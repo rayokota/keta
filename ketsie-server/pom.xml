@@ -17,6 +17,34 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.kcache</groupId>
+            <artifactId>kcache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.omid</groupId>
+            <artifactId>omid-commit-table</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.omid</groupId>
+            <artifactId>omid-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.omid</groupId>
+            <artifactId>omid-timestamp-storage-hbase1.x</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.omid</groupId>
+            <artifactId>omid-transaction-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.omid</groupId>
+            <artifactId>omid-tso-server-hbase2.x</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -42,6 +70,10 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

@@ -1,0 +1,197 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to you under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.kcache.ketsie.version;
+
+import com.google.common.primitives.SignedBytes;
+import io.kcache.ketsie.transaction.client.KetsieTransactionManager;
+import io.kcache.Cache;
+import io.kcache.KeyValue;
+import io.kcache.KeyValueIterator;
+import io.kcache.utils.InMemoryCache;
+import io.kcache.utils.Streams;
+import org.apache.omid.transaction.TransactionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
+
+import static io.kcache.ketsie.version.TxVersionedCache.INVALID_TX;
+import static io.kcache.ketsie.version.TxVersionedCache.PENDING_TX;
+
+public class VersionedCache implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(VersionedCache.class);
+
+    private static final Comparator<byte[]> BYTES_COMPARATOR = SignedBytes.lexicographicalComparator();
+    private static final byte[] EMPTY_VALUE = new byte[0];
+
+    private final String name;
+    private final Cache<byte[], NavigableMap<Long, VersionedValue>> cache;
+
+    public VersionedCache(String name) {
+        this(name, new InMemoryCache<>(BYTES_COMPARATOR));
+    }
+
+    public VersionedCache(String name,
+                          Cache<byte[], NavigableMap<Long, VersionedValue>> cache) {
+        this.name = name;
+        this.cache = cache;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean keysEqual(byte[] key1, byte[] key2) {
+        return Arrays.equals(key1, key2);
+    }
+
+    public boolean valuesEqual(byte[] value1, byte[] value2) {
+        return Arrays.equals(value1, value2);
+    }
+
+    public VersionedValue get(byte[] key, long version) {
+        NavigableMap<Long, VersionedValue> rowData = cache.get(key);
+        return rowData != null ? rowData.get(version) : null;
+    }
+
+    public List<VersionedValue> get(byte[] key, long minVersion, long maxVersion) {
+        NavigableMap<Long, VersionedValue> rowData = cache.get(key);
+        return rowData != null ? getAll(rowData, minVersion, maxVersion) : Collections.emptyList();
+    }
+
+    private static List<VersionedValue> getAll(
+        NavigableMap<Long, VersionedValue> rowdata, long minVersion, long maxVersion) {
+        List<VersionedValue> all = new ArrayList<>(rowdata.subMap(minVersion, true, maxVersion, true)
+            .descendingMap()
+            .values());
+        return all;
+    }
+
+    public void put(byte[] key, long version, byte[] value) {
+        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+        rowData.put(version, new VersionedValue(version, PENDING_TX, false, value));
+        garbageCollect(rowData);
+        cache.put(key, rowData);
+    }
+
+    public boolean setCommit(byte[] key, long version, long commit) {
+        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+        VersionedValue value = rowData.get(version);
+        if (value == null) {
+            return false;
+        }
+        if (commit == INVALID_TX) {
+            rowData.remove(version);
+        } else {
+            rowData.put(version, new VersionedValue(version, commit, value.isDeleted(), value.getValue()));
+        }
+        garbageCollect(rowData);
+        cache.put(key, rowData);
+        return true;
+    }
+
+    public void remove(byte[] key, long version) {
+        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+        rowData.put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE));
+        garbageCollect(rowData);
+        cache.put(key, rowData);
+    }
+
+    private void garbageCollect(NavigableMap<Long, VersionedValue> rowData) {
+        // Discard all entries strictly older than the low water mark except the most recent
+        try {
+            KetsieTransactionManager txManager = KetsieTransactionManager.INSTANCE;
+            if (txManager != null) {  // allow null for tests
+                long lowWaterMark = txManager.getLowWatermark();
+                List<Long> oldVersions = new ArrayList<>(rowData.headMap(lowWaterMark).keySet());
+                if (oldVersions.size() > 1) {
+                    for (int i = 0; i < oldVersions.size() - 1; i++) {
+                        rowData.remove(oldVersions.get(i));
+                    }
+                }
+            }
+        } catch (TransactionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public VersionedCache subCache(byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive) {
+        return new VersionedCache(name, cache.subCache(from, fromInclusive, to, toInclusive));
+    }
+
+    public KeyValueIterator<byte[], List<VersionedValue>> range(
+        byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive, long minVersion, long maxVersion) {
+        return new VersionedKeyValueIterator(cache.range(from, fromInclusive, to, toInclusive), minVersion, maxVersion);
+    }
+
+    public KeyValueIterator<byte[], List<VersionedValue>> all(long minVersion, long maxVersion) {
+        return new VersionedKeyValueIterator(cache.all(), minVersion, maxVersion);
+    }
+
+    public void flush() {
+        cache.flush();
+    }
+
+    public void close() throws IOException {
+        cache.close();
+    }
+
+    private static class VersionedKeyValueIterator implements KeyValueIterator<byte[], List<VersionedValue>> {
+        private final KeyValueIterator<byte[], NavigableMap<Long, VersionedValue>> rawIterator;
+        private final Iterator<KeyValue<byte[], List<VersionedValue>>> iterator;
+
+        VersionedKeyValueIterator(
+            KeyValueIterator<byte[], NavigableMap<Long, VersionedValue>> iter,
+            long minVersion, long maxVersion) {
+            this.rawIterator = iter;
+            this.iterator = Streams.<KeyValue<byte[], NavigableMap<Long, VersionedValue>>>streamOf(iter)
+                .flatMap(kv -> {
+                    List<VersionedValue> values = getAll(kv.value, minVersion, maxVersion);
+                    return values.isEmpty() ? Stream.empty() : Stream.of(new KeyValue<>(kv.key, values));
+                })
+                .iterator();
+        }
+
+        public final boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        public final KeyValue<byte[], List<VersionedValue>> next() {
+            return iterator.next();
+        }
+
+        public final void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        public final void close() {
+            rawIterator.close();
+        }
+    }
+}
