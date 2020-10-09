@@ -43,6 +43,7 @@
         <apache.directory.api.version>1.0.0-M33</apache.directory.api.version>
         <apache.directory.server.version>2.0.0-M22</apache.directory.server.version>
         <bouncycastle.version>1.66</bouncycastle.version>
+        <grpc.version>1.32.1</grpc.version>
         <guava.version>19.0</guava.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -66,6 +67,27 @@
                 <groupId>io.kcache</groupId>
                 <artifactId>kcache</artifactId>
                 <version>${kcache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency> <!-- necessary for Java 9+ -->
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>annotations-api</artifactId>
+                <version>6.0.53</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -297,6 +319,15 @@
                             <inputDirectories>
                                 <include>src/main/proto</include>
                             </inputDirectories>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                </outputTarget>
+                                <outputTarget>
+                                    <type>grpc-java</type>
+                                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.1</pluginArtifact>
+                                </outputTarget>
+                            </outputTargets>
                         </configuration>
                     </execution>
                 </executions>
