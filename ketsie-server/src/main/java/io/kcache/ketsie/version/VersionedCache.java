@@ -37,7 +37,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 
 import static io.kcache.ketsie.version.TxVersionedCache.INVALID_TX;
@@ -51,14 +50,14 @@ public class VersionedCache implements Closeable {
     private static final byte[] EMPTY_VALUE = new byte[0];
 
     private final String name;
-    private final Cache<byte[], NavigableMap<Long, VersionedValue>> cache;
+    private final Cache<byte[], VersionedValues> cache;
 
     public VersionedCache(String name) {
         this(name, new InMemoryCache<>(BYTES_COMPARATOR));
     }
 
     public VersionedCache(String name,
-                          Cache<byte[], NavigableMap<Long, VersionedValue>> cache) {
+                          Cache<byte[], VersionedValues> cache) {
         this.name = name;
         this.cache = cache;
     }
@@ -76,13 +75,13 @@ public class VersionedCache implements Closeable {
     }
 
     public VersionedValue get(byte[] key, long version) {
-        NavigableMap<Long, VersionedValue> rowData = cache.get(key);
-        return rowData != null ? rowData.get(version) : null;
+        VersionedValues rowData = cache.get(key);
+        return rowData != null ? rowData.getValues().get(version) : null;
     }
 
     public List<VersionedValue> get(byte[] key, long minVersion, long maxVersion) {
-        NavigableMap<Long, VersionedValue> rowData = cache.get(key);
-        return rowData != null ? getAll(rowData, minVersion, maxVersion) : Collections.emptyList();
+        VersionedValues rowData = cache.get(key);
+        return rowData != null ? getAll(rowData.getValues(), minVersion, maxVersion) : Collections.emptyList();
     }
 
     private static List<VersionedValue> getAll(
@@ -93,15 +92,16 @@ public class VersionedCache implements Closeable {
         return all;
     }
 
-    public void put(byte[] key, long version, byte[] value) {
-        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+    public void put(int generationId, byte[] key, long version, byte[] value) {
+        NavigableMap<Long, VersionedValue> rowData =
+            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
         rowData.put(version, new VersionedValue(version, PENDING_TX, false, value));
         garbageCollect(rowData);
-        cache.put(key, rowData);
     }
 
-    public boolean setCommit(byte[] key, long version, long commit) {
-        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+    public boolean setCommit(int generationId, byte[] key, long version, long commit) {
+        NavigableMap<Long, VersionedValue> rowData =
+            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
         VersionedValue value = rowData.get(version);
         if (value == null) {
             return false;
@@ -112,15 +112,14 @@ public class VersionedCache implements Closeable {
             rowData.put(version, new VersionedValue(version, commit, value.isDeleted(), value.getValue()));
         }
         garbageCollect(rowData);
-        cache.put(key, rowData);
         return true;
     }
 
-    public void remove(byte[] key, long version) {
-        NavigableMap<Long, VersionedValue> rowData = cache.getOrDefault(key, new ConcurrentSkipListMap<>());
+    public void remove(int generationId, byte[] key, long version) {
+        NavigableMap<Long, VersionedValue> rowData =
+            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
         rowData.put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE));
         garbageCollect(rowData);
-        cache.put(key, rowData);
     }
 
     private void garbageCollect(NavigableMap<Long, VersionedValue> rowData) {
@@ -163,16 +162,16 @@ public class VersionedCache implements Closeable {
     }
 
     private static class VersionedKeyValueIterator implements KeyValueIterator<byte[], List<VersionedValue>> {
-        private final KeyValueIterator<byte[], NavigableMap<Long, VersionedValue>> rawIterator;
+        private final KeyValueIterator<byte[], VersionedValues> rawIterator;
         private final Iterator<KeyValue<byte[], List<VersionedValue>>> iterator;
 
         VersionedKeyValueIterator(
-            KeyValueIterator<byte[], NavigableMap<Long, VersionedValue>> iter,
+            KeyValueIterator<byte[], VersionedValues> iter,
             long minVersion, long maxVersion) {
             this.rawIterator = iter;
-            this.iterator = Streams.<KeyValue<byte[], NavigableMap<Long, VersionedValue>>>streamOf(iter)
+            this.iterator = Streams.<KeyValue<byte[], VersionedValues>>streamOf(iter)
                 .flatMap(kv -> {
-                    List<VersionedValue> values = getAll(kv.value, minVersion, maxVersion);
+                    List<VersionedValue> values = getAll(kv.value.getValues(), minVersion, maxVersion);
                     return values.isEmpty() ? Stream.empty() : Stream.of(new KeyValue<>(kv.key, values));
                 })
                 .iterator();
