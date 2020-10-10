@@ -44,7 +44,7 @@
         <apache.directory.server.version>2.0.0-M22</apache.directory.server.version>
         <bouncycastle.version>1.66</bouncycastle.version>
         <grpc.version>1.32.1</grpc.version>
-        <guava.version>19.0</guava.version>
+        <guava.version>29.0-jre</guava.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -58,6 +58,21 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.kcache</groupId>
+                <artifactId>ketsie-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.kcache</groupId>
+                <artifactId>ketsie-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.kcache</groupId>
+                <artifactId>ketsie-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
