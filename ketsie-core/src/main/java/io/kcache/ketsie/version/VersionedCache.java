@@ -46,7 +46,8 @@ public class VersionedCache implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(VersionedCache.class);
 
-    private static final Comparator<byte[]> BYTES_COMPARATOR = SignedBytes.lexicographicalComparator();
+    public static final Comparator<byte[]> BYTES_COMPARATOR = SignedBytes.lexicographicalComparator();
+
     private static final byte[] EMPTY_VALUE = new byte[0];
 
     private final String name;

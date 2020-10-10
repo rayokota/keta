@@ -61,7 +61,7 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
 
     public static KetsieTransactionManager INSTANCE;
 
-    private final int generationId;
+    private volatile int generationId = -1;
 
     // ----------------------------------------------------------------------------------------------------------------
     // Construction
@@ -69,11 +69,10 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
 
     // visible for testing
     public static KetsieTransactionManager newInstance() {
-        return newInstance(1, new InMemoryCommitTable(), new InMemoryTimestampStorage());
+        return newInstance(new InMemoryCommitTable(), new InMemoryTimestampStorage());
     }
 
-    public static KetsieTransactionManager newInstance(int generationId,
-                                                       CommitTable commitTable,
+    public static KetsieTransactionManager newInstance(CommitTable commitTable,
                                                        TimestampStorage timestampStorage) {
         try {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
@@ -81,14 +80,13 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
             timestampOracle.initialize();
             PostCommitActions postCommitter = new KetsieSyncPostCommitter(commitTable.getClient());
-            return newInstance(generationId, commitTable, timestampOracle, postCommitter);
+            return newInstance(commitTable, timestampOracle, postCommitter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static KetsieTransactionManager newInstance(int generationId,
-                                                       CommitTable commitTable,
+    public static KetsieTransactionManager newInstance(CommitTable commitTable,
                                                        TimestampOracle timestampOracle,
                                                        PostCommitActions postCommitter) {
         try {
@@ -98,7 +96,6 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
             TSOProtocol tsoClient = new KetsieTimestampClient(timestampOracle, commitTableWriter);
 
             INSTANCE = new KetsieTransactionManager(
-                generationId,
                 metricsRegistry,
                 postCommitter,
                 tsoClient,
@@ -112,8 +109,7 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
     }
 
 
-    private KetsieTransactionManager(int generationId,
-                                     MetricsRegistry metricsRegistry,
+    private KetsieTransactionManager(MetricsRegistry metricsRegistry,
                                      PostCommitActions postCommitter,
                                      TSOProtocol tsoClient,
                                      CommitTable.Client commitTableClient,
@@ -125,11 +121,14 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
             commitTableClient,
             commitTableWriter,
             transactionFactory);
-        this.generationId = generationId;
     }
 
     public int getGenerationId() {
         return generationId;
+    }
+
+    public void setGenerationId(int generationId) {
+        this.generationId = generationId;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
