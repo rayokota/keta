@@ -61,8 +61,8 @@ public class SnapshotFilterImpl implements SnapshotFilter {
         return versionedCache;
     }
 
-    private void healShadowCell(KeyValue<byte[], VersionedValue> kv, long commitTimestamp) {
-        versionedCache.setCommit(kv.key, kv.value.getVersion(), commitTimestamp);
+    private void healShadowCell(KetsieTransaction tx, KeyValue<byte[], VersionedValue> kv, long commitTimestamp) {
+        versionedCache.setCommit(tx.getGenerationId(), kv.key, kv.value.getVersion(), commitTimestamp);
     }
 
     /**
@@ -195,7 +195,7 @@ public class SnapshotFilterImpl implements SnapshotFilter {
                 // commit phase of the client probably failed, so we heal the shadow
                 // cell with the right commit timestamp for avoiding further reads to
                 // hit the storage
-                healShadowCell(cell, tentativeCommitTimestamp.getValue());
+                healShadowCell(transaction, cell, tentativeCommitTimestamp.getValue());
                 return Optional.of(tentativeCommitTimestamp.getValue());
             case CACHE:
             case SHADOW_CELL:

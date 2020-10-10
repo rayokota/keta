@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.kcache.ketsie.server;
+package io.kcache.ketsie;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.stub.StreamObserver;
+import io.kcache.ketsie.kv.KVImpl;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

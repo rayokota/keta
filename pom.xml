@@ -31,8 +31,7 @@
     </scm>
 
     <modules>
-        <module>ketsie-client</module>
-        <module>ketsie-common</module>
+        <module>ketsie-core</module>
         <module>ketsie-server</module>
     </modules>
 
@@ -44,7 +43,7 @@
         <apache.directory.server.version>2.0.0-M22</apache.directory.server.version>
         <bouncycastle.version>1.66</bouncycastle.version>
         <grpc.version>1.32.1</grpc.version>
-        <guava.version>29.0-jre</guava.version>
+        <guava.version>19.0</guava.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -206,6 +205,7 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

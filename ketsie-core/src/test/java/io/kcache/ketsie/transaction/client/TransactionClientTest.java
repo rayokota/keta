@@ -132,7 +132,7 @@ public class TransactionClientTest {
         VersionedCache cache = new VersionedCache(TEST_TABLE);
         TxVersionedCache txCache = new TxVersionedCache(cache);
         SnapshotFilterImpl snapshotFilter = new SnapshotFilterImpl(cache);
-        KetsieTransactionManager tm = KetsieTransactionManager.newInstance(commitTable, timestampOracle, postCommitter);
+        KetsieTransactionManager tm = KetsieTransactionManager.newInstance(1, commitTable, timestampOracle, postCommitter);
 
         // The following line emulates a crash after commit that is observed in (*) below
         doThrow(new RuntimeException()).when(postCommitter).updateShadowCells(any(KetsieTransaction.class));
@@ -199,7 +199,7 @@ public class TransactionClientTest {
         VersionedCache cache = new VersionedCache(TEST_TABLE);
         TxVersionedCache txCache = new TxVersionedCache(cache);
         SnapshotFilterImpl snapshotFilter = new SnapshotFilterImpl(cache);
-        KetsieTransactionManager tm = KetsieTransactionManager.newInstance(commitTable, timestampOracle, postCommitter);
+        KetsieTransactionManager tm = KetsieTransactionManager.newInstance(1, commitTable, timestampOracle, postCommitter);
 
         final long CURRENT_EPOCH_FAKE = (System.currentTimeMillis() + 10000) * CommitTable.MAX_CHECKPOINTS_PER_TXN;
 

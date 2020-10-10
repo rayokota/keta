@@ -55,13 +55,13 @@ public class KetsieSyncPostCommitter implements PostCommitActions {
             for (KetsieCellId cell : tx.getWriteSet()) {
                 VersionedCache cache = cell.getCache();
                 caches.put(cache.getName(), cache);
-                cache.setCommit(cell.getKey(), cell.getTimestamp(), tx.getCommitTimestamp());
+                cache.setCommit(tx.getGenerationId(), cell.getKey(), cell.getTimestamp(), tx.getCommitTimestamp());
             }
 
             for (KetsieCellId cell : tx.getConflictFreeWriteSet()) {
                 VersionedCache cache = cell.getCache();
                 caches.put(cache.getName(), cache);
-                cache.setCommit(cell.getKey(), cell.getTimestamp(), tx.getCommitTimestamp());
+                cache.setCommit(tx.getGenerationId(), cell.getKey(), cell.getTimestamp(), tx.getCommitTimestamp());
             }
 
             for (VersionedCache cache : caches.values()) {

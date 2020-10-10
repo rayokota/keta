@@ -71,6 +71,10 @@ public class KetsieTransaction extends AbstractTransaction<KetsieCellId> {
         super(transactionId, readTimestamp, visibilityLevel, epoch, writeSet, conflictFreeWriteSet, tm, isLowLatency);
     }
 
+    public int getGenerationId() {
+        return ((KetsieTransactionManager) getTransactionManager()).getGenerationId();
+    }
+
     @Override
     public void cleanup() {
         try {
@@ -79,13 +83,13 @@ public class KetsieTransaction extends AbstractTransaction<KetsieCellId> {
             for (final KetsieCellId cell : getWriteSet()) {
                 VersionedCache cache = cell.getCache();
                 caches.put(cache.getName(), cache);
-                cache.setCommit(cell.getKey(), cell.getTimestamp(), INVALID_TX);
+                cache.setCommit(getGenerationId(), cell.getKey(), cell.getTimestamp(), INVALID_TX);
             }
 
             for (final KetsieCellId cell : getConflictFreeWriteSet()) {
                 VersionedCache cache = cell.getCache();
                 caches.put(cache.getName(), cache);
-                cache.setCommit(cell.getKey(), cell.getTimestamp(), INVALID_TX);
+                cache.setCommit(getGenerationId(), cell.getKey(), cell.getTimestamp(), INVALID_TX);
             }
 
             for (VersionedCache cache : caches.values()) {
