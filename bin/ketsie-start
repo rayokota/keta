@@ -41,4 +41,4 @@ if [[ ! -e "$1" ]]; then
 	exit 1
 fi
 
-exec $(dirname $0)/ketsie-run-class ${EXTRA_ARGS} io.kcache.ketsie.KetsieMain "$@"
+exec $(dirname $0)/ketsie-run-class ${EXTRA_ARGS} io.kcache.ketsie.server.KetsieMain "$@"

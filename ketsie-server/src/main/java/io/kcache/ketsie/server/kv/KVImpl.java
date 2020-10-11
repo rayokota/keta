@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.ketsie.kv;
+package io.kcache.ketsie.server.kv;
 
 import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.CompactionRequest;
@@ -36,8 +36,6 @@ import io.kcache.ketsie.version.VersionedValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
-
-import java.io.IOException;
 
 public class KVImpl extends KVGrpc.KVImplBase {
 

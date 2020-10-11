@@ -13,4 +13,4 @@
 # limitations under the License.
 #
 
-exec $(dirname $0)/ketsie-stop-service "io.ketsie.server.KetsieMain"
+exec $(dirname $0)/ketsie-stop-service "io.kcache.ketsie.server.KetsieMain"

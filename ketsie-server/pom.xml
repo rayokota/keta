@@ -124,7 +124,7 @@
                     </descriptors>
                     <archive>
                         <manifest>
-                            <mainClass>io.kcache.ketsie.KetsieMain</mainClass>
+                            <mainClass>io.kcache.ketsie.server.KetsieMain</mainClass>
                         </manifest>
                     </archive>
                     <attach>false</attach>
