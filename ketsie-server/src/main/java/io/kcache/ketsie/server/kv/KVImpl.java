@@ -31,7 +31,9 @@ import io.etcd.jetcd.api.RangeResponse;
 import io.etcd.jetcd.api.TxnRequest;
 import io.etcd.jetcd.api.TxnResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.KeyValueIterator;
 import io.kcache.ketsie.KetsieEngine;
+import io.kcache.ketsie.version.TxVersionedCache;
 import io.kcache.ketsie.version.VersionedValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
@@ -43,11 +45,30 @@ public class KVImpl extends KVGrpc.KVImplBase {
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
         try {
             Transaction tx = KetsieEngine.getInstance().getTxManager().begin();
-            VersionedValue value = KetsieEngine.getInstance().getTxCache().get("hi".getBytes());
-            RangeResponse rangeResponse = RangeResponse.newBuilder().addKvs(
-                KeyValue.newBuilder().setKey(ByteString.copyFrom("hi".getBytes()))
-                    .setValue(ByteString.copyFrom(value.getValue())).build()).build();
-            responseObserver.onNext(rangeResponse);
+            TxVersionedCache cache = KetsieEngine.getInstance().getTxCache();
+            byte[] from = request.getKey().toByteArray();
+            byte[] to = request.getRangeEnd().toByteArray();
+            RangeResponse.Builder responseBuilder = RangeResponse.newBuilder();
+            if (to.length > 0) {
+                // TODO handle to = new byte[]{0}
+                KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false);
+                while (iter.hasNext()) {
+                    io.kcache.KeyValue<byte[], VersionedValue> elem = iter.next();
+                    KeyValue kv = KeyValue.newBuilder()
+                        .setKey(ByteString.copyFrom(elem.key))
+                        .setValue(ByteString.copyFrom(elem.value.getValue()))
+                        .build();
+                    responseBuilder.addKvs(kv);
+                }
+            } else {
+                VersionedValue elem = cache.get(from);
+                KeyValue kv = KeyValue.newBuilder()
+                    .setKey(ByteString.copyFrom(from))
+                    .setValue(ByteString.copyFrom(elem.getValue()))
+                    .build();
+                responseBuilder.addKvs(kv);
+            }
+            responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
             KetsieEngine.getInstance().getTxManager().commit(tx);
         } catch (TransactionException | RollbackException e) {
@@ -59,10 +80,13 @@ public class KVImpl extends KVGrpc.KVImplBase {
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
         try {
             Transaction tx = KetsieEngine.getInstance().getTxManager().begin();
-            System.out.println("*** Put");
-            KetsieEngine.getInstance().getTxCache().put("hi".getBytes(), request.getValue().toByteArray());
+            TxVersionedCache cache = KetsieEngine.getInstance().getTxCache();
+            cache.put(request.getKey().toByteArray(), request.getValue().toByteArray());
             ByteString bs = ByteString.copyFrom("hi".getBytes());
-            KeyValue kv = KeyValue.newBuilder().setKey(bs).setValue(request.getValue()).build();
+            KeyValue kv = KeyValue.newBuilder()
+                .setKey(request.getKey())
+                .setValue(request.getValue())
+                .build();
             PutResponse putResponse = PutResponse.newBuilder().setPrevKv(kv).build();
             responseObserver.onNext(putResponse);
             responseObserver.onCompleted();
