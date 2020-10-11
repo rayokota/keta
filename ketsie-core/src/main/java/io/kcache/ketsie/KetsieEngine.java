@@ -23,10 +23,12 @@ import io.kcache.ketsie.kafka.serialization.KafkaValueSerde;
 import io.kcache.ketsie.transaction.KetsieCommitTable;
 import io.kcache.ketsie.transaction.KetsieTimestampStorage;
 import io.kcache.ketsie.transaction.client.KetsieTransactionManager;
+import io.kcache.ketsie.version.TxVersionedCache;
 import io.kcache.ketsie.version.VersionedCache;
 import io.kcache.ketsie.version.VersionedValues;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
+import io.kcache.utils.TransformedRawCache;
 import org.apache.kafka.common.Configurable;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
@@ -52,6 +54,7 @@ public class KetsieEngine implements Configurable, Closeable {
     private Cache<Long, Long> commits;
     private Cache<Long, Long> timestamps;
     private Cache<byte[], VersionedValues> cache;
+    private TxVersionedCache txCache;
     private KetsieTransactionManager transactionManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
 
@@ -89,7 +92,7 @@ public class KetsieEngine implements Configurable, Closeable {
     public void init() {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
-        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "kareldb-1");
+        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "ketsie-1");
         if (bootstrapServers != null) {
             String topic = "_commits";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -116,6 +119,7 @@ public class KetsieEngine implements Configurable, Closeable {
         }
         timestamps = Caches.concurrentCache(timestamps);
         timestamps.init();
+        Cache<byte[], VersionedValues> cache;
         if (bootstrapServers != null) {
             String topic = "_ketsie";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -127,6 +131,8 @@ public class KetsieEngine implements Configurable, Closeable {
         } else {
             cache = new InMemoryCache<>();
         }
+        cache.init();
+        txCache = new TxVersionedCache(new VersionedCache("ketsie", cache));
         CommitTable commitTable = new KetsieCommitTable(commits);
         TimestampStorage timestampStorage = new KetsieTimestampStorage(timestamps);
         transactionManager = KetsieTransactionManager.newInstance(commitTable, timestampStorage);
@@ -145,6 +151,10 @@ public class KetsieEngine implements Configurable, Closeable {
     public void sync() {
         commits.sync();
         timestamps.sync();
+    }
+
+    public TxVersionedCache getTxCache() {
+        return txCache;
     }
 
     public KetsieTransactionManager getTxManager() {

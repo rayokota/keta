@@ -17,6 +17,9 @@
 
 package io.kcache.ketsie.version;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 import static io.kcache.ketsie.version.TxVersionedCache.PENDING_TX;
 
 public class VersionedValue {
@@ -60,6 +63,28 @@ public class VersionedValue {
 
     public byte[] getValue() {
         return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VersionedValue that = (VersionedValue) o;
+        return version == that.version
+            && commit == that.commit
+            && deleted == that.deleted
+            && Arrays.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(version, commit, deleted);
+        result = 31 * result + Arrays.hashCode(value);
+        return result;
     }
 }
 

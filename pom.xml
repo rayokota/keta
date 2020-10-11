@@ -41,7 +41,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <avro.version>1.10.0</avro.version>
         <grpc.version>1.32.1</grpc.version>
-        <guava.version>19.0</guava.version>
+        <!-- omid does not work with guava 26+ -->
+        <guava.version>25.0-jre</guava.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -57,12 +58,7 @@
         <dependencies>
             <dependency>
                 <groupId>io.kcache</groupId>
-                <artifactId>ketsie-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.kcache</groupId>
-                <artifactId>ketsie-common</artifactId>
+                <artifactId>ketsie-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -78,6 +74,11 @@
             <dependency>
                 <groupId>io.kcache</groupId>
                 <artifactId>kcache</artifactId>
+                <version>${kcache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.kcache</groupId>
+                <artifactId>kcache-rocksdb</artifactId>
                 <version>${kcache.version}</version>
             </dependency>
             <dependency>

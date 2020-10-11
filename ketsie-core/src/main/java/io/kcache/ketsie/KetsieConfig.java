@@ -35,7 +35,7 @@ public class KetsieConfig extends KafkaCacheConfig {
             + "hostname, and port. For example: http://myhost:8080, https://0.0.0.0:8081";
 
     public static final String CLUSTER_GROUP_ID_CONFIG = "cluster.group.id";
-    public static final String CLUSTER_GROUP_ID_DEFAULT = "kareldb";
+    public static final String CLUSTER_GROUP_ID_DEFAULT = "ketsie";
     public static final String CLUSTER_GROUP_ID_DOC =
         "The group ID used for leader election.";
 

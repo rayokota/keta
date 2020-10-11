@@ -51,7 +51,7 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetsieTransactionManager.class);
 
-    private static class KarelDbTransactionFactory implements TransactionFactory<KetsieCellId> {
+    private static class KetsieTransactionFactory implements TransactionFactory<KetsieCellId> {
         @Override
         public KetsieTransaction createTransaction(long transactionId, long epoch, AbstractTransactionManager tm) {
             return new KetsieTransaction(transactionId, epoch, new HashSet<>(), new HashSet<>(),
@@ -59,9 +59,13 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
-    public static KetsieTransactionManager INSTANCE;
-
     private volatile int generationId = -1;
+
+    private static KetsieTransactionManager INSTANCE;
+
+    public static KetsieTransactionManager getInstance() {
+        return INSTANCE;
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Construction
@@ -101,7 +105,7 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
                 tsoClient,
                 commitTableClient,
                 commitTableWriter,
-                new KarelDbTransactionFactory());
+                new KetsieTransactionFactory());
             return INSTANCE;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -114,7 +118,7 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
                                      TSOProtocol tsoClient,
                                      CommitTable.Client commitTableClient,
                                      CommitTable.Writer commitTableWriter,
-                                     KarelDbTransactionFactory transactionFactory) {
+                                     KetsieTransactionFactory transactionFactory) {
         super(metricsRegistry,
             postCommitter,
             tsoClient,
@@ -163,13 +167,13 @@ public class KetsieTransactionManager extends AbstractTransactionManagerShim {
     // Helper methods
     // ----------------------------------------------------------------------------------------------------------------
 
-    public static KetsieTransaction enforceKarelDbTransactionAsParam(AbstractTransaction<? extends CellId> tx) {
+    public static KetsieTransaction enforceKetsieTransactionAsParam(AbstractTransaction<? extends CellId> tx) {
 
         if (tx instanceof KetsieTransaction) {
             return (KetsieTransaction) tx;
         } else {
             throw new IllegalArgumentException(
-                "The transaction object passed is not an instance of KarelDBTransaction");
+                "The transaction object passed is not an instance of KetsieTransaction");
         }
     }
 

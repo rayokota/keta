@@ -46,7 +46,7 @@ public class KetsieCommitTable implements CommitTable {
     // Reader and Writer
     // ----------------------------------------------------------------------------------------------------------------
 
-    private class KarelDbWriter implements Writer {
+    private class KetsieWriter implements Writer {
 
         private static final long INITIAL_LWM_VALUE = -1L;
 
@@ -54,7 +54,7 @@ public class KetsieCommitTable implements CommitTable {
         final Map<Long, Long> writeBuffer = new ConcurrentHashMap<>();
         volatile long lowWatermarkToStore = INITIAL_LWM_VALUE;
 
-        KarelDbWriter() {
+        KetsieWriter() {
         }
 
         @Override
@@ -102,9 +102,9 @@ public class KetsieCommitTable implements CommitTable {
         }
     }
 
-    class KarelDbClient implements Client {
+    class KetsieClient implements Client {
 
-        KarelDbClient() {
+        KetsieClient() {
         }
 
         @Override
@@ -166,12 +166,12 @@ public class KetsieCommitTable implements CommitTable {
 
     @Override
     public Writer getWriter() throws IOException {
-        return new KarelDbWriter();
+        return new KetsieWriter();
     }
 
     @Override
     public Client getClient() throws IOException {
-        return new KarelDbClient();
+        return new KetsieClient();
     }
 
     // ----------------------------------------------------------------------------------------------------------------

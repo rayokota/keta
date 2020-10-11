@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
@@ -83,11 +84,11 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
         Schema arraySchema = avroSchema.getField("_values").schema();
         List<GenericRecord> records = new GenericData.Array<>(object.getValues().size(), arraySchema);
         for (VersionedValue versionedValue : object.getValues().values()) {
-            GenericRecordBuilder nested = new GenericRecordBuilder(arraySchema);
+            GenericRecordBuilder nested = new GenericRecordBuilder(arraySchema.getElementType());
             nested.set("_version", versionedValue.getVersion());
             nested.set("_commit", versionedValue.getCommit());
             nested.set("_deleted", versionedValue.isDeleted());
-            nested.set("_value", versionedValue.getValue());
+            nested.set("_value", ByteBuffer.wrap(versionedValue.getValue()));
             records.add(nested.build());
         }
         builder.set("_values", records);

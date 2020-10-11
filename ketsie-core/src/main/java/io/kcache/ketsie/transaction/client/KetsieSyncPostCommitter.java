@@ -47,7 +47,7 @@ public class KetsieSyncPostCommitter implements PostCommitActions {
 
         SettableFuture<Void> updateSCFuture = SettableFuture.create();
 
-        KetsieTransaction tx = KetsieTransactionManager.enforceKarelDbTransactionAsParam(transaction);
+        KetsieTransaction tx = KetsieTransactionManager.enforceKetsieTransactionAsParam(transaction);
 
         try {
             Map<String, VersionedCache> caches = new HashMap<>();
@@ -84,7 +84,7 @@ public class KetsieSyncPostCommitter implements PostCommitActions {
 
         SettableFuture<Void> updateSCFuture = SettableFuture.create();
 
-        KetsieTransaction tx = KetsieTransactionManager.enforceKarelDbTransactionAsParam(transaction);
+        KetsieTransaction tx = KetsieTransactionManager.enforceKetsieTransactionAsParam(transaction);
 
         try {
             commitTableClient.deleteCommitEntry(tx.getStartTimestamp()).get();

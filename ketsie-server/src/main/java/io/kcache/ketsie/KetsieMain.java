@@ -32,7 +32,11 @@ public class KetsieMain {
 
     private Server server;
 
-    private void start() throws IOException {
+    private void start(String[] args) throws IOException {
+        KetsieConfig config = new KetsieConfig(args[0]);
+        KetsieEngine engine = KetsieEngine.getInstance();
+        engine.configure(config);
+        engine.init();
         /* The port on which the server should run */
         int port = 50051;
         server = ServerBuilder.forPort(port)
@@ -75,7 +79,7 @@ public class KetsieMain {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         final KetsieMain server = new KetsieMain();
-        server.start();
+        server.start(args);
         server.blockUntilShutdown();
     }
 }

@@ -31,29 +31,46 @@ import io.etcd.jetcd.api.RangeResponse;
 import io.etcd.jetcd.api.TxnRequest;
 import io.etcd.jetcd.api.TxnResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.ketsie.KetsieEngine;
+import io.kcache.ketsie.version.VersionedValue;
+import org.apache.omid.transaction.RollbackException;
+import org.apache.omid.transaction.Transaction;
+import org.apache.omid.transaction.TransactionException;
 
 import java.io.IOException;
 
 public class KVImpl extends KVGrpc.KVImplBase {
+
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
-        super.range(request, responseObserver);
+        try {
+            Transaction tx = KetsieEngine.getInstance().getTxManager().begin();
+            VersionedValue value = KetsieEngine.getInstance().getTxCache().get("hi".getBytes());
+            RangeResponse rangeResponse = RangeResponse.newBuilder().addKvs(
+                KeyValue.newBuilder().setKey(ByteString.copyFrom("hi".getBytes()))
+                    .setValue(ByteString.copyFrom(value.getValue())).build()).build();
+            responseObserver.onNext(rangeResponse);
+            responseObserver.onCompleted();
+            KetsieEngine.getInstance().getTxManager().commit(tx);
+        } catch (TransactionException | RollbackException e) {
+            // TODO
+        }
     }
 
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
         try {
+            Transaction tx = KetsieEngine.getInstance().getTxManager().begin();
             System.out.println("*** Put");
-            ByteString.Output out = ByteString.newOutput();
-            out.write("hi".getBytes());
-            ByteString bs = out.toByteString();
-            KeyValue kv = KeyValue.newBuilder().setKey(bs).setValue(bs).build();
+            KetsieEngine.getInstance().getTxCache().put("hi".getBytes(), request.getValue().toByteArray());
+            ByteString bs = ByteString.copyFrom("hi".getBytes());
+            KeyValue kv = KeyValue.newBuilder().setKey(bs).setValue(request.getValue()).build();
             PutResponse putResponse = PutResponse.newBuilder().setPrevKv(kv).build();
             responseObserver.onNext(putResponse);
             responseObserver.onCompleted();
-        } catch (IOException e) {
-            super.put(request, responseObserver);
-
+            KetsieEngine.getInstance().getTxManager().commit(tx);
+        } catch (TransactionException | RollbackException e) {
+            // TODO
         }
     }
 

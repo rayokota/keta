@@ -94,39 +94,39 @@ public class VersionedCache implements Closeable {
     }
 
     public void put(int generationId, byte[] key, long version, byte[] value) {
-        NavigableMap<Long, VersionedValue> rowData =
-            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
-        rowData.put(version, new VersionedValue(version, PENDING_TX, false, value));
-        garbageCollect(rowData);
+        VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, false, value));
+        garbageCollect(rowData.getValues());
+        cache.put(key, rowData);
     }
 
     public boolean setCommit(int generationId, byte[] key, long version, long commit) {
-        NavigableMap<Long, VersionedValue> rowData =
-            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
-        VersionedValue value = rowData.get(version);
+        VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
+        VersionedValue value = rowData.getValues().get(version);
         if (value == null) {
             return false;
         }
         if (commit == INVALID_TX) {
-            rowData.remove(version);
+            rowData.getValues().remove(version);
         } else {
-            rowData.put(version, new VersionedValue(version, commit, value.isDeleted(), value.getValue()));
+            rowData.getValues().put(version, new VersionedValue(version, commit, value.isDeleted(), value.getValue()));
         }
-        garbageCollect(rowData);
+        garbageCollect(rowData.getValues());
+        cache.put(key, rowData);
         return true;
     }
 
     public void remove(int generationId, byte[] key, long version) {
-        NavigableMap<Long, VersionedValue> rowData =
-            cache.computeIfAbsent(key, k -> new VersionedValues(generationId)).getValues();
-        rowData.put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE));
-        garbageCollect(rowData);
+        VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE));
+        garbageCollect(rowData.getValues());
+        cache.put(key, rowData);
     }
 
     private void garbageCollect(NavigableMap<Long, VersionedValue> rowData) {
         // Discard all entries strictly older than the low water mark except the most recent
         try {
-            KetsieTransactionManager txManager = KetsieTransactionManager.INSTANCE;
+            KetsieTransactionManager txManager = KetsieTransactionManager.getInstance();
             if (txManager != null) {  // allow null for tests
                 long lowWaterMark = txManager.getLowWatermark();
                 List<Long> oldVersions = new ArrayList<>(rowData.headMap(lowWaterMark).keySet());

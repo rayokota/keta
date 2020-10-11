@@ -8,7 +8,7 @@
     </parent>
 
     <groupId>io.kcache</groupId>
-    <artifactId>ketsie-common</artifactId>
+    <artifactId>ketsie-core</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -19,6 +19,10 @@
         <dependency>
             <groupId>io.kcache</groupId>
             <artifactId>kcache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.kcache</groupId>
+            <artifactId>kcache-rocksdb</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
