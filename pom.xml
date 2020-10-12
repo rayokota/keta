@@ -39,10 +39,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <assertj.version>3.15.0</assertj.version>
         <avro.version>1.10.0</avro.version>
-        <grpc.version>1.32.1</grpc.version>
+        <grpc.version>1.28.1</grpc.version>
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
+        <jetcd.version>0.5.3</jetcd.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -142,6 +144,10 @@
                         <artifactId>servlet-api</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.mortbay.jetty</groupId>
                         <artifactId>servlet-api-2.5</artifactId>
                     </exclusion>
@@ -156,6 +162,10 @@
                 <artifactId>omid-transaction-client</artifactId>
                 <version>${omid.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.testng</groupId>
                         <artifactId>testng</artifactId>
@@ -191,6 +201,12 @@
                 <artifactId>kafka_${kafka.scala.version}</artifactId>
                 <version>${kafka.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -198,11 +214,29 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-core</artifactId>
+                <version>${jetcd.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

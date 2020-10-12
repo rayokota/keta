@@ -34,8 +34,7 @@ public class KetsieMain {
 
     private Server server;
 
-    private void start(String[] args) throws IOException {
-        KetsieConfig config = new KetsieConfig(args[0]);
+    public void start(KetsieConfig config) throws IOException {
         KetsieEngine engine = KetsieEngine.getInstance();
         engine.configure(config);
         engine.init();
@@ -46,6 +45,7 @@ public class KetsieMain {
             .build()
             .start();
         logger.info("Server started, listening on " + port);
+        logger.info("Ketsie is at your service...");
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -61,7 +61,7 @@ public class KetsieMain {
         });
     }
 
-    private void stop() throws InterruptedException {
+    public void stop() throws InterruptedException {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
@@ -70,7 +70,7 @@ public class KetsieMain {
     /**
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
-    private void blockUntilShutdown() throws InterruptedException {
+    public void blockUntilShutdown() throws InterruptedException {
         if (server != null) {
             server.awaitTermination();
         }
@@ -81,7 +81,8 @@ public class KetsieMain {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         final KetsieMain server = new KetsieMain();
-        server.start(args);
+        final KetsieConfig config = new KetsieConfig(args[0]);
+        server.start(config);
         server.blockUntilShutdown();
     }
 }

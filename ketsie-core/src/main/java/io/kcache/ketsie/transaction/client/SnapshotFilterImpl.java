@@ -323,9 +323,10 @@ public class SnapshotFilterImpl implements SnapshotFilter {
 
     @Override
     public KeyValueIterator<byte[], List<VersionedValue>> range(
-        KetsieTransaction transaction, byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive) {
+        KetsieTransaction transaction, byte[] from, boolean fromInclusive, byte[] to,
+        boolean toInclusive, boolean descending) {
         return new FilteredKeyValueIterator(transaction, versionedCache.range(
-            from, fromInclusive, to, toInclusive, 0, Long.MAX_VALUE));
+            from, fromInclusive, to, toInclusive, descending, 0, Long.MAX_VALUE));
     }
 
     @Override

@@ -208,8 +208,13 @@ public class TxVersionedCache implements Closeable {
 
     public KeyValueIterator<byte[], VersionedValue> range(
         byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive) {
+        return range(from, fromInclusive, to, toInclusive, false);
+    }
+
+    public KeyValueIterator<byte[], VersionedValue> range(
+        byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive, boolean descending) {
         KetsieTransaction tx = KetsieTransaction.currentTransaction();
-        return new FlattenedKeyValueIterator(snapshotFilter.range(tx, from, fromInclusive, to, toInclusive));
+        return new FlattenedKeyValueIterator(snapshotFilter.range(tx, from, fromInclusive, to, toInclusive, descending));
     }
 
     public KeyValueIterator<byte[], VersionedValue> all() {

@@ -146,8 +146,14 @@ public class VersionedCache implements Closeable {
     }
 
     public KeyValueIterator<byte[], List<VersionedValue>> range(
-        byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive, long minVersion, long maxVersion) {
-        return new VersionedKeyValueIterator(cache.range(from, fromInclusive, to, toInclusive), minVersion, maxVersion);
+        byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive, boolean descending, long minVersion, long maxVersion) {
+        KeyValueIterator<byte[], VersionedValues> iter;
+        if (descending) {
+            iter = cache.descendingCache().range(to, toInclusive, from, fromInclusive);
+        } else {
+            iter = cache.range(from, fromInclusive, to, toInclusive);
+        }
+        return new VersionedKeyValueIterator(iter, minVersion, maxVersion);
     }
 
     public KeyValueIterator<byte[], List<VersionedValue>> all(long minVersion, long maxVersion) {

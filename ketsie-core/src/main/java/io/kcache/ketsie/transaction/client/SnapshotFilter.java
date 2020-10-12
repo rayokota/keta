@@ -28,7 +28,8 @@ public interface SnapshotFilter {
     List<VersionedValue> get(KetsieTransaction transaction, byte[] key);
 
     KeyValueIterator<byte[], List<VersionedValue>> range(
-        KetsieTransaction transaction, byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive);
+        KetsieTransaction transaction, byte[] from, boolean fromInclusive, byte[] to,
+        boolean toInclusive, boolean descending);
 
     KeyValueIterator<byte[], List<VersionedValue>> all(KetsieTransaction transaction);
 }

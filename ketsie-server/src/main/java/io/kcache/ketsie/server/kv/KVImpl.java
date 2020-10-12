@@ -51,6 +51,10 @@ public class KVImpl extends KVGrpc.KVImplBase {
 
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
+        // TODO keys_only count_only limit
+        // TODO range \0
+        // TODO error on sort_target
+        // TODO set more
         TransactionManager txMgr = KetsieEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -75,10 +79,12 @@ public class KVImpl extends KVGrpc.KVImplBase {
         TxVersionedCache cache = KetsieEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
         byte[] to = request.getRangeEnd().toByteArray();
+        boolean descending = request.getSortOrder() == RangeRequest.SortOrder.DESCEND;
         RangeResponse.Builder responseBuilder = RangeResponse.newBuilder();
         if (to.length > 0) {
             // TODO handle to = new byte[]{0}
-            try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
+            long count = 0L;
+            try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
                 while (iter.hasNext()) {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
                     KeyValue kv = KeyValue.newBuilder()
@@ -86,8 +92,10 @@ public class KVImpl extends KVGrpc.KVImplBase {
                         .setValue(ByteString.copyFrom(entry.value.getValue()))
                         .build();
                     responseBuilder.addKvs(kv);
+                    count++;
                 }
             }
+            responseBuilder.setCount(count);
         } else {
             VersionedValue versioned = cache.get(from);
             if (versioned != null) {
@@ -96,6 +104,7 @@ public class KVImpl extends KVGrpc.KVImplBase {
                     .setValue(ByteString.copyFrom(versioned.getValue()))
                     .build();
                 responseBuilder.addKvs(kv);
+                responseBuilder.setCount(1L);
             }
 
         }
@@ -172,6 +181,7 @@ public class KVImpl extends KVGrpc.KVImplBase {
         DeleteRangeResponse.Builder responseBuilder = DeleteRangeResponse.newBuilder();
         if (to.length > 0) {
             // TODO handle to = new byte[]{0}
+            long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
                 while (iter.hasNext()) {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
@@ -181,8 +191,10 @@ public class KVImpl extends KVGrpc.KVImplBase {
                         .setValue(ByteString.copyFrom(entry.value.getValue()))
                         .build();
                     responseBuilder.addPrevKvs(kv);
+                    count++;
                 }
             }
+            responseBuilder.setDeleted(count);
         } else {
             VersionedValue versioned = cache.get(from);
             if (versioned != null) {
@@ -192,6 +204,7 @@ public class KVImpl extends KVGrpc.KVImplBase {
                     .setValue(ByteString.copyFrom(versioned.getValue()))
                     .build();
                 responseBuilder.addPrevKvs(kv);
+                responseBuilder.setDeleted(1);
             }
         }
         cache.remove(keys);
@@ -200,6 +213,7 @@ public class KVImpl extends KVGrpc.KVImplBase {
 
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
+        // TODO cmp < value
         TransactionManager txMgr = KetsieEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -245,6 +259,7 @@ public class KVImpl extends KVGrpc.KVImplBase {
             // TODO
             throw new IllegalArgumentException();
         }
+        // TODO range
         byte[] key = compare.getKey().toByteArray();
         byte[] value = compare.getValue().toByteArray();
         VersionedValue versioned = cache.get(key);
