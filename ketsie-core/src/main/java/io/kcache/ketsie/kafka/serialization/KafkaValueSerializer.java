@@ -43,6 +43,8 @@ import static io.kcache.ketsie.kafka.serialization.KafkaValueSerde.MAGIC_BYTE;
 public class KafkaValueSerializer implements Serializer<VersionedValues> {
     private final static Logger LOG = LoggerFactory.getLogger(KafkaValueSerializer.class);
 
+    private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+
     private final EncoderFactory encoderFactory = EncoderFactory.get();
     private Schema avroSchema;
     private DatumWriter<Object> writer;
@@ -88,7 +90,11 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
             nested.set("_version", versionedValue.getVersion());
             nested.set("_commit", versionedValue.getCommit());
             nested.set("_deleted", versionedValue.isDeleted());
-            nested.set("_value", ByteBuffer.wrap(versionedValue.getValue()));
+            if (!versionedValue.isDeleted()) {
+                nested.set("_value", ByteBuffer.wrap(versionedValue.getValue()));
+            } else {
+                nested.set("_value", EMPTY_BUFFER);
+            }
             records.add(nested.build());
         }
         builder.set("_values", records);

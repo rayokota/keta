@@ -28,6 +28,7 @@ import io.kcache.ketsie.transaction.client.SnapshotFilterImpl;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
 import io.kcache.utils.Streams;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.committable.CommitTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,28 +83,22 @@ public class TxVersionedCache implements Closeable {
     }
 
     public VersionedValue get(byte[] key) {
-        List<VersionedValue> values = getAll(key);
-        return values.size() > 0 ? values.get(0) : null;
-    }
-
-    public List<VersionedValue> getAll(byte[] key) {
-        Lock lock = striped.get(Arrays.asList(key)).readLock();
+        Lock lock = striped.get(Bytes.wrap(key)).readLock();
         lock.lock();
         try {
-            KetsieTransaction tx = KetsieTransaction.currentTransaction();
-            List<VersionedValue> values = snapshotFilter.get(tx, key);
-            return values;
+            List<VersionedValue> values = getVersions(key);
+            return values.size() > 0 ? values.get(0) : null;
         } finally {
             lock.unlock();
         }
     }
 
     public void put(byte[] key, byte[] value) {
-        Lock lock = striped.get(Arrays.asList(key)).writeLock();
+        Lock lock = striped.get(Bytes.wrap(key)).writeLock();
         lock.lock();
         try {
             KetsieTransaction tx = KetsieTransaction.currentTransaction();
-            List<VersionedValue> values = snapshotFilter.get(tx, key);
+            List<VersionedValue> values = getVersions(key);
             if (values.size() > 0) {
                 throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(key));
             }
@@ -120,7 +115,7 @@ public class TxVersionedCache implements Closeable {
 
     public boolean replace(byte[] oldKey, byte[] oldValue,
                            byte[] newKey, byte[] newValue) {
-        Iterable<ReadWriteLock> locks = striped.bulkGet(ImmutableList.of(Arrays.asList(oldKey), Arrays.asList(newKey)));
+        Iterable<ReadWriteLock> locks = striped.bulkGet(ImmutableList.of(Bytes.wrap(oldKey), Bytes.wrap(newKey)));
         List<Lock> writeLocks = Streams.streamOf(locks)
             .map(ReadWriteLock::writeLock)
             .collect(Collectors.toList());
@@ -128,9 +123,9 @@ public class TxVersionedCache implements Closeable {
         try {
             KetsieTransaction tx = KetsieTransaction.currentTransaction();
             // Ensure the value hasn't changed
-            List<VersionedValue> oldValues = snapshotFilter.get(tx, oldKey);
-            VersionedValue oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0) : null;
-            if (oldVersionedValue == null || !Arrays.equals(oldValue, oldVersionedValue.getValue())) {
+            List<VersionedValue> oldValues = getVersions(oldKey);
+            byte[] oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0).getValue() : null;
+            if (!(oldValue == null && oldVersionedValue == null) && !Arrays.equals(oldValue, oldVersionedValue)) {
                 throw new IllegalStateException("Previous value has changed");
             }
             if (cache.keysEqual(oldKey, newKey)) {
@@ -142,7 +137,7 @@ public class TxVersionedCache implements Closeable {
                     return true;
                 }
             } else {
-                List<VersionedValue> newValues = snapshotFilter.get(tx, newKey);
+                List<VersionedValue> newValues = getVersions(newKey);
                 if (newValues.size() > 0) {
                     throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(newKey));
                 }
@@ -158,7 +153,7 @@ public class TxVersionedCache implements Closeable {
     }
 
     public void remove(byte[] key) {
-        Lock lock = striped.get(Arrays.asList(key)).writeLock();
+        Lock lock = striped.get(Bytes.wrap(key)).writeLock();
         lock.lock();
         try {
             KetsieTransaction tx = KetsieTransaction.currentTransaction();
@@ -169,8 +164,36 @@ public class TxVersionedCache implements Closeable {
         }
     }
 
+    public void remove(List<byte[]> keys) {
+        Iterable<ReadWriteLock> locks = striped.bulkGet(
+            keys.stream()
+                .map(Bytes::wrap)
+                .collect(Collectors.toList())
+        );
+        List<Lock> writeLocks = Streams.streamOf(locks)
+            .map(ReadWriteLock::writeLock)
+            .collect(Collectors.toList());
+        writeLocks.forEach(Lock::lock);
+        try {
+            KetsieTransaction tx = KetsieTransaction.currentTransaction();
+            for (byte[] key : keys) {
+                addWriteSetElement(tx, new KetsieCellId(cache, key, tx.getWriteTimestamp()));
+                cache.remove(tx.getGenerationId(), key, tx.getWriteTimestamp());
+            }
+        } finally {
+            writeLocks.forEach(Lock::unlock);
+        }
+    }
+
     public TxVersionedCache subCache(byte[] from, boolean fromInclusive, byte[] to, boolean toInclusive) {
         return new TxVersionedCache(cache.subCache(from, fromInclusive, to, toInclusive));
+    }
+
+    public List<VersionedValue> getVersions(byte[] key) {
+        KetsieTransaction tx = KetsieTransaction.currentTransaction();
+        return snapshotFilter.get(tx, key).stream()
+            .filter(value -> !value.isDeleted())
+            .collect(Collectors.toList());
     }
 
     public KeyValueIterator<byte[], VersionedValue> range(
