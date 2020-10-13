@@ -32,9 +32,11 @@ import io.etcd.jetcd.options.GetOption.SortOrder;
 import io.etcd.jetcd.options.GetOption.SortTarget;
 import io.etcd.jetcd.options.PutOption;
 import io.kcache.ketsie.server.utils.RemoteClusterTestHarness;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,11 +55,21 @@ public class KVTest extends RemoteClusterTestHarness {
     private static final ByteSequence SAMPLE_VALUE_2 = bytesOf("sample_value2");
     private static final ByteSequence SAMPLE_KEY_3 = bytesOf("sample_key3");
 
-    @BeforeClass
+    @BeforeAll
     public static void init() throws Exception {
         //TODO
         //kvClient = Client.builder().endpoints(cluster.getClientEndpoints()).build().getKVClient();
         kvClient = Client.builder().endpoints("http://127.0.0.1:50051").build().getKVClient();
+    }
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     @Test
@@ -82,7 +94,7 @@ public class KVTest extends RemoteClusterTestHarness {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testPutWithNotExistLease() throws ExecutionException, InterruptedException {
         PutOption option = PutOption.newBuilder().withLeaseId(99999).build();
         CompletableFuture<PutResponse> future = kvClient.put(SAMPLE_KEY, SAMPLE_VALUE, option);
@@ -102,7 +114,7 @@ public class KVTest extends RemoteClusterTestHarness {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testGetWithRev() throws Exception {
         CompletableFuture<PutResponse> feature = kvClient.put(SAMPLE_KEY_3, SAMPLE_VALUE);
         PutResponse putResp = feature.get();
