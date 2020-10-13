@@ -20,7 +20,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.kcache.ketsie.KetsieConfig;
 import io.kcache.ketsie.KetsieEngine;
-import io.kcache.ketsie.server.kv.KVImpl;
+import io.kcache.ketsie.server.grpc.KVService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +41,7 @@ public class KetsieMain {
         /* The port on which the server should run */
         int port = 50051;
         server = ServerBuilder.forPort(port)
-            .addService(new KVImpl().bindService())
+            .addService(new KVService().bindService())
             .build()
             .start();
         logger.info("Server started, listening on " + port);

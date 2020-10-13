@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.ketsie.server.kv;
+package io.kcache.ketsie.server.grpc;
 
 import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.CompactionRequest;
@@ -47,7 +47,7 @@ import org.apache.omid.transaction.TransactionManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KVImpl extends KVGrpc.KVImplBase {
+public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
