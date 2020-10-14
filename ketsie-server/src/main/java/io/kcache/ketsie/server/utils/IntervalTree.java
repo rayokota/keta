@@ -23,7 +23,6 @@ import com.google.common.collect.Range;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.function.BiFunction;
 
 public class IntervalTree<K extends Comparable<K>, V> implements Iterable<IntervalTree.Node<K, V>> {
