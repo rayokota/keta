@@ -17,6 +17,7 @@
  */
 package io.kcache.ketsie.server.utils;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
 import java.util.ConcurrentModificationException;
@@ -44,15 +45,14 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
 
     /**
      * Put a new interval into the tree (or update the value associated with an existing interval).
-     * If the interval is novel, the special sentinel value is returned.
      *
      * @param interval The interval.
      * @param value The associated value.
-     * @return The old value associated with that interval, or the sentinel.
+     * @return The old value associated with that interval, or null.
      */
     public V put(final Range<K> interval, final V value) {
 
-        V result = mSentinel;
+        V result = null;
 
         if (mRoot == null) {
             mRoot = new Node<>(interval, value);
@@ -86,24 +86,23 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     /**
-     * If the specified start and end positions are not already associated with a value or are
-     * associated with the sentinel ( see {@link #getSentinel()}, associates it with the given (non-sentinel) value.
+     * If the specified start and end positions are not already associated with a value,
+     * associates it with the given value.
      * Otherwise, replaces the associated value with the results of the given
-     * remapping function, or removes if the result is equal to the sentinel value. This
+     * remapping function, or removes if the result is null. This
      * method may be of use when combining multiple values that have the same start and end position.
      *
      * @param interval          interval
-     * @param value             value to merge into the tree, must not be equal to the sentinel value
+     * @param value             value to merge into the tree, must not be equal null
      * @param remappingFunction a function that merges the new value with the existing value for the same start and end position,
-     *                          if the function returns the sentinel value then the mapping will be unset
-     * @return the updated value that is stored in the tree after the completion of this merge operation, this will
-     * be the sentinel value if nothing ended up being stored
+     *                          if the function returns the null then the mapping will be unset
+     * @return the updated value that is stored in the tree after the completion of this merge operation, or null
      */
     public V merge(Range<K> interval, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         final V alreadyPresent = put(interval, value);
-        if (!Objects.equals(alreadyPresent, mSentinel)) {
+        if (alreadyPresent != null) {
             final V newComputedValue = remappingFunction.apply(value, alreadyPresent);
-            if (Objects.equals(newComputedValue, mSentinel)) {
+            if (newComputedValue == null) {
                 remove(interval);
             } else {
                 put(interval, newComputedValue);
@@ -114,14 +113,13 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     /**
-     * Remove an interval from the tree.  If the interval does not exist in the tree the
-     * special sentinel value is returned.
+     * Remove an interval from the tree.
      *
      * @param interval The interval.
-     * @return The value associated with that interval, or the sentinel.
+     * @return The value associated with that interval, or null.
      */
     public V remove(final Range<K> interval) {
-        V result = mSentinel;
+        V result = null;
         Node<K, V> node = mRoot;
 
         while (node != null) {
@@ -359,29 +357,6 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     /**
-     * Get the special sentinel value that will be used to signal novelty when putting a new interval
-     * into the tree, or to signal "not found" when removing an interval.  This is null by default.
-     *
-     * @return The sentinel value.
-     */
-    public V getSentinel() {
-        return mSentinel;
-    }
-
-    /**
-     * Set the special sentinel value that will be used to signal novelty when putting a new interval
-     * into the tree, or to signal "not found" when removing an interval.
-     *
-     * @param sentinel The new sentinel value.
-     * @return The old sentinel value.
-     */
-    public V setSentinel(final V sentinel) {
-        final V result = mSentinel;
-        mSentinel = sentinel;
-        return result;
-    }
-
-    /**
      * This method is only for debugging.
      * It verifies whether the tree is internally consistent with respect to the mMaxEnd cached on each node.
      *
@@ -404,7 +379,6 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     private Node<K, V> mRoot;
-    private V mSentinel;
 
     public static class Node<K1 extends Comparable<K1>, V1> {
 
@@ -1011,66 +985,54 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         private final Range<K> mIvl;
     }
 
-    public static class ValuesIterator<K1 extends Comparable<K1>, V1>
-        implements Iterator<V1> {
-        public ValuesIterator(final Iterator<Node<K1, V1>> itr) {
-            mItr = itr;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return mItr.hasNext();
-        }
-
-        @Override
-        public V1 next() {
-            return mItr.next().getValue();
-        }
-
-        @Override
-        public void remove() {
-            mItr.remove();
-        }
-
-        private final Iterator<Node<K1, V1>> mItr;
-    }
-
     private static <K1 extends Comparable<K1>> int compareLower(Range<K1> r1, Range<K1> r2) {
-        Range<K1> start1 = Range.downTo(r1.lowerEndpoint(), r1.lowerBoundType());
-        Range<K1> start2 = Range.downTo(r2.lowerEndpoint(), r2.lowerBoundType());
-        boolean b1 = start1.encloses(start2);
-        boolean b2 = start2.encloses(start1);
-        if (b1 && !b2)
-            return -1;
-        else if (!b1 && b2)
-            return 1;
-        else
-            return 0;
+        K1 start1 = r1.lowerEndpoint();
+        K1 start2 = r2.lowerEndpoint();
+        BoundType bound1 = r1.lowerBoundType();
+        BoundType bound2 = r2.lowerBoundType();
+        int cmp = start1.compareTo(start2);
+        if (cmp != 0) {
+            return cmp;
+        } else {
+            if (bound1 == BoundType.CLOSED) {
+                return bound2 == BoundType.CLOSED ? 0 : -1;
+            } else {
+                return bound2 == BoundType.CLOSED ? 1 : 0;
+            }
+        }
     }
 
     private static <K1 extends Comparable<K1>> int compareUpper(Range<K1> r1, Range<K1> r2) {
-        Range<K1> end1 = Range.upTo(r1.upperEndpoint(), r1.upperBoundType());
-        Range<K1> end2 = Range.upTo(r2.upperEndpoint(), r2.upperBoundType());
-        boolean b1 = end1.encloses(end2);
-        boolean b2 = end2.encloses(end1);
-        if (b1 && !b2)
-            return 1;
-        else if (!b1 && b2)
-            return -1;
-        else
-            return 0;
+        K1 end1 = r1.upperEndpoint();
+        K1 end2 = r2.upperEndpoint();
+        BoundType bound1 = r1.upperBoundType();
+        BoundType bound2 = r2.upperBoundType();
+        int cmp = end1.compareTo(end2);
+        if (cmp != 0) {
+            return cmp;
+        } else {
+            if (bound1 == BoundType.CLOSED) {
+                return bound2 == BoundType.CLOSED ? 0 : 1;
+            } else {
+                return bound2 == BoundType.CLOSED ? -1 : 0;
+            }
+        }
     }
 
     private static <K1 extends Comparable<K1>> int compareLowerUpper(Range<K1> r1, Range<K1> r2) {
-        Range<K1> start = Range.upTo(r1.lowerEndpoint(), r1.lowerBoundType());
-        Range<K1> end = Range.upTo(r2.upperEndpoint(), r2.upperBoundType());
-        boolean b1 = start.encloses(end);
-        boolean b2 = end.encloses(start);
-        if (b1 && !b2)
-            return 1;
-        else if (!b1 && b2)
-            return -1;
-        else
-            return 0;
+        K1 start = r1.lowerEndpoint();
+        K1 end = r2.upperEndpoint();
+        BoundType startBound = r1.lowerBoundType();
+        BoundType endBound = r2.upperBoundType();
+        int cmp = start.compareTo(end);
+        if (cmp != 0) {
+            return cmp;
+        } else {
+            if (startBound == BoundType.CLOSED) {
+                return endBound == BoundType.CLOSED ? 0 : 1;
+            } else {
+                return endBound == BoundType.CLOSED ? 1 : 0;
+            }
+        }
     }
 }

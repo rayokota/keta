@@ -249,29 +249,24 @@ public class IntervalTreeTest {
 
     public Object[][] getMergeTestCases() {
         return new Object[][]{
-            {add, null, Arrays.asList(0, 1, 2, 3), 6},
-            {add, null, Arrays.asList(0, 1, 2), 3},
-            {add, null, Arrays.asList(0, 1), 1},
-            {add, null, Collections.singletonList(0), 0},
-            {addButCountNullAs10, null, Arrays.asList(1, 2, 3), 6},
-            {addButCountNullAs10, 0, Arrays.asList(1, 2, null), 13},
-            {addButCountNullAs10, 0, Arrays.asList(null, null, null), 30}
+            {add, Arrays.asList(0, 1, 2, 3), 6},
+            {add, Arrays.asList(0, 1, 2), 3},
+            {add, Arrays.asList(0, 1), 1},
+            {add, Collections.singletonList(0), 0},
         };
     }
 
     private static final BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b;
-    private static final BiFunction<Integer, Integer, Integer> addButCountNullAs10 = (a, b) -> (a == null ? 10 : a) + (b == null ? 10 : b);
 
     @Test
     public void testMerge() {
         for (Object[] data : getMergeTestCases()) {
-            testMerge((BiFunction<Integer, Integer, Integer>) data[0], (Integer) data[1], (List<Integer>) data[2], (Integer) data[3]);
+            testMerge((BiFunction<Integer, Integer, Integer>) data[0], (List<Integer>) data[1], (Integer) data[2]);
         }
     }
 
-    private void testMerge(BiFunction<Integer, Integer, Integer> function, Integer sentinel, List<Integer> values, Integer expected) {
+    private void testMerge(BiFunction<Integer, Integer, Integer> function, List<Integer> values, Integer expected) {
         final IntervalTree<Integer, Integer> tree = new IntervalTree<>();
-        tree.setSentinel(sentinel);
         values.forEach(value -> {
             tree.merge(Range.closed(10, 20), value, function);
         });
