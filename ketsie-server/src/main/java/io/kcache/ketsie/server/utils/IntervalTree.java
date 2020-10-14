@@ -17,6 +17,8 @@
  */
 package io.kcache.ketsie.server.utils;
 
+import com.google.common.collect.Range;
+
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -44,19 +46,16 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Put a new interval into the tree (or update the value associated with an existing interval).
      * If the interval is novel, the special sentinel value is returned.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @param value The associated value.
      * @return The old value associated with that interval, or the sentinel.
      */
-    public V put(final K start, final K end, final V value) {
-        if (start.compareTo(end) > 0)
-            throw new IllegalArgumentException("Start cannot exceed end.");
+    public V put(final Range<K> interval, final V value) {
 
         V result = mSentinel;
 
         if (mRoot == null) {
-            mRoot = new Node<>(start, end, value);
+            mRoot = new Node<>(interval, value);
         } else {
             Node<K, V> parent = null;
             Node<K, V> node = mRoot;
@@ -64,7 +63,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
 
             while (node != null) {
                 parent = node; // last non-null node
-                cmpVal = node.compare(start, end);
+                cmpVal = node.compare(interval);
                 if (cmpVal == 0) {
                     break;
                 }
@@ -76,9 +75,9 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
                 result = parent.setValue(value);
             } else {
                 if (cmpVal < 0) {
-                    mRoot = parent.insertLeft(start, end, value, mRoot);
+                    mRoot = parent.insertLeft(interval, value, mRoot);
                 } else {
-                    mRoot = parent.insertRight(start, end, value, mRoot);
+                    mRoot = parent.insertRight(interval, value, mRoot);
                 }
             }
         }
@@ -93,22 +92,21 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * remapping function, or removes if the result is equal to the sentinel value. This
      * method may be of use when combining multiple values that have the same start and end position.
      *
-     * @param start             interval start position
-     * @param end               interval end position
+     * @param interval          interval
      * @param value             value to merge into the tree, must not be equal to the sentinel value
      * @param remappingFunction a function that merges the new value with the existing value for the same start and end position,
      *                          if the function returns the sentinel value then the mapping will be unset
      * @return the updated value that is stored in the tree after the completion of this merge operation, this will
      * be the sentinel value if nothing ended up being stored
      */
-    public V merge(K start, K end, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        final V alreadyPresent = put(start, end, value);
+    public V merge(Range<K> interval, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        final V alreadyPresent = put(interval, value);
         if (!Objects.equals(alreadyPresent, mSentinel)) {
             final V newComputedValue = remappingFunction.apply(value, alreadyPresent);
             if (Objects.equals(newComputedValue, mSentinel)) {
-                remove(start, end);
+                remove(interval);
             } else {
-                put(start, end, newComputedValue);
+                put(interval, newComputedValue);
             }
             return newComputedValue;
         }
@@ -119,16 +117,15 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Remove an interval from the tree.  If the interval does not exist in the tree the
      * special sentinel value is returned.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The value associated with that interval, or the sentinel.
      */
-    public V remove(final K start, final K end) {
+    public V remove(final Range<K> interval) {
         V result = mSentinel;
         Node<K, V> node = mRoot;
 
         while (node != null) {
-            final int cmpVal = node.compare(start, end);
+            final int cmpVal = node.compare(interval);
             if (cmpVal == 0) {
                 result = node.getValue();
                 mRoot = node.remove(mRoot);
@@ -144,15 +141,14 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Find an interval.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The Node that represents that interval, or null.
      */
-    public Node<K, V> find(final K start, final K end) {
+    public Node<K, V> find(final Range<K> interval) {
         Node<K, V> node = mRoot;
 
         while (node != null) {
-            final int cmpVal = node.compare(start, end);
+            final int cmpVal = node.compare(interval);
             if (cmpVal == 0) {
                 break;
             }
@@ -177,12 +173,11 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Find the rank of the specified interval.  If the specified interval is not in the
      * tree, then -1 is returned.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The rank of that interval, or -1.
      */
-    public int getIndex(final K start, final K end) {
-        return Node.getRank(mRoot, start, end) - 1;
+    public int getIndex(final Range<K> interval) {
+        return Node.getRank(mRoot, interval) - 1;
     }
 
     /**
@@ -205,19 +200,18 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Find the earliest interval in the tree greater than or equal to the specified interval.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The earliest >= interval, or null if there is none.
      */
     @SuppressWarnings("null")
-    public Node<K, V> min(final K start, final K end) {
+    public Node<K, V> min(final Range<K> interval) {
         Node<K, V> result = null;
         Node<K, V> node = mRoot;
         int cmpVal = 0;
 
         while (node != null) {
             result = node;
-            cmpVal = node.compare(start, end);
+            cmpVal = node.compare(interval);
             if (cmpVal == 0) {
                 break;
             }
@@ -235,32 +229,31 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Find the earliest interval in the tree that overlaps the specified interval.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The earliest overlapping interval, or null if there is none.
      */
-    public Node<K, V> minOverlapper(final K start, final K end) {
+    public Node<K, V> minOverlapper(final Range<K> interval) {
         Node<K, V> result = null;
         Node<K, V> node = mRoot;
 
-        if (node != null && node.getMaxEnd().compareTo(start) >= 0) {
+        if (node != null && compareLowerUpper(interval, node.getMaxEnd()) <= 0) {
             while (true) {
-                if (node.getStart().compareTo(end) <= 0 && start.compareTo(node.getEnd()) <= 0) { // this node overlaps.  there might be a lesser overlapper down the left sub-tree.
+                if (node.getInterval().isConnected(interval)) { // this node overlaps.  there might be a lesser overlapper down the left sub-tree.
                     // no need to consider the right sub-tree:  even if there's an overlapper, if won't be minimal
                     result = node;
                     node = node.getLeft();
-                    if (node == null || node.getMaxEnd().compareTo(start) < 0)
+                    if (node == null || compareLowerUpper(interval, node.getMaxEnd()) > 0)
                         break; // no left sub-tree or all nodes end too early
                 } else { // no overlap.  if there might be a left sub-tree overlapper, consider the left sub-tree.
                     final Node<K, V> left = node.getLeft();
-                    if (left != null && left.getMaxEnd().compareTo(start) >= 0) {
+                    if (left != null && compareLowerUpper(interval, left.getMaxEnd()) <= 0) {
                         node = left;
                     } else { // left sub-tree cannot contain an overlapper.  consider the right sub-tree.
-                        if (node.getStart().compareTo(end) > 0)
+                        if (compareLowerUpper(node.getInterval(), interval) > 0)
                             break; // everything in the right sub-tree is past the end of the query interval
 
                         node = node.getRight();
-                        if (node == null || node.getMaxEnd().compareTo(start) < 0)
+                        if (node == null || compareLowerUpper(interval, node.getMaxEnd()) > 0)
                             break; // no right sub-tree or all nodes end too early
                     }
                 }
@@ -290,19 +283,18 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Find the latest interval in the tree less than or equal to the specified interval.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return The latest >= interval, or null if there is none.
      */
     @SuppressWarnings("null")
-    public Node<K, V> max(final K start, final K end) {
+    public Node<K, V> max(final Range<K> interval) {
         Node<K, V> result = null;
         Node<K, V> node = mRoot;
         int cmpVal = 0;
 
         while (node != null) {
             result = node;
-            cmpVal = node.compare(start, end);
+            cmpVal = node.compare(interval);
             if (cmpVal == 0) {
                 break;
             }
@@ -330,23 +322,21 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Return an iterator over all intervals greater than or equal to the specified interval.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return An iterator.
      */
-    public Iterator<Node<K, V>> iterator(final K start, final K end) {
-        return new FwdIterator(min(start, end));
+    public Iterator<Node<K, V>> iterator(final Range<K> interval) {
+        return new FwdIterator(min(interval));
     }
 
     /**
      * Return an iterator over all intervals overlapping the specified range.
      *
-     * @param start The range start.
-     * @param end   The range end.
+     * @param interval The interval.
      * @return An iterator.
      */
-    public Iterator<Node<K, V>> overlappers(final K start, final K end) {
-        return new OverlapIterator(start, end);
+    public Iterator<Node<K, V>> overlappers(final Range<K> interval) {
+        return new OverlapIterator(interval);
     }
 
     /**
@@ -361,12 +351,11 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     /**
      * Return an iterator over all intervals less than or equal to the specified interval, in reverse order.
      *
-     * @param start The interval's start.
-     * @param end   The interval's end.
+     * @param interval The interval.
      * @return An iterator.
      */
-    public Iterator<Node<K, V>> reverseIterator(final K start, final K end) {
-        return new RevIterator(max(start, end));
+    public Iterator<Node<K, V>> reverseIterator(final Range<K> interval) {
+        return new RevIterator(max(interval));
     }
 
     /**
@@ -419,30 +408,24 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
 
     public static class Node<K1 extends Comparable<K1>, V1> {
 
-        Node(final K1 start, final K1 end, final V1 value) {
-            mStart = start;
-            mEnd = end;
+        Node(final Range<K1> interval, final V1 value) {
+            mIvl = interval;
             mValue = value;
             mSize = 1;
-            mMaxEnd = mEnd;
+            mMaxEnd = Range.upTo(interval.upperEndpoint(), interval.upperBoundType());
             mIsBlack = true;
         }
 
-        Node(final Node<K1, V1> parent, final K1 start, final K1 end, final V1 value) {
+        Node(final Node<K1, V1> parent, final Range<K1> interval, final V1 value) {
             mParent = parent;
-            mStart = start;
-            mEnd = end;
+            mIvl = interval;
             mValue = value;
-            mMaxEnd = mEnd;
+            mMaxEnd = Range.upTo(interval.upperEndpoint(), interval.upperBoundType());
             mSize = 1;
         }
 
-        public K1 getStart() {
-            return mStart;
-        }
-
-        public K1 getEnd() {
-            return mEnd;
+        public Range<K1> getInterval() {
+            return mIvl;
         }
 
         public V1 getValue() {
@@ -459,7 +442,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return mSize;
         }
 
-        K1 getMaxEnd() {
+        Range<K1> getMaxEnd() {
             return mMaxEnd;
         }
 
@@ -467,8 +450,8 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return mLeft;
         }
 
-        Node<K1, V1> insertLeft(final K1 start, final K1 end, final V1 value, final Node<K1, V1> root) {
-            mLeft = new Node<>(this, start, end, value);
+        Node<K1, V1> insertLeft(final Range<K1> interval, final V1 value, final Node<K1, V1> root) {
+            mLeft = new Node<>(this, interval, value);
             return insertFixup(mLeft, root);
         }
 
@@ -476,8 +459,8 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return mRight;
         }
 
-        Node<K1, V1> insertRight(final K1 start, final K1 end, final V1 value, final Node<K1, V1> root) {
-            mRight = new Node<>(this, start, end, value);
+        Node<K1, V1> insertRight(final Range<K1> interval, final V1 value, final Node<K1, V1> root) {
+            mRight = new Node<>(this, interval, value);
             return insertFixup(mRight, root);
         }
 
@@ -584,39 +567,29 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         }
 
         // backwards comparison!  compares start+end to this.
-        int compare(final K1 start, final K1 end) {
-            int result = 0;
-
-            if (start.compareTo(mStart) > 0)
-                result = 1;
-            else if (start.compareTo(mStart) < 0)
-                result = -1;
-            else if (end.compareTo(mEnd) > 0)
-                result = 1;
-            else if (end.compareTo(mEnd) < 0)
-                result = -1;
-
-            return result;
+        int compare(final Range<K1> interval) {
+            int lower = compareLower(interval, mIvl);
+            int upper = compareUpper(interval, mIvl);
+            return lower != 0 ? lower : upper;
         }
 
         @SuppressWarnings("null")
-        static <K1 extends Comparable<K1>, V1> Node<K1, V1> getNextOverlapper(Node<K1, V1> node, final K1 start, final K1 end) {
+        static <K1 extends Comparable<K1>, V1> Node<K1, V1> getNextOverlapper(Node<K1, V1> node, final Range<K1> interval) {
             do {
                 Node<K1, V1> nextNode = node.mRight;
-                if (nextNode != null && nextNode.mMaxEnd.compareTo(start) >= 0) {
+                if (nextNode != null && compareLowerUpper(interval, nextNode.mMaxEnd) <= 0) {
                     node = nextNode;
-                    while ((nextNode = node.mLeft) != null && nextNode.mMaxEnd.compareTo(start) >= 0)
+                    while ((nextNode = node.mLeft) != null && compareLowerUpper(interval, nextNode.mMaxEnd) <= 0)
                         node = nextNode;
                 } else {
                     nextNode = node;
                     while ((node = nextNode.mParent) != null && node.mRight == nextNode)
                         nextNode = node;
                 }
-
-                if (node != null && node.mStart.compareTo(end) > 0)
+                if (node != null && compareLowerUpper(node.mIvl, interval) > 0)
                     node = null;
             }
-            while (node != null && !(node.mStart.compareTo(end) <= 0 && start.compareTo(node.mEnd) <= 0));
+            while (node != null && !node.mIvl.isConnected(interval));
 
             return node;
         }
@@ -638,11 +611,11 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return node;
         }
 
-        static <K1 extends Comparable<K1>, V1> int getRank(Node<K1, V1> node, final K1 start, final K1 end) {
+        static <K1 extends Comparable<K1>, V1> int getRank(Node<K1, V1> node, final Range<K1> interval) {
             int rank = 0;
 
             while (node != null) {
-                final int cmpVal = node.compare(start, end);
+                final int cmpVal = node.compare(interval);
                 if (cmpVal < 0) {
                     node = node.mLeft;
                 } else {
@@ -739,7 +712,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         }
 
         private void setMaxEnd() {
-            mMaxEnd = mEnd;
+            mMaxEnd = Range.upTo(mIvl.upperEndpoint(), mIvl.upperBoundType());
             if (mLeft != null)
                 mMaxEnd = max(mMaxEnd, mLeft.mMaxEnd);
             if (mRight != null)
@@ -749,7 +722,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         private static <K1 extends Comparable<K1>, V1> void fixup(Node<K1, V1> node) {
             do {
                 node.mSize = 1;
-                node.mMaxEnd = node.mEnd;
+                node.mMaxEnd = Range.upTo(node.mIvl.upperEndpoint(), node.mIvl.upperBoundType());
                 if (node.mLeft != null) {
                     node.mSize += node.mLeft.mSize;
                     node.mMaxEnd = max(node.mMaxEnd, node.mLeft.mMaxEnd);
@@ -869,15 +842,15 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         }
 
         public void checkMaxEnd() {
-            if (mMaxEnd.compareTo(calcMaxEnd()) != 0) {
+            if (compareUpper(mMaxEnd, calcMaxEnd()) != 0) {
                 throw new IllegalStateException("Max end mismatch " + mMaxEnd + " vs " + calcMaxEnd() + ": " + this);
             }
             if (mLeft != null) mLeft.checkMaxEnd();
             if (mRight != null) mRight.checkMaxEnd();
         }
 
-        private K1 calcMaxEnd() {
-            K1 end = mEnd;
+        private Range<K1> calcMaxEnd() {
+            Range<K1> end = Range.upTo(mIvl.upperEndpoint(), mIvl.upperBoundType());
             if (mLeft != null) {
                 end = max(end, mLeft.mMaxEnd);
             }
@@ -888,9 +861,8 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return end;
         }
 
-        private static <K1 extends Comparable<K1>> K1 max(K1 k1, K1 k2) {
-            int cmp = k1.compareTo(k2);
-            return cmp >= 0 ? k1 : k2;
+        private static <K1 extends Comparable<K1>> Range<K1> max(Range<K1> k1, Range<K1> k2) {
+            return k1.span(k2);
         }
 
         public void printNode() {
@@ -904,17 +876,16 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         }
 
         public String toString() {
-            return "Node(" + mStart + "," + mEnd + "," + mValue + "," + mSize + "," + mMaxEnd + "," + mIsBlack + ")";
+            return "Node(" + mIvl + "," + mValue + "," + mSize + "," + mMaxEnd + "," + mIsBlack + ")";
         }
 
         private Node<K1, V1> mParent;
         private Node<K1, V1> mLeft;
         private Node<K1, V1> mRight;
-        private final K1 mStart;
-        private final K1 mEnd;
+        private final Range<K1> mIvl;
         private V1 mValue;
         private int mSize;
-        private K1 mMaxEnd;
+        private Range<K1> mMaxEnd;
         private boolean mIsBlack;
     }
 
@@ -936,7 +907,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             }
 
             if (mNext.wasRemoved()) {
-                mNext = min(mNext.getStart(), mNext.getEnd());
+                mNext = min(mNext.getInterval());
                 if (mNext == null)
                     throw new ConcurrentModificationException("Current element was removed, and there are no more elements.");
             }
@@ -975,7 +946,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             if (mNext == null)
                 throw new NoSuchElementException("No next element.");
             if (mNext.wasRemoved()) {
-                mNext = max(mNext.getStart(), mNext.getEnd());
+                mNext = max(mNext.getInterval());
                 if (mNext == null)
                     throw new ConcurrentModificationException("Current element was removed, and there are no more elements.");
             }
@@ -1000,10 +971,9 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
 
     public class OverlapIterator
         implements Iterator<Node<K, V>> {
-        public OverlapIterator(final K start, final K end) {
-            mNext = minOverlapper(start, end);
-            mStart = start;
-            mEnd = end;
+        public OverlapIterator(final Range<K> interval) {
+            mNext = minOverlapper(interval);
+            mIvl = interval;
         }
 
         @Override
@@ -1022,7 +992,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             }
 
             mLast = mNext;
-            mNext = Node.getNextOverlapper(mNext, mStart, mEnd);
+            mNext = Node.getNextOverlapper(mNext, mIvl);
             return mLast;
         }
 
@@ -1038,8 +1008,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
 
         private Node<K, V> mNext;
         private Node<K, V> mLast;
-        private final K mStart;
-        private final K mEnd;
+        private final Range<K> mIvl;
     }
 
     public static class ValuesIterator<K1 extends Comparable<K1>, V1>
@@ -1064,5 +1033,44 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
         }
 
         private final Iterator<Node<K1, V1>> mItr;
+    }
+
+    private static <K1 extends Comparable<K1>> int compareLower(Range<K1> r1, Range<K1> r2) {
+        Range<K1> start1 = Range.downTo(r1.lowerEndpoint(), r1.lowerBoundType());
+        Range<K1> start2 = Range.downTo(r2.lowerEndpoint(), r2.lowerBoundType());
+        boolean b1 = start1.encloses(start2);
+        boolean b2 = start2.encloses(start1);
+        if (b1 && !b2)
+            return -1;
+        else if (!b1 && b2)
+            return 1;
+        else
+            return 0;
+    }
+
+    private static <K1 extends Comparable<K1>> int compareUpper(Range<K1> r1, Range<K1> r2) {
+        Range<K1> end1 = Range.upTo(r1.upperEndpoint(), r1.upperBoundType());
+        Range<K1> end2 = Range.upTo(r2.upperEndpoint(), r2.upperBoundType());
+        boolean b1 = end1.encloses(end2);
+        boolean b2 = end2.encloses(end1);
+        if (b1 && !b2)
+            return 1;
+        else if (!b1 && b2)
+            return -1;
+        else
+            return 0;
+    }
+
+    private static <K1 extends Comparable<K1>> int compareLowerUpper(Range<K1> r1, Range<K1> r2) {
+        Range<K1> start = Range.upTo(r1.lowerEndpoint(), r1.lowerBoundType());
+        Range<K1> end = Range.upTo(r2.upperEndpoint(), r2.upperBoundType());
+        boolean b1 = start.encloses(end);
+        boolean b2 = end.encloses(start);
+        if (b1 && !b2)
+            return 1;
+        else if (!b1 && b2)
+            return -1;
+        else
+            return 0;
     }
 }
