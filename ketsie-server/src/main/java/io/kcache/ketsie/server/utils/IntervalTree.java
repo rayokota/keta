@@ -85,15 +85,14 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     /**
-     * If the specified start and end positions are not already associated with a value,
-     * associates it with the given value.
-     * Otherwise, replaces the associated value with the results of the given
-     * remapping function, or removes if the result is null. This
-     * method may be of use when combining multiple values that have the same start and end position.
+     * If the specified interval is not already associated with a value, associates it with the given value.
+     * Otherwise, replaces the associated value with the results of the given remapping function,
+     * or removes if the result is null.
+     * This method may be of use when combining multiple intervals that have the same bounds.
      *
      * @param interval          interval
      * @param value             value to merge into the tree, must not be equal null
-     * @param remappingFunction a function that merges the new value with the existing value for the same start and end position,
+     * @param remappingFunction a function that merges the new value with the existing value for the interval,
      *                          if the function returns the null then the mapping will be unset
      * @return the updated value that is stored in the tree after the completion of this merge operation, or null
      */
@@ -539,7 +538,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
             return root;
         }
 
-        // backwards comparison!  compares start+end to this.
+        // backwards comparison!  compares interval to this.
         int compare(final Range<K1> interval) {
             int lower = compareLower(interval, mIvl);
             int upper = compareUpper(interval, mIvl);
@@ -985,52 +984,52 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
     }
 
     private static <K1 extends Comparable<K1>> int compareLower(Range<K1> r1, Range<K1> r2) {
-        K1 start1 = r1.lowerEndpoint();
-        K1 start2 = r2.lowerEndpoint();
-        BoundType bound1 = r1.lowerBoundType();
-        BoundType bound2 = r2.lowerBoundType();
-        int cmp = start1.compareTo(start2);
+        K1 l1 = r1.lowerEndpoint();
+        K1 l2 = r2.lowerEndpoint();
+        BoundType b1 = r1.lowerBoundType();
+        BoundType b2 = r2.lowerBoundType();
+        int cmp = l1.compareTo(l2);
         if (cmp != 0) {
             return cmp;
         } else {
-            if (bound1 == BoundType.CLOSED) {
-                return bound2 == BoundType.CLOSED ? 0 : -1;
+            if (b1 == BoundType.CLOSED) {
+                return b2 == BoundType.CLOSED ? 0 : -1;
             } else {
-                return bound2 == BoundType.CLOSED ? 1 : 0;
+                return b2 == BoundType.CLOSED ? 1 : 0;
             }
         }
     }
 
     private static <K1 extends Comparable<K1>> int compareUpper(Range<K1> r1, Range<K1> r2) {
-        K1 end1 = r1.upperEndpoint();
-        K1 end2 = r2.upperEndpoint();
-        BoundType bound1 = r1.upperBoundType();
-        BoundType bound2 = r2.upperBoundType();
-        int cmp = end1.compareTo(end2);
+        K1 u1 = r1.upperEndpoint();
+        K1 u2 = r2.upperEndpoint();
+        BoundType b1 = r1.upperBoundType();
+        BoundType b2 = r2.upperBoundType();
+        int cmp = u1.compareTo(u2);
         if (cmp != 0) {
             return cmp;
         } else {
-            if (bound1 == BoundType.CLOSED) {
-                return bound2 == BoundType.CLOSED ? 0 : 1;
+            if (b1 == BoundType.CLOSED) {
+                return b2 == BoundType.CLOSED ? 0 : 1;
             } else {
-                return bound2 == BoundType.CLOSED ? -1 : 0;
+                return b2 == BoundType.CLOSED ? -1 : 0;
             }
         }
     }
 
     private static <K1 extends Comparable<K1>> int compareLowerUpper(Range<K1> r1, Range<K1> r2) {
-        K1 start = r1.lowerEndpoint();
-        K1 end = r2.upperEndpoint();
-        BoundType startBound = r1.lowerBoundType();
-        BoundType endBound = r2.upperBoundType();
-        int cmp = start.compareTo(end);
+        K1 l = r1.lowerEndpoint();
+        K1 u = r2.upperEndpoint();
+        BoundType lb = r1.lowerBoundType();
+        BoundType ub = r2.upperBoundType();
+        int cmp = l.compareTo(u);
         if (cmp != 0) {
             return cmp;
         } else {
-            if (startBound == BoundType.CLOSED) {
-                return endBound == BoundType.CLOSED ? 0 : 1;
+            if (lb == BoundType.CLOSED) {
+                return ub == BoundType.CLOSED ? 0 : 1;
             } else {
-                return endBound == BoundType.CLOSED ? 1 : 0;
+                return ub == BoundType.CLOSED ? 1 : 0;
             }
         }
     }
