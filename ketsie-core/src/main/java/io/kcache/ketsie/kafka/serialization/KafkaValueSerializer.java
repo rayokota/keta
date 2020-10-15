@@ -90,6 +90,7 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
             nested.set("_version", versionedValue.getVersion());
             nested.set("_commit", versionedValue.getCommit());
             nested.set("_deleted", versionedValue.isDeleted());
+            nested.set("_lease", versionedValue.getLease());
             if (!versionedValue.isDeleted()) {
                 nested.set("_value", ByteBuffer.wrap(versionedValue.getValue()));
             } else {

@@ -47,6 +47,7 @@ public class VersionedCache implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(VersionedCache.class);
 
     public static final Comparator<byte[]> BYTES_COMPARATOR = SignedBytes.lexicographicalComparator();
+    public static final long NO_LEASE = 0L;
 
     private static final byte[] EMPTY_VALUE = new byte[0];
 
@@ -93,9 +94,9 @@ public class VersionedCache implements Closeable {
         return all;
     }
 
-    public void put(int generationId, byte[] key, long version, byte[] value) {
+    public void put(int generationId, byte[] key, long version, byte[] value, long lease) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, false, value));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, false, value, lease));
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }
@@ -109,7 +110,8 @@ public class VersionedCache implements Closeable {
         if (commit == INVALID_TX) {
             rowData.getValues().remove(version);
         } else {
-            rowData.getValues().put(version, new VersionedValue(version, commit, value.isDeleted(), value.getValue()));
+            rowData.getValues().put(version,
+                new VersionedValue(version, commit, value.isDeleted(), value.getValue(), value.getLease()));
         }
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
@@ -118,7 +120,7 @@ public class VersionedCache implements Closeable {
 
     public void remove(int generationId, byte[] key, long version) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE, NO_LEASE));
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }

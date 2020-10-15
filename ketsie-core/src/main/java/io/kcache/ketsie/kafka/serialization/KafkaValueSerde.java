@@ -70,6 +70,7 @@ public class KafkaValueSerde implements Serde<VersionedValues> {
             .name("_version").type().longType().noDefault()
             .name("_commit").type().longType().noDefault()
             .name("_deleted").type().booleanType().noDefault()
+            .name("_lease").type().longType().noDefault()
             .name("_value").type().bytesType().noDefault();
         org.apache.avro.Schema valueSchema = SchemaBuilder.array().items(valueSchemaBuilder.endRecord());
         SchemaBuilder.FieldAssembler<org.apache.avro.Schema> valuesSchemaBuilder =

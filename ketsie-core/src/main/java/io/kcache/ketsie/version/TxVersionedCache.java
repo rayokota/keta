@@ -95,6 +95,10 @@ public class TxVersionedCache implements Closeable {
     }
 
     public void put(byte[] key, byte[] value) {
+        put(key, value, VersionedCache.NO_LEASE);
+    }
+
+    public void put(byte[] key, byte[] value, long lease) {
         Lock lock = striped.get(Bytes.wrap(key)).writeLock();
         lock.lock();
         try {
@@ -104,18 +108,22 @@ public class TxVersionedCache implements Closeable {
                 throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(key));
             }
             addWriteSetElement(tx, new KetsieCellId(cache, key, tx.getWriteTimestamp()));
-            cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), value);
+            cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), value, lease);
         } finally {
             lock.unlock();
         }
     }
 
     public boolean replace(byte[] key, byte[] oldValue, byte[] newValue) {
-        return replace(key, oldValue, key, newValue);
+        return replace(key, oldValue, newValue, VersionedCache.NO_LEASE);
+    }
+
+    public boolean replace(byte[] key, byte[] oldValue, byte[] newValue, long lease) {
+        return replace(key, oldValue, key, newValue, lease);
     }
 
     public boolean replace(byte[] oldKey, byte[] oldValue,
-                           byte[] newKey, byte[] newValue) {
+                           byte[] newKey, byte[] newValue, long lease) {
         Iterable<ReadWriteLock> locks = striped.bulkGet(ImmutableList.of(Bytes.wrap(oldKey), Bytes.wrap(newKey)));
         List<Lock> writeLocks = Streams.streamOf(locks)
             .map(ReadWriteLock::writeLock)
@@ -134,7 +142,7 @@ public class TxVersionedCache implements Closeable {
                     return false;
                 } else {
                     addWriteSetElement(tx, new KetsieCellId(cache, newKey, tx.getWriteTimestamp()));
-                    cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue);
+                    cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue, lease);
                     return true;
                 }
             } else {
@@ -145,7 +153,7 @@ public class TxVersionedCache implements Closeable {
                 addWriteSetElement(tx, new KetsieCellId(cache, oldKey, tx.getWriteTimestamp()));
                 addWriteSetElement(tx, new KetsieCellId(cache, newKey, tx.getWriteTimestamp()));
                 cache.remove(tx.getGenerationId(), oldKey, tx.getWriteTimestamp());
-                cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue);
+                cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue, lease);
                 return true;
             }
         } finally {

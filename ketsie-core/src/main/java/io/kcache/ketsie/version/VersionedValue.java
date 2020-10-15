@@ -21,32 +21,37 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static io.kcache.ketsie.version.TxVersionedCache.PENDING_TX;
+import static io.kcache.ketsie.version.VersionedCache.NO_LEASE;
 
 public class VersionedValue {
     private final long version;
     private final long commit;
     private final boolean deleted;
     private final byte[] value;
+    private final long lease;
 
     public VersionedValue(long version, byte[] value) {
         this.version = version;
         this.commit = PENDING_TX;
         this.deleted = false;
         this.value = value;
+        this.lease = NO_LEASE;
     }
 
-    public VersionedValue(long version, long commit, byte[] value) {
+    public VersionedValue(long version, long commit, byte[] value, long lease) {
         this.version = version;
         this.commit = commit;
         this.deleted = false;
         this.value = value;
+        this.lease = lease;
     }
 
-    public VersionedValue(long version, long commit, boolean deleted, byte[] value) {
+    public VersionedValue(long version, long commit, boolean deleted, byte[] value, long lease) {
         this.version = version;
         this.commit = commit;
         this.deleted = deleted;
         this.value = value;
+        this.lease = lease;
     }
 
     public long getVersion() {
@@ -65,6 +70,10 @@ public class VersionedValue {
         return value;
     }
 
+    public long getLease() {
+        return lease;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -77,12 +86,13 @@ public class VersionedValue {
         return version == that.version
             && commit == that.commit
             && deleted == that.deleted
+            && lease == that.lease
             && Arrays.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(version, commit, deleted);
+        int result = Objects.hash(version, commit, deleted, lease);
         result = 31 * result + Arrays.hashCode(value);
         return result;
     }
