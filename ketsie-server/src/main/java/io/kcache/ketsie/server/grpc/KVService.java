@@ -130,10 +130,11 @@ public class KVService extends KVGrpc.KVImplBase {
         TxVersionedCache cache = KetsieEngine.getInstance().getTxCache();
         byte[] key = request.getKey().toByteArray();
         byte[] value = request.getValue().toByteArray();
+        long lease = request.getLease();
         VersionedValue versioned = cache.get(key);
         byte[] oldValue = versioned != null ? versioned.getValue() : null;
         if (!request.getIgnoreValue()) {
-            cache.replace(key, oldValue, value);
+            cache.replace(key, oldValue, value, lease);
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         if (request.getPrevKv() && versioned != null) {
