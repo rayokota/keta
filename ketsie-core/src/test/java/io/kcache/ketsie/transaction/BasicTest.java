@@ -22,7 +22,7 @@ import io.kcache.ketsie.version.TxVersionedCache;
 import io.kcache.ketsie.version.VersionedCache;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -24,15 +24,15 @@ import io.kcache.KeyValue;
 import io.kcache.utils.Streams;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class DeletionTest {
@@ -46,13 +46,13 @@ public class DeletionTest {
     private TransactionManager tm;
     private TxVersionedCache versionedCache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tm = KetsieTransactionManager.newInstance();
         versionedCache = new TxVersionedCache(new VersionedCache(TEST_TABLE));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tm.close();
     }
@@ -80,7 +80,7 @@ public class DeletionTest {
         Iterator<KeyValue<byte[], VersionedValue>> iter = versionedCache.range(
             ("test-del" + 0).getBytes(), true, ("test-del" + 9).getBytes(), true);
         int rowsRead = (int) Streams.streamOf(iter).count();
-        assertEquals("Expected " + rowsWritten + " rows but " + rowsRead + " found", rowsRead, rowsWritten);
+        assertEquals(rowsRead, rowsWritten, "Expected " + rowsWritten + " rows but " + rowsRead + " found");
 
         tm.commit(t2);
 
@@ -90,7 +90,7 @@ public class DeletionTest {
         iter = versionedCache.range(
             ("test-del" + 0).getBytes(), true, ("test-del" + 9).getBytes(), true);
         rowsRead = (int) Streams.streamOf(iter).count();
-        assertEquals("Expected " + (rowsWritten - 1) + " rows but " + rowsRead + " found", rowsRead, rowsWritten - 1);
+        assertEquals(rowsRead, rowsWritten - 1, "Expected " + (rowsWritten - 1) + " rows but " + rowsRead + " found");
     }
 
     private void writeRows(TxVersionedCache versionCache, int rowcount) {

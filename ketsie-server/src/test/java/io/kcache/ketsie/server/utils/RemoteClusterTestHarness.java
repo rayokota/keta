@@ -20,8 +20,8 @@ import io.kcache.ketsie.KetsieEngine;
 import io.kcache.ketsie.server.KetsieMain;
 import io.kcache.ketsie.utils.ClusterTestHarness;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
         super(numBrokers);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         if (tempDir == null) {
@@ -115,7 +115,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
         return choosePorts(1)[0];
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             server.stop();

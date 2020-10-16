@@ -22,11 +22,11 @@ import io.kcache.ketsie.version.VersionedCache;
 import io.kcache.utils.Streams;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UpdateScanTest {
     private static final Logger LOG = LoggerFactory.getLogger(UpdateScanTest.class);
@@ -50,7 +50,7 @@ public class UpdateScanTest {
 
         byte[] key = {22};
         int count = (int) Streams.streamOf(versionedCache.range(key, true, key, true)).count();
-        assertEquals("Count is wrong", count, 1);
+        assertEquals(count, 1, "Count is wrong");
 
         tm.commit(t);
 
@@ -58,7 +58,7 @@ public class UpdateScanTest {
 
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) t);
         count = (int) Streams.streamOf(versionedCache.range(key, true, key, true)).count();
-        assertEquals("Count is wrong", count, 1);
+        assertEquals(count, 1, "Count is wrong");
 
         tm.commit(t);
     }
@@ -77,7 +77,7 @@ public class UpdateScanTest {
         }
 
         int count = (int) Streams.streamOf(versionedCache.all()).count();
-        assertEquals("Count is wrong", count, lInts.length);
+        assertEquals(count, lInts.length, "Count is wrong");
 
         tm.commit(t);
 
@@ -85,7 +85,7 @@ public class UpdateScanTest {
 
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) t);
         count = (int) Streams.streamOf(versionedCache.all()).count();
-        assertEquals("Count is wrong", count, lInts.length);
+        assertEquals(count, lInts.length, "Count is wrong");
 
         tm.commit(t);
     }
@@ -127,6 +127,6 @@ public class UpdateScanTest {
 
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) t);
         int count = (int) Streams.streamOf(versionedCache.all()).count();
-        assertEquals("Count is wrong", count, lIntsA.length + lIntsC.length);
+        assertEquals(count, lIntsA.length + lIntsC.length, "Count is wrong");
     }
 }

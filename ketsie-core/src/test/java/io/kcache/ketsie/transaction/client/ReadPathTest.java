@@ -22,15 +22,15 @@ import io.kcache.ketsie.version.VersionedCache;
 import io.kcache.ketsie.version.VersionedValue;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ReadPathTest {
 
@@ -44,13 +44,13 @@ public class ReadPathTest {
     private TransactionManager tm;
     private TxVersionedCache versionedCache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tm = KetsieTransactionManager.newInstance();
         versionedCache = new TxVersionedCache(new VersionedCache(TEST_TABLE));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tm.close();
     }

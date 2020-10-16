@@ -29,8 +29,8 @@ import org.apache.omid.tso.client.AbortException;
 import org.apache.omid.tso.client.CellId;
 import org.apache.omid.tso.client.TSOProtocol;
 import org.apache.omid.tso.util.DummyCellIdImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,8 +38,8 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TSOClientRowAndCellLevelConflictTest {
 
@@ -48,7 +48,7 @@ public class TSOClientRowAndCellLevelConflictTest {
     private CommitTable commitTable;
     private TSOProtocol client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         commitTable = new KetsieCommitTable(new InMemoryCache<>());
         TimestampStorage timestampStorage = new KetsieTimestampStorage(new InMemoryCache<>());
@@ -75,11 +75,11 @@ public class TSOClientRowAndCellLevelConflictTest {
         try {
             client.commit(ts2, testWriteSet2).get();
         } catch (ExecutionException e) {
-            assertTrue("Transaction should be aborted", e.getCause() instanceof AbortException);
+            assertTrue(e.getCause() instanceof AbortException, "Transaction should be aborted");
             return;
         }
 
-        assertTrue("Transaction should be aborted", false);
+        assertTrue(false, "Transaction should be aborted");
     }
 
     @Test
@@ -99,10 +99,10 @@ public class TSOClientRowAndCellLevelConflictTest {
         try {
             client.commit(ts2, testWriteSet2).get();
         } catch (ExecutionException e) {
-            assertFalse("Transaction should be committed", e.getCause() instanceof AbortException);
+            assertFalse(e.getCause() instanceof AbortException, "Transaction should be committed");
             return;
         }
 
-        assertTrue("Transaction should be committed", true);
+        assertTrue(true, "Transaction should be committed");
     }
 }

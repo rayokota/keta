@@ -24,18 +24,19 @@ import io.kcache.KeyValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class BasicTransactionTest {
 
@@ -52,13 +53,13 @@ public class BasicTransactionTest {
     private TransactionManager tm;
     private TxVersionedCache versionedCache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tm = KetsieTransactionManager.newInstance();
         versionedCache = new TxVersionedCache(new VersionedCache(TEST_TABLE));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tm.close();
     }
@@ -162,11 +163,13 @@ public class BasicTransactionTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSameCommitRaisesException() throws Exception {
-        Transaction t1 = tm.begin();
-        tm.commit(t1);
-        tm.commit(t1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Transaction t1 = tm.begin();
+            tm.commit(t1);
+            tm.commit(t1);
+        });
     }
 
     @Test
@@ -214,7 +217,7 @@ public class BasicTransactionTest {
                 modifiedRows++;
             }
         }
-        assertEquals("Expected 1 row modified, but " + modifiedRows + " are.", modifiedRows, 1);
+        assertEquals(modifiedRows, 1, "Expected 1 row modified, but " + modifiedRows + " are.");
 
         // Finally, check that the Scanner Iterator does not implement the remove method
         newIter = versionedCache.range(startRow, true, stopRow, true);
@@ -258,7 +261,7 @@ public class BasicTransactionTest {
                 modifiedRows++;
             }
         }
-        assertEquals("Expected 1 row modified, but " + modifiedRows + " are.", modifiedRows, 1);
+        assertEquals(modifiedRows, 1, "Expected 1 row modified, but " + modifiedRows + " are.");
 
         // Rollback the second transaction and then check that under a new transactional scanner we get the snapshot
         // that includes the only the initial rows put by Tx1

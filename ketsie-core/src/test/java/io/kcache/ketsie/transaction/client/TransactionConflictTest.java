@@ -23,16 +23,16 @@ import io.kcache.utils.Streams;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class TransactionConflictTest {
@@ -52,14 +52,14 @@ public class TransactionConflictTest {
     private TxVersionedCache versionedCache;
     private TxVersionedCache versionedCache2;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tm = KetsieTransactionManager.newInstance();
         versionedCache = new TxVersionedCache(new VersionedCache(TEST_TABLE));
         versionedCache2 = new TxVersionedCache(new VersionedCache(TEST_TABLE2));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tm.close();
     }
@@ -112,7 +112,7 @@ public class TransactionConflictTest {
         } catch (RollbackException e) {
             aborted = true;
         }
-        assertTrue("Transaction didn't raise exception", aborted);
+        assertTrue(aborted, "Transaction didn't raise exception");
 
         Transaction t3 = tm.begin();
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) t3);
@@ -142,7 +142,7 @@ public class TransactionConflictTest {
         } catch (RollbackException e) {
             aborted = true;
         }
-        assertTrue("Transaction didn't raise exception", aborted);
+        assertTrue(aborted, "Transaction didn't raise exception");
 
         Transaction t3 = tm.begin();
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) t3);
@@ -170,7 +170,7 @@ public class TransactionConflictTest {
         versionedCache.remove(("test-del" + 3).getBytes());
 
         count = countRows(versionedCache);
-        assertEquals("Wrong count", count, rowcount - 1);
+        assertEquals(count, rowcount - 1, "Wrong count");
 
         Transaction t3 = tm.begin();
         LOG.info("Transaction created " + t3);
@@ -187,13 +187,13 @@ public class TransactionConflictTest {
         } catch (RollbackException e) {
             aborted = true;
         }
-        assertTrue("Didn't raise exception", aborted);
+        assertTrue(aborted, "Didn't raise exception");
 
         Transaction tscan = tm.begin();
 
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) tscan);
         count = countRows(versionedCache);
-        assertEquals("Wrong count", count, rowcount);
+        assertEquals(count, rowcount, "Wrong count");
     }
 
     public int countRows(TxVersionedCache cache) {
@@ -224,8 +224,8 @@ public class TransactionConflictTest {
         }
 
         // validate rows are really written
-        assertEquals("Unexpected size for read.", countRows(versionedCache), rowcount + 1);
-        assertEquals("Unexpected size for read.", countRows(versionedCache2), rowcount);
+        assertEquals(countRows(versionedCache), rowcount + 1, "Unexpected size for read.");
+        assertEquals(countRows(versionedCache2), rowcount, "Unexpected size for read.");
 
         tm.commit(t1);
 
@@ -236,13 +236,13 @@ public class TransactionConflictTest {
         } catch (RollbackException e) {
             aborted = true;
         }
-        assertTrue("Transaction didn't raise exception", aborted);
+        assertTrue(aborted, "Transaction didn't raise exception");
 
         Transaction tscan = tm.begin();
 
         // validate rows are cleaned
         KetsieTransaction.setCurrentTransaction((KetsieTransaction) tscan);
-        assertEquals("Unexpected size for read.", countRows(versionedCache), 1);
-        assertEquals("Unexpected size for read.", countRows(versionedCache2), 0);
+        assertEquals(countRows(versionedCache), 1, "Unexpected size for read.");
+        assertEquals(countRows(versionedCache2), 0, "Unexpected size for read.");
     }
 }

@@ -16,26 +16,19 @@
  */
 package io.kcache.ketsie.kafka.serialization;
 
-import io.kcache.ketsie.version.VersionedValue;
-import io.kcache.ketsie.version.VersionedValues;
+import io.kcache.ketsie.lease.Lease;
 import org.junit.jupiter.api.Test;
-
-import java.util.NavigableMap;
-import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class KafkaValueSerializerTest {
+public class KafkaLeaseSerializerTest {
 
     @Test
     public void testSerializer() throws Exception {
-        KafkaValueSerde serde = new KafkaValueSerde();
-        NavigableMap<Long, VersionedValue> map = new TreeMap<>();
-        map.put(2L, new VersionedValue(2, "hi".getBytes()));
-        map.put(4L, new VersionedValue(4, "bye".getBytes()));
-        VersionedValues values = new VersionedValues(1, map);
-        byte[] bytes = serde.serializer().serialize(null, values);
-        VersionedValues values2 = serde.deserializer().deserialize(null, bytes);
-        assertEquals(values, values2);
+        KafkaLeaseSerde serde = new KafkaLeaseSerde();
+        Lease lease = new Lease(1, 1000, System.currentTimeMillis());
+        byte[] bytes = serde.serializer().serialize(null, lease);
+        Lease lease2 = serde.deserializer().deserialize(null, bytes);
+        assertEquals(lease, lease2);
     }
 }

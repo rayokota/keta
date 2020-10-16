@@ -31,7 +31,7 @@ import org.apache.omid.transaction.PostCommitActions;
 import org.apache.omid.tso.RuntimeExceptionPanicker;
 import org.apache.omid.tso.TimestampOracle;
 import org.apache.omid.tso.TimestampOracleImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +40,9 @@ import java.util.Map;
 import static org.apache.omid.committable.CommitTable.CommitTimestamp.Location.CACHE;
 import static org.apache.omid.committable.CommitTable.CommitTimestamp.Location.COMMIT_TABLE;
 import static org.apache.omid.committable.CommitTable.CommitTimestamp.Location.SHADOW_CELL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -89,9 +89,9 @@ public class TransactionClientTest {
         KetsieCellId cellId2 = new KetsieCellId(cache, rowId2, t2.getStartTimestamp());
         KetsieCellId cellId3 = new KetsieCellId(cache, rowId2, t3.getStartTimestamp());
 
-        assertTrue("row1 should be committed", snapshotFilter.isCommitted(t1, cellId1));
-        assertFalse("row2 should not be committed for kv2", snapshotFilter.isCommitted(t2, cellId2));
-        assertTrue("row2 should be committed for kv3", snapshotFilter.isCommitted(t3, cellId3));
+        assertTrue(snapshotFilter.isCommitted(t1, cellId1), "row1 should be committed");
+        assertFalse(snapshotFilter.isCommitted(t2, cellId2), "row2 should not be committed for kv2");
+        assertTrue(snapshotFilter.isCommitted(t3, cellId3), "row2 should not be committed for kv3");
     }
 
     // Tests step 1 in AbstractTransactionManager.locateCellCommitTimestamp()

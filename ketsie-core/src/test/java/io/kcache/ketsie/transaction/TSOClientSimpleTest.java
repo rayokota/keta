@@ -29,16 +29,16 @@ import org.apache.omid.tso.client.AbortException;
 import org.apache.omid.tso.client.CellId;
 import org.apache.omid.tso.client.TSOProtocol;
 import org.apache.omid.tso.util.DummyCellIdImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TSOClientSimpleTest {
 
@@ -48,7 +48,7 @@ public class TSOClientSimpleTest {
     private CommitTable commitTable;
     private TSOProtocol client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         commitTable = new KetsieCommitTable(new InMemoryCache<>());
         TimestampStorage timestampStorage = new KetsieTimestampStorage(new InMemoryCache<>());
@@ -69,7 +69,7 @@ public class TSOClientSimpleTest {
             client.commit(tr2, Sets.newHashSet(c1, c2), new HashSet<>()).get();
             fail("Shouldn't have committed");
         } catch (ExecutionException ee) {
-            assertEquals("Should have aborted", ee.getCause().getClass(), AbortException.class);
+            assertEquals(ee.getCause().getClass(), AbortException.class, "Should have aborted");
         }
     }
 
@@ -86,6 +86,6 @@ public class TSOClientSimpleTest {
         client.commit(tr2, Sets.newHashSet(c1), new HashSet<>()).get();
 
         long newWatermark = commitTableClient.readLowWatermark().get();
-        assertTrue("new low watermark should be bigger", newWatermark > initWatermark);
+        assertTrue(newWatermark > initWatermark, "new low watermark should be bigger");
     }
 }

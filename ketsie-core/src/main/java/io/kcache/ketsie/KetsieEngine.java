@@ -19,7 +19,9 @@ package io.kcache.ketsie;
 import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
+import io.kcache.ketsie.kafka.serialization.KafkaLeaseSerde;
 import io.kcache.ketsie.kafka.serialization.KafkaValueSerde;
+import io.kcache.ketsie.lease.Lease;
 import io.kcache.ketsie.transaction.KetsieCommitTable;
 import io.kcache.ketsie.transaction.KetsieTimestampStorage;
 import io.kcache.ketsie.transaction.client.KetsieTransactionManager;
@@ -53,6 +55,7 @@ public class KetsieEngine implements Configurable, Closeable {
     private KetsieConfig config;
     private Cache<Long, Long> commits;
     private Cache<Long, Long> timestamps;
+    private Cache<Long, Lease> leases;
     private Cache<byte[], VersionedValues> cache;
     private TxVersionedCache txCache;
     private KetsieTransactionManager transactionManager;
@@ -99,8 +102,7 @@ public class KetsieEngine implements Configurable, Closeable {
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             commits = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
-                new InMemoryCache<>());
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
         } else {
             commits = new InMemoryCache<>();
         }
@@ -112,13 +114,24 @@ public class KetsieEngine implements Configurable, Closeable {
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             timestamps = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
-                new InMemoryCache<>());
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
         } else {
             timestamps = new InMemoryCache<>();
         }
         timestamps = Caches.concurrentCache(timestamps);
         timestamps.init();
+        if (bootstrapServers != null) {
+            String topic = "_leases";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            leases = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), new KafkaLeaseSerde(), null, new InMemoryCache<>());
+        } else {
+            leases = new InMemoryCache<>();
+        }
+        leases = Caches.concurrentCache(leases);
+        leases.init();
         Cache<byte[], VersionedValues> cache;
         if (bootstrapServers != null) {
             String topic = "_ketsie";

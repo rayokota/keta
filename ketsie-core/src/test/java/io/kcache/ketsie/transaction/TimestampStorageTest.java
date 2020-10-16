@@ -18,14 +18,14 @@
 package io.kcache.ketsie.transaction;
 
 import io.kcache.utils.InMemoryCache;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TimestampStorageTest {
 
@@ -38,7 +38,7 @@ public class TimestampStorageTest {
         KetsieTimestampStorage tsStorage = new KetsieTimestampStorage(new InMemoryCache<>());
 
         // Test that the first time we get the timestamp is the initial value
-        assertEquals("Initial value should be " + INITIAL_TS_VALUE, tsStorage.getMaxTimestamp(), INITIAL_TS_VALUE);
+        assertEquals(tsStorage.getMaxTimestamp(), INITIAL_TS_VALUE, "Initial value should be " + INITIAL_TS_VALUE);
 
         // Test that updating the timestamp succeeds when passing the initial value as the previous one
         long newTimestamp = 1;
@@ -48,15 +48,15 @@ public class TimestampStorageTest {
         long wrongTimestamp = 20;
         try {
             tsStorage.updateMaxTimestamp(wrongTimestamp, newTimestamp);
-            Assert.fail("Shouldn't update");
+            Assertions.fail("Shouldn't update");
         } catch (IOException e) {
             // Correct behavior
         }
-        assertEquals("Value should be still " + newTimestamp, tsStorage.getMaxTimestamp(), newTimestamp);
+        assertEquals(tsStorage.getMaxTimestamp(), newTimestamp, "Value should be still " + newTimestamp);
 
         // Test we can set a new timestamp when passing the right previous max timestamp
         long veryNewTimestamp = 40;
         tsStorage.updateMaxTimestamp(newTimestamp, veryNewTimestamp);
-        assertEquals("Value should be " + veryNewTimestamp, tsStorage.getMaxTimestamp(), veryNewTimestamp);
+        assertEquals(tsStorage.getMaxTimestamp(), veryNewTimestamp, "Value should be " + veryNewTimestamp);
     }
 }

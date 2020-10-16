@@ -25,17 +25,17 @@ import org.apache.omid.transaction.AbstractTransaction.VisibilityLevel;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CheckpointTest {
 
@@ -53,13 +53,13 @@ public class CheckpointTest {
     private TransactionManager tm;
     private TxVersionedCache versionedCache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tm = KetsieTransactionManager.newInstance();
         versionedCache = new TxVersionedCache(new VersionedCache(TEST_TABLE));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tm.close();
     }
@@ -103,7 +103,7 @@ public class CheckpointTest {
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
         List<VersionedValue> values = versionedCache.getVersions(rowId1);
-        assertEquals("Expected 3 results and found " + values.size(), 3, values.size());
+        assertEquals(3, values.size(), "Expected 3 results and found " + values.size());
 
         assertArrayEquals(dataValue3, values.get(0).getValue());
         assertArrayEquals(dataValue2, values.get(1).getValue());
@@ -175,7 +175,7 @@ public class CheckpointTest {
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
         List<VersionedValue> values = versionedCache.getVersions(rowId1);
-        assertEquals("Expected 3 results and found " + values.size(), 3, values.size());
+        assertEquals(3, values.size(), "Expected 3 results and found " + values.size());
 
         assertArrayEquals(dataValue2, values.get(0).getValue());
         assertArrayEquals(dataValue1, values.get(1).getValue());
@@ -226,7 +226,7 @@ public class CheckpointTest {
         try {
             tm.commit(tx2);
         } catch (TransactionException e) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
@@ -241,7 +241,7 @@ public class CheckpointTest {
 
         try {
             kdbTx1.checkpoint();
-            Assert.fail();
+            Assertions.fail();
         } catch (TransactionException e) {
             // expected
         }

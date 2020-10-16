@@ -23,8 +23,8 @@ import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Utils;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import scala.Option;
 import scala.Option$;
 
@@ -60,7 +60,7 @@ public abstract class ClusterTestHarness {
         this.numBrokers = numBrokers;
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         zookeeper = new EmbeddedZookeeper();
         zkConnect = String.format("localhost:%d", zookeeper.port());
@@ -126,7 +126,7 @@ public abstract class ClusterTestHarness {
         return SecurityProtocol.PLAINTEXT;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (servers != null) {
             for (KafkaServer server : servers) {

@@ -25,13 +25,13 @@ import io.kcache.ketsie.version.VersionedValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class SnapshotIsolationTest {
 
@@ -64,8 +64,8 @@ public class SnapshotIsolationTest {
             Transaction tx2 = tm.begin();
             LOG.info("Concurrent Transaction {} STARTED", tx2);
             VersionedValue tx2GetResult = versionedCache.get(rowId);
-            assertArrayEquals("As Tx1 is not yet committed, Tx2 should read the value set by Tx0 not the value written by Tx1",
-                tx2GetResult.getValue(), initialData);
+            assertArrayEquals(tx2GetResult.getValue(), initialData,
+                "As Tx1 is not yet committed, Tx2 should read the value set by Tx0 not the value written by Tx1");
 
             // Transaction Tx1 tries to commit and as there're no conflicting changes, persists the new value in HBase
             tm.commit(tx1);
@@ -77,7 +77,7 @@ public class SnapshotIsolationTest {
             LOG.info(
                 "Concurrent Transaction {} should read again base value in its Snapshot | Value read = {}",
                 tx2, Arrays.toString(tx2GetResult.getValue()));
-            assertArrayEquals("Tx2 must read the initial value written by Tx0", tx2GetResult.getValue(), initialData);
+            assertArrayEquals(tx2GetResult.getValue(), initialData, "Tx2 must read the initial value written by Tx0");
 
             // Tx2 tries to write the column written by the committed concurrent transaction Tx1...
             versionedCache.replace(rowId, tx2GetResult.getValue(), dataValue2);
