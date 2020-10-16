@@ -36,9 +36,13 @@ import io.etcd.jetcd.api.TxnResponse;
 import io.grpc.stub.StreamObserver;
 import io.kcache.KeyValueIterator;
 import io.kcache.ketsie.KetsieEngine;
+import io.kcache.ketsie.lease.KetsieLeaseManager;
+import io.kcache.ketsie.lease.LeaseKeys;
 import io.kcache.ketsie.version.TxVersionedCache;
 import io.kcache.ketsie.version.VersionedCache;
 import io.kcache.ketsie.version.VersionedValue;
+import org.apache.hadoop.hdfs.server.namenode.LeaseManager;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
@@ -128,13 +132,29 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private PutResponse doPut(PutRequest request) {
         TxVersionedCache cache = KetsieEngine.getInstance().getTxCache();
+        KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
         byte[] key = request.getKey().toByteArray();
         byte[] value = request.getValue().toByteArray();
         long lease = request.getLease();
         VersionedValue versioned = cache.get(key);
         byte[] oldValue = versioned != null ? versioned.getValue() : null;
+        long oldLease = versioned != null ? versioned.getLease() : 0;
         if (!request.getIgnoreValue()) {
             cache.replace(key, oldValue, value, lease);
+            if (oldLease > 0) {
+                LeaseKeys lk = leaseMgr.get(oldLease);
+                if (lk == null) {
+                    throw new IllegalArgumentException("No lease with id " + oldLease);
+                }
+                lk.getKeys().remove(Bytes.wrap(key));
+            }
+            if (lease > 0) {
+                LeaseKeys lk = leaseMgr.get(lease);
+                if (lk == null) {
+                    throw new IllegalArgumentException("No lease with id " + lease);
+                }
+                lk.getKeys().add(Bytes.wrap(key));
+            }
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         if (request.getPrevKv() && versioned != null) {
@@ -249,7 +269,7 @@ public class KVService extends KVGrpc.KVImplBase {
         Compare.CompareTarget target = compare.getTarget();
         if (target != Compare.CompareTarget.VALUE) {
             // TODO
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Unsupported target type " + compare.getTarget());
         }
         byte[] from = compare.getKey().toByteArray();
         byte[] to = compare.getRangeEnd().toByteArray();
@@ -283,7 +303,7 @@ public class KVService extends KVGrpc.KVImplBase {
                 return cmp != null ? cmp != 0 : value != null && value.length != 0;
             default:
                 // TODO
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
         }
     }
 
@@ -310,7 +330,7 @@ public class KVService extends KVGrpc.KVImplBase {
                 return responseBuilder.build();
             default:
                 // TODO
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Unsupported request type " + request.getRequestCase());
         }
     }
 

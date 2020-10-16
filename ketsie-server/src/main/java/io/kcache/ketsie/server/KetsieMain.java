@@ -21,6 +21,7 @@ import io.grpc.ServerBuilder;
 import io.kcache.ketsie.KetsieConfig;
 import io.kcache.ketsie.KetsieEngine;
 import io.kcache.ketsie.server.grpc.KVService;
+import io.kcache.ketsie.server.grpc.LeaseService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,7 @@ public class KetsieMain {
         int port = 50051;
         server = ServerBuilder.forPort(port)
             .addService(new KVService().bindService())
+            .addService(new LeaseService().bindService())
             .build()
             .start();
         logger.info("Server started, listening on " + port);

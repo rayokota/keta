@@ -21,6 +21,7 @@ import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.ketsie.kafka.serialization.KafkaLeaseSerde;
 import io.kcache.ketsie.kafka.serialization.KafkaValueSerde;
+import io.kcache.ketsie.lease.KetsieLeaseManager;
 import io.kcache.ketsie.lease.Lease;
 import io.kcache.ketsie.transaction.KetsieCommitTable;
 import io.kcache.ketsie.transaction.KetsieTimestampStorage;
@@ -59,6 +60,7 @@ public class KetsieEngine implements Configurable, Closeable {
     private Cache<byte[], VersionedValues> cache;
     private TxVersionedCache txCache;
     private KetsieTransactionManager transactionManager;
+    private KetsieLeaseManager leaseManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
 
     private static KetsieEngine INSTANCE;
@@ -146,9 +148,11 @@ public class KetsieEngine implements Configurable, Closeable {
         }
         cache.init();
         txCache = new TxVersionedCache(new VersionedCache("ketsie", cache));
+
         CommitTable commitTable = new KetsieCommitTable(commits);
         TimestampStorage timestampStorage = new KetsieTimestampStorage(timestamps);
         transactionManager = KetsieTransactionManager.newInstance(commitTable, timestampStorage);
+        leaseManager = new KetsieLeaseManager(txCache, leases);
 
         boolean isInitialized = initialized.compareAndSet(false, true);
         if (!isInitialized) {
@@ -174,16 +178,8 @@ public class KetsieEngine implements Configurable, Closeable {
         return transactionManager;
     }
 
-    public Transaction beginTx() throws TransactionException {
-        return transactionManager.begin();
-    }
-
-    public void commitTx(Transaction tx) throws RollbackException, TransactionException {
-        transactionManager.commit(tx);
-    }
-
-    public void rollbackTx(Transaction tx) throws TransactionException {
-        transactionManager.rollback(tx);
+    public KetsieLeaseManager getLeaseManager() {
+        return leaseManager;
     }
 
     @Override

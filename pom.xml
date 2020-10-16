@@ -98,6 +98,11 @@
                 <artifactId>grpc-stub</artifactId>
                 <version>${grpc.version}</version>
             </dependency>
+            <dependency>
+                <groupId>net.jodah</groupId>
+                <artifactId>expiringmap</artifactId>
+                <version>0.5.9</version>
+            </dependency>
             <dependency> <!-- necessary for Java 9+ -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>annotations-api</artifactId>

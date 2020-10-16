@@ -36,6 +36,10 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>expiringmap</artifactId>
+        </dependency>
         <dependency> <!-- necessary for Java 9+ -->
             <groupId>org.apache.tomcat</groupId>
             <artifactId>annotations-api</artifactId>

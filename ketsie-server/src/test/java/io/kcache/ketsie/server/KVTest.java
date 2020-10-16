@@ -47,7 +47,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOf
 
 public class KVTest extends RemoteClusterTestHarness {
 
-    private static KV kvClient;
+    private KV kvClient;
 
     private static final ByteSequence SAMPLE_KEY = bytesOf("sample_key");
     private static final ByteSequence SAMPLE_VALUE = bytesOf("sample_value");
@@ -55,16 +55,11 @@ public class KVTest extends RemoteClusterTestHarness {
     private static final ByteSequence SAMPLE_VALUE_2 = bytesOf("sample_value2");
     private static final ByteSequence SAMPLE_KEY_3 = bytesOf("sample_key3");
 
-    @BeforeAll
-    public static void init() throws Exception {
-        //TODO
-        //kvClient = Client.builder().endpoints(cluster.getClientEndpoints()).build().getKVClient();
-        kvClient = Client.builder().endpoints("http://127.0.0.1:50051").build().getKVClient();
-    }
-
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
+        //TODO
+        kvClient = Client.builder().endpoints("http://127.0.0.1:50051").build().getKVClient();
     }
 
     @AfterEach
@@ -181,7 +176,7 @@ public class KVTest extends RemoteClusterTestHarness {
         assertThat(delResp.getDeleted()).isEqualTo(numPrefixes);
     }
 
-    private static void putKeysWithPrefix(String prefix, int numPrefixes) throws ExecutionException, InterruptedException {
+    private void putKeysWithPrefix(String prefix, int numPrefixes) throws ExecutionException, InterruptedException {
         for (int i = 0; i < numPrefixes; i++) {
             ByteSequence key = bytesOf(prefix + i);
             ByteSequence value = bytesOf("" + i);

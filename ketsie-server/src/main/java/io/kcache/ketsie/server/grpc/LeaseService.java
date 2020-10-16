@@ -17,6 +17,7 @@
  */
 package io.kcache.ketsie.server.grpc;
 
+import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.LeaseGrantRequest;
 import io.etcd.jetcd.api.LeaseGrantResponse;
 import io.etcd.jetcd.api.LeaseGrpc;
@@ -27,26 +28,80 @@ import io.etcd.jetcd.api.LeaseRevokeResponse;
 import io.etcd.jetcd.api.LeaseTimeToLiveRequest;
 import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.ketsie.KetsieEngine;
+import io.kcache.ketsie.lease.KetsieLeaseManager;
+import io.kcache.ketsie.lease.Lease;
+import io.kcache.ketsie.lease.LeaseKeys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.stream.Collectors;
 
 public class LeaseService extends LeaseGrpc.LeaseImplBase {
+    private final static Logger LOG = LoggerFactory.getLogger(LeaseService.class);
 
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
-        super.leaseGrant(request, responseObserver);
+        long id = request.getID();
+        if (id == 0) {
+            id = System.currentTimeMillis();
+        }
+        Lease lease = new Lease(id, request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
+        KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
+        leaseMgr.grant(lease);
+        responseObserver.onNext(LeaseGrantResponse.newBuilder()
+            .setID(lease.getId())
+            .setTTL(lease.getTtl())
+            .build());
+        responseObserver.onCompleted();
     }
 
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
-        super.leaseRevoke(request, responseObserver);
+        long id = request.getID();
+        if (id == 0) {
+            throw new IllegalArgumentException("No lease id");
+        }
+        KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
+        leaseMgr.revoke(id);
+        responseObserver.onNext(LeaseRevokeResponse.newBuilder().build());
+        responseObserver.onCompleted();
     }
 
     @Override
     public StreamObserver<LeaseKeepAliveRequest> leaseKeepAlive(StreamObserver<LeaseKeepAliveResponse> responseObserver) {
-        return super.leaseKeepAlive(responseObserver);
+        return new StreamObserver<LeaseKeepAliveRequest>() {
+            @Override
+            public void onNext(LeaseKeepAliveRequest value) {
+                long id = value.getID();
+                KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
+                LeaseKeys lease = leaseMgr.renew(id);
+                responseObserver.onNext(LeaseKeepAliveResponse.newBuilder().setID(id).setTTL(lease.getTtl()).build());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                LOG.error(t.getMessage());
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
     }
 
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
-        super.leaseTimeToLive(request, responseObserver);
+        long id = request.getID();
+        KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
+        LeaseKeys lease = leaseMgr.get(id);
+        responseObserver.onNext(LeaseTimeToLiveResponse.newBuilder()
+            .setID(id)
+            .setTTL(lease.getTtl())
+            .addAllKeys(lease.getKeys().stream().map(k -> ByteString.copyFrom(k.get())).collect(Collectors.toList()))
+            .setGrantedTTL(lease.getTtl())
+            .build());
+        responseObserver.onCompleted();
     }
 }
