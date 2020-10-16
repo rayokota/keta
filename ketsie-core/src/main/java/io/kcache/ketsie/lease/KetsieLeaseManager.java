@@ -19,9 +19,7 @@ package io.kcache.ketsie.lease;
 
 import io.kcache.Cache;
 import io.kcache.ketsie.KetsieEngine;
-import io.kcache.ketsie.transaction.client.KetsieTransactionManager;
 import io.kcache.ketsie.version.TxVersionedCache;
-import net.jodah.expiringmap.ExpirationListener;
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
 import org.apache.kafka.common.utils.Bytes;
@@ -32,6 +30,8 @@ import org.apache.omid.transaction.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class KetsieLeaseManager {
@@ -52,11 +52,20 @@ public class KetsieLeaseManager {
             .build();
     }
 
-    public void grant(Lease lease) {
-        // TODO check expiry is still valid
+    public LeaseKeys grant(Lease lease) {
+        long id = lease.getId();
+        while (id == 0) {
+            long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
+            if (!cache.containsKey(newId)) {
+                lease = new Lease(newId, lease.getTtl(), lease.getExpiry());
+                id = newId;
+            }
+        }
         cache.put(lease.getId(), lease);
-        expiringMap.put(lease.getId(), new LeaseKeys(lease),
-            lease.getExpiry() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        LeaseKeys lk = new LeaseKeys(lease);
+        // TODO check expiry is still valid
+        expiringMap.put(lease.getId(), lk, lease.getExpiry() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        return lk;
     }
 
     public LeaseKeys get(long id) {

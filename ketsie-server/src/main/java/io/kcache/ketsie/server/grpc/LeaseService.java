@@ -42,16 +42,12 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
-        long id = request.getID();
-        if (id == 0) {
-            id = System.currentTimeMillis();
-        }
-        Lease lease = new Lease(id, request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
+        Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
         KetsieLeaseManager leaseMgr = KetsieEngine.getInstance().getLeaseManager();
-        leaseMgr.grant(lease);
+        LeaseKeys lk = leaseMgr.grant(lease);
         responseObserver.onNext(LeaseGrantResponse.newBuilder()
-            .setID(lease.getId())
-            .setTTL(lease.getTtl())
+            .setID(lk.getLease().getId())
+            .setTTL(lk.getLease().getTtl())
             .build());
         responseObserver.onCompleted();
     }
