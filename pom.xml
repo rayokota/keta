@@ -2,13 +2,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.kcache</groupId>
-    <artifactId>ketsie-parent</artifactId>
+    <artifactId>keta-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>ketsie</name>
+    <name>keta</name>
     <description>An etcd-like service backed by Apache Kafka</description>
-    <url>https://github.com/rayokota/ketsie</url>
+    <url>https://github.com/rayokota/keta</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -24,15 +24,15 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com:rayokota/ketsie.git</connection>
-        <developerConnection>scm:git:git@github.com:rayokota/ketsie.git</developerConnection>
-        <url>git@github.com:rayokota/ketsie.git</url>
+        <connection>scm:git:git://github.com:rayokota/keta.git</connection>
+        <developerConnection>scm:git:git@github.com:rayokota/keta.git</developerConnection>
+        <url>git@github.com:rayokota/keta.git</url>
         <tag>HEAD</tag>
     </scm>
 
     <modules>
-        <module>ketsie-core</module>
-        <module>ketsie-server</module>
+        <module>keta-core</module>
+        <module>keta-server</module>
     </modules>
 
     <properties>
@@ -61,12 +61,12 @@
         <dependencies>
             <dependency>
                 <groupId>io.kcache</groupId>
-                <artifactId>ketsie-core</artifactId>
+                <artifactId>keta-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.kcache</groupId>
-                <artifactId>ketsie-server</artifactId>
+                <artifactId>keta-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
