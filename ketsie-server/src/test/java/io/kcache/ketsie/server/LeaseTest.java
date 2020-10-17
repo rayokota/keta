@@ -29,11 +29,16 @@ import io.etcd.jetcd.support.CloseableClient;
 import io.etcd.jetcd.support.Observers;
 import io.grpc.stub.StreamObserver;
 import io.kcache.ketsie.server.utils.RemoteClusterTestHarness;
+import io.vertx.core.Vertx;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +48,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+@ExtendWith(VertxExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LeaseTest extends RemoteClusterTestHarness {
 
     private KV kvClient;
@@ -53,12 +60,18 @@ public class LeaseTest extends RemoteClusterTestHarness {
     private static final ByteSequence KEY_2 = ByteSequence.from("foo2", Charsets.UTF_8);
     private static final ByteSequence VALUE = ByteSequence.from("bar", Charsets.UTF_8);
 
+    @BeforeAll
+    public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
+        vertx.deployVerticle(new KetsieMain(), testContext.completing());
+        //TODO
+        client = Client.builder().endpoints("http://127.0.0.1:8080").build();
+        kvClient = client.getKVClient();
+        leaseClient = client.getLeaseClient();
+    }
+
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        client = Client.builder().endpoints("http://127.0.0.1:50051").build();
-        kvClient = client.getKVClient();
-        leaseClient = client.getLeaseClient();
     }
 
     @AfterEach

@@ -42,7 +42,6 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     protected File tempDir;
     protected Properties props;
     protected Integer serverPort;
-    protected KetsieMain server;
 
     public RemoteClusterTestHarness() {
         super();
@@ -74,8 +73,9 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             //elector.init();
             //boolean isLeader = elector.isLeader();
             LOG.info("Leader elected, starting server...");
-            server = new KetsieMain();
-            server.start(config);
+            KetsieEngine engine = KetsieEngine.getInstance();
+            engine.configure(config);
+            engine.init();
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);
@@ -118,7 +118,6 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     @AfterEach
     public void tearDown() throws Exception {
         try {
-            server.stop();
             KetsieEngine.closeInstance();
             FileUtils.deleteDirectory(tempDir);
         } catch (Exception e) {
