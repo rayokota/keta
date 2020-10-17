@@ -41,7 +41,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <assertj.version>3.15.0</assertj.version>
         <avro.version>1.10.0</avro.version>
-        <grpc.version>1.28.1</grpc.version>
+        <grpc.version>1.25.0</grpc.version>
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
         <jetcd.version>0.5.3</jetcd.version>
@@ -54,6 +54,7 @@
         <protobuf.version>3.11.4</protobuf.version>
         <scala.version>${kafka.scala.version}.3</scala.version>
         <sl4j.version>1.7.30</sl4j.version>
+        <vertx.version>3.9.4</vertx.version>
     </properties>
 
     <dependencyManagement>
@@ -193,6 +194,11 @@
                 <artifactId>slf4j-api</artifactId>
                 <version>${sl4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-grpc</artifactId>
+                <version>${vertx.version}</version>
+            </dependency>
             <!-- TESTING -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -237,6 +243,12 @@
                 <artifactId>jetcd-core</artifactId>
                 <version>${jetcd.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.grpc</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
@@ -266,6 +278,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>${sl4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-junit5</artifactId>
+                <version>${vertx.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -366,33 +384,41 @@
     </profiles>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.4.1.Final</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
-                <groupId>com.github.os72</groupId>
-                <artifactId>protoc-jar-maven-plugin</artifactId>
-                <version>3.11.4</version>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <configuration>
+                    <protocArtifact>com.google.protobuf:protoc:3.2.0:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.vertx:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                </configuration>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
+                        <id>compile</id>
                         <configuration>
-                            <protocVersion>${protobuf.version}</protocVersion>
-                            <includeStdTypes>true</includeStdTypes>
-                            <inputDirectories>
-                                <include>src/main/proto</include>
-                            </inputDirectories>
-                            <outputTargets>
-                                <outputTarget>
-                                    <type>java</type>
-                                </outputTarget>
-                                <outputTarget>
-                                    <type>grpc-java</type>
-                                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.1</pluginArtifact>
-                                </outputTarget>
-                            </outputTargets>
+                            <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
+                            <clearOutputDirectory>false</clearOutputDirectory>
                         </configuration>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>compile-custom</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>test-compile</goal>
+                            <goal>test-compile-custom</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

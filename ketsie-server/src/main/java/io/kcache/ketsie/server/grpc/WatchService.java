@@ -17,15 +17,89 @@
  */
 package io.kcache.ketsie.server.grpc;
 
+import io.etcd.jetcd.api.WatchCancelRequest;
+import io.etcd.jetcd.api.WatchCreateRequest;
 import io.etcd.jetcd.api.WatchGrpc;
 import io.etcd.jetcd.api.WatchRequest;
 import io.etcd.jetcd.api.WatchResponse;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WatchService extends WatchGrpc.WatchImplBase {
+    private final static Logger LOG = LoggerFactory.getLogger(LeaseService.class);
 
     @Override
     public StreamObserver<WatchRequest> watch(StreamObserver<WatchResponse> responseObserver) {
         return super.watch(responseObserver);
+        /*
+        return new StreamObserver<WatchRequest>() {
+
+            @Override
+            public void onNext(WatchRequest request) {
+                LOG.debug("received a watchRequest {}", request);
+                switch (request.getRequestUnionCase()) {
+
+                    case CREATE_REQUEST:
+
+                        WatchCreateRequest createRequest = request.getCreateRequest();
+                        if (createRequest.getWatchId() == 0) {
+                            createRequest = createRequest.toBuilder().setWatchId(random.nextLong()).build();
+                        }
+
+                        handleCreateRequest(createRequest, tenantId, responseObserver);
+                        break;
+                    case CANCEL_REQUEST:
+                        handleCancelRequest(request.getCancelRequest(), tenantId);
+                        break;
+                    case REQUESTUNION_NOT_SET:
+                        LOG.warn("received an empty watch request");
+                        break;
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        };
+
+         */
     }
+
+    /*
+    private void handleCancelRequest(WatchCancelRequest cancelRequest) {
+        LOG.info("cancel watch");
+        this.recordLayer.deleteWatch(tenantId, cancelRequest.getWatchId());
+    }
+
+    private void handleCreateRequest(WatchCreateRequest createRequest, StreamObserver<WatchResponse> responseObserver) {
+
+        this.recordLayer.put(tenantId, createRequest);
+        LOG.info("successfully registered new Watch");
+        notifier.watch(tenantId, createRequest.getWatchId(), event -> {
+            log.info("inside WatchService");
+            try {
+                responseObserver
+                    .onNext(EtcdIoRpcProto.WatchResponse.newBuilder()
+                        .addEvents(event)
+                        .setWatchId(createRequest.getWatchId())
+                        .build());
+            } catch (StatusRuntimeException e) {
+                if (e.getStatus().equals(Status.CANCELLED)) {
+                    log.warn("connection was closed");
+                    return;
+                }
+
+                log.error("cought an error writing response: {}", e.getMessage());
+            }
+        });
+    }
+
+     */
 }
