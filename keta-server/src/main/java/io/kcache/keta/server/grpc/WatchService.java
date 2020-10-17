@@ -22,6 +22,8 @@ import io.etcd.jetcd.api.WatchCreateRequest;
 import io.etcd.jetcd.api.WatchGrpc;
 import io.etcd.jetcd.api.WatchRequest;
 import io.etcd.jetcd.api.WatchResponse;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.watch.KetaWatchManager;
@@ -74,27 +76,25 @@ public class WatchService extends WatchGrpc.WatchImplBase {
     private void handleCreateRequest(WatchCreateRequest createRequest, StreamObserver<WatchResponse> responseObserver) {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
-        watchMgr.add(watch);
-        //this.recordLayer.put(tenantId, createRequest);
+        watch = watchMgr.add(watch);
+        long watchId = watch.getId();
         LOG.info("successfully registered new Watch");
-        /*
-        notifier.watch(tenantId, createRequest.getWatchId(), event -> {
-            log.info("inside WatchService");
+        watchMgr.getNotifier().watch(watchId, event -> {
+            LOG.info("inside WatchService");
             try {
                 responseObserver
-                    .onNext(EtcdIoRpcProto.WatchResponse.newBuilder()
+                    .onNext(WatchResponse.newBuilder()
                         .addEvents(event)
-                        .setWatchId(createRequest.getWatchId())
+                        .setWatchId(watchId)
                         .build());
             } catch (StatusRuntimeException e) {
                 if (e.getStatus().equals(Status.CANCELLED)) {
-                    log.warn("connection was closed");
+                    LOG.warn("connection was closed");
                     return;
                 }
 
-                log.error("cought an error writing response: {}", e.getMessage());
+                LOG.error("cought an error writing response: {}", e.getMessage());
             }
         });
-         */
     }
 }

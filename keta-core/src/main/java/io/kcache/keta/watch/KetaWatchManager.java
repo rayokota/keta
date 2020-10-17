@@ -21,6 +21,7 @@ import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.notifier.Notifier;
 import io.kcache.keta.utils.IntervalTree;
 import io.kcache.keta.version.TxVersionedCache;
 import net.jodah.expiringmap.ExpirationPolicy;
@@ -44,17 +45,24 @@ public class KetaWatchManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaWatchManager.class);
 
+    private final Notifier notifier;
     private final Map<Bytes, Set<Watch>> keyWatchers;
     private final IntervalTree<Bytes, Set<Watch>> ranges;
     private final Set<Watch> watchers;
 
-    public KetaWatchManager() {
+    public KetaWatchManager(Notifier notifier) {
+        this.notifier = notifier;
         this.keyWatchers = new HashMap<>();
         this.ranges = new IntervalTree<>();
         this.watchers = new HashSet<>();
     }
 
-    public void add(Watch watch) {
+    public Notifier getNotifier() {
+        return notifier;
+    }
+
+    public Watch add(Watch watch) {
+        return null;
     }
 
     public Set<Watch> getWatches(byte[] key) {

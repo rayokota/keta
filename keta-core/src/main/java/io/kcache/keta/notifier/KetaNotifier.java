@@ -1,4 +1,4 @@
-package io.kcache.keta.server.notifier;
+package io.kcache.keta.notifier;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;

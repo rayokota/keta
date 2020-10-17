@@ -24,6 +24,7 @@ import io.kcache.keta.kafka.serialization.KafkaLeaseSerde;
 import io.kcache.keta.kafka.serialization.KafkaValueSerde;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.Lease;
+import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.transaction.KetaCommitTable;
 import io.kcache.keta.transaction.KetaTimestampStorage;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
@@ -92,7 +93,7 @@ public class KetaEngine implements Configurable, Closeable {
         this.config = config;
     }
 
-    public void init(CacheUpdateHandler<byte[], VersionedValues> notifier) {
+    public void init(KetaNotifier notifier) {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
@@ -151,7 +152,7 @@ public class KetaEngine implements Configurable, Closeable {
         TimestampStorage timestampStorage = new KetaTimestampStorage(timestamps);
         transactionManager = KetaTransactionManager.newInstance(commitTable, timestampStorage);
         leaseManager = new KetaLeaseManager(txCache, leases);
-        watchManager = new KetaWatchManager();
+        watchManager = new KetaWatchManager(notifier);
 
         boolean isInitialized = initialized.compareAndSet(false, true);
         if (!isInitialized) {

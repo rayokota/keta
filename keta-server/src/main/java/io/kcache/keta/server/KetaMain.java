@@ -5,7 +5,7 @@ import io.kcache.keta.KetaEngine;
 import io.kcache.keta.server.grpc.KVService;
 import io.kcache.keta.server.grpc.LeaseService;
 import io.kcache.keta.server.grpc.WatchService;
-import io.kcache.keta.server.notifier.KetaNotifier;
+import io.kcache.keta.notifier.KetaNotifier;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;

@@ -1,4 +1,4 @@
-package io.kcache.keta.server.notifier;
+package io.kcache.keta.notifier;
 
 import io.etcd.jetcd.api.Event;
 import io.vertx.core.Handler;

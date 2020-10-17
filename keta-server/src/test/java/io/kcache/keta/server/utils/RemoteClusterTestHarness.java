@@ -17,7 +17,7 @@ package io.kcache.keta.server.utils;
 import com.google.common.io.Files;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
-import io.kcache.keta.server.notifier.KetaNotifier;
+import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.utils.ClusterTestHarness;
 import io.vertx.core.Vertx;
 import org.apache.commons.io.FileUtils;
