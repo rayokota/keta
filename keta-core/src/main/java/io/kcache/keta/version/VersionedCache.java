@@ -83,12 +83,11 @@ public class VersionedCache implements Closeable {
 
     public List<VersionedValue> get(byte[] key, long minVersion, long maxVersion) {
         VersionedValues rowData = cache.get(key);
-        return rowData != null ? getAll(rowData.getValues(), minVersion, maxVersion) : Collections.emptyList();
+        return rowData != null ? getAll(rowData, minVersion, maxVersion) : Collections.emptyList();
     }
 
-    private static List<VersionedValue> getAll(
-        NavigableMap<Long, VersionedValue> rowdata, long minVersion, long maxVersion) {
-        List<VersionedValue> all = new ArrayList<>(rowdata.subMap(minVersion, true, maxVersion, true)
+    public static List<VersionedValue> getAll(VersionedValues rowdata, long minVersion, long maxVersion) {
+        List<VersionedValue> all = new ArrayList<>(rowdata.getValues().subMap(minVersion, true, maxVersion, true)
             .descendingMap()
             .values());
         return all;
@@ -180,7 +179,7 @@ public class VersionedCache implements Closeable {
             this.rawIterator = iter;
             this.iterator = Streams.<KeyValue<byte[], VersionedValues>>streamOf(iter)
                 .flatMap(kv -> {
-                    List<VersionedValue> values = getAll(kv.value.getValues(), minVersion, maxVersion);
+                    List<VersionedValue> values = getAll(kv.value, minVersion, maxVersion);
                     return values.isEmpty() ? Stream.empty() : Stream.of(new KeyValue<>(kv.key, values));
                 })
                 .iterator();

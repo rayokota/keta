@@ -25,6 +25,7 @@ import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValue;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
+import io.kcache.keta.version.VersionedValues;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.committable.CommitTable.CommitTimestamp;
 import org.apache.omid.transaction.AbstractTransaction.VisibilityLevel;
@@ -307,12 +308,20 @@ public class SnapshotFilterImpl implements SnapshotFilter {
 
     @Override
     public List<VersionedValue> get(KetaTransaction transaction, byte[] key) {
-        try {
-            List<VersionedValue> result = versionedCache.get(key, 0, Long.MAX_VALUE);
+        List<VersionedValue> result = versionedCache.get(key, 0, Long.MAX_VALUE);
+        return get(transaction, key, result);
+    }
 
+    public List<VersionedValue> get(KetaTransaction transaction, byte[] key, VersionedValues versionedValues) {
+        List<VersionedValue> result = versionedCache.getAll(versionedValues, 0, Long.MAX_VALUE);
+        return get(transaction, key, result);
+    }
+
+    private List<VersionedValue> get(KetaTransaction transaction, byte[] key, List<VersionedValue> versions) {
+        try {
             List<VersionedValue> filteredKeyValues = Collections.emptyList();
-            if (!result.isEmpty()) {
-                filteredKeyValues = filterCellsForSnapshot(transaction, key, result);
+            if (!versions.isEmpty()) {
+                filteredKeyValues = filterCellsForSnapshot(transaction, key, versions);
             }
 
             return filteredKeyValues;

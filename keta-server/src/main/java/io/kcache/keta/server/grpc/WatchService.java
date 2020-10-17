@@ -17,10 +17,15 @@
  */
 package io.kcache.keta.server.grpc;
 
+import io.etcd.jetcd.api.WatchCancelRequest;
+import io.etcd.jetcd.api.WatchCreateRequest;
 import io.etcd.jetcd.api.WatchGrpc;
 import io.etcd.jetcd.api.WatchRequest;
 import io.etcd.jetcd.api.WatchResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.keta.KetaEngine;
+import io.kcache.keta.watch.KetaWatchManager;
+import io.kcache.keta.watch.Watch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +34,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
     @Override
     public StreamObserver<WatchRequest> watch(StreamObserver<WatchResponse> responseObserver) {
-        return super.watch(responseObserver);
-        /*
         return new StreamObserver<WatchRequest>() {
 
             @Override
@@ -40,15 +43,10 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
                     case CREATE_REQUEST:
 
-                        WatchCreateRequest createRequest = request.getCreateRequest();
-                        if (createRequest.getWatchId() == 0) {
-                            createRequest = createRequest.toBuilder().setWatchId(random.nextLong()).build();
-                        }
-
-                        handleCreateRequest(createRequest, tenantId, responseObserver);
+                        handleCreateRequest(request.getCreateRequest(), responseObserver);
                         break;
                     case CANCEL_REQUEST:
-                        handleCancelRequest(request.getCancelRequest(), tenantId);
+                        handleCancelRequest(request.getCancelRequest());
                         break;
                     case REQUESTUNION_NOT_SET:
                         LOG.warn("received an empty watch request");
@@ -66,20 +64,20 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
             }
         };
-
-         */
     }
 
-    /*
     private void handleCancelRequest(WatchCancelRequest cancelRequest) {
         LOG.info("cancel watch");
-        this.recordLayer.deleteWatch(tenantId, cancelRequest.getWatchId());
+        //this.recordLayer.deleteWatch(tenantId, cancelRequest.getWatchId());
     }
 
     private void handleCreateRequest(WatchCreateRequest createRequest, StreamObserver<WatchResponse> responseObserver) {
-
-        this.recordLayer.put(tenantId, createRequest);
+        KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
+        Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
+        watchMgr.add(watch);
+        //this.recordLayer.put(tenantId, createRequest);
         LOG.info("successfully registered new Watch");
+        /*
         notifier.watch(tenantId, createRequest.getWatchId(), event -> {
             log.info("inside WatchService");
             try {
@@ -97,7 +95,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                 log.error("cought an error writing response: {}", e.getMessage());
             }
         });
+         */
     }
-
-     */
 }

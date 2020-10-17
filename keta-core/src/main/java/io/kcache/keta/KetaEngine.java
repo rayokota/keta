@@ -30,6 +30,7 @@ import io.kcache.keta.transaction.client.KetaTransactionManager;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValues;
+import io.kcache.keta.watch.KetaWatchManager;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
 import org.apache.kafka.common.Configurable;
@@ -57,6 +58,7 @@ public class KetaEngine implements Configurable, Closeable {
     private TxVersionedCache txCache;
     private KetaTransactionManager transactionManager;
     private KetaLeaseManager leaseManager;
+    private KetaWatchManager watchManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
 
     private static KetaEngine INSTANCE;
@@ -90,7 +92,7 @@ public class KetaEngine implements Configurable, Closeable {
         this.config = config;
     }
 
-    public void init(CacheUpdateHandler<byte[], VersionedValues> updateHandler) {
+    public void init(CacheUpdateHandler<byte[], VersionedValues> notifier) {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
@@ -138,7 +140,7 @@ public class KetaEngine implements Configurable, Closeable {
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             Comparator<byte[]> cmp = VersionedCache.BYTES_COMPARATOR;
             cache = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.ByteArray(), new KafkaValueSerde(), updateHandler, topic, cmp);
+                new KafkaCacheConfig(configs), Serdes.ByteArray(), new KafkaValueSerde(), notifier, topic, cmp);
         } else {
             cache = new InMemoryCache<>();
         }
@@ -149,6 +151,7 @@ public class KetaEngine implements Configurable, Closeable {
         TimestampStorage timestampStorage = new KetaTimestampStorage(timestamps);
         transactionManager = KetaTransactionManager.newInstance(commitTable, timestampStorage);
         leaseManager = new KetaLeaseManager(txCache, leases);
+        watchManager = new KetaWatchManager();
 
         boolean isInitialized = initialized.compareAndSet(false, true);
         if (!isInitialized) {
@@ -176,6 +179,10 @@ public class KetaEngine implements Configurable, Closeable {
 
     public KetaLeaseManager getLeaseManager() {
         return leaseManager;
+    }
+
+    public KetaWatchManager getWatchManager() {
+        return watchManager;
     }
 
     @Override

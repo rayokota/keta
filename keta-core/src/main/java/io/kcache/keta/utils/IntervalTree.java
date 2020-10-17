@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.server.utils;
+package io.kcache.keta.utils;
 
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 
+@NotThreadSafe
 public class IntervalTree<K extends Comparable<K>, V> implements Iterable<IntervalTree.Node<K, V>> {
     /**
      * Return the number of intervals in the tree.

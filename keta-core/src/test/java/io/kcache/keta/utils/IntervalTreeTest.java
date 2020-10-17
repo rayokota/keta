@@ -15,9 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.server.utils;
+package io.kcache.keta.utils;
 
 import com.google.common.collect.Range;
+import io.kcache.keta.utils.IntervalTree;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
