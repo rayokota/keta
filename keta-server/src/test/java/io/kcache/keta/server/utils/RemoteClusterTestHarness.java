@@ -17,7 +17,9 @@ package io.kcache.keta.server.utils;
 import com.google.common.io.Files;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.server.KetaNotifier;
 import io.kcache.keta.utils.ClusterTestHarness;
+import io.vertx.core.Vertx;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,16 +53,16 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     }
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp(Vertx vertx) throws Exception {
         super.setUp();
         if (tempDir == null) {
             tempDir = Files.createTempDir();
         }
         props = new Properties();
-        setUpServer();
+        setUpServer(vertx);
     }
 
-    private void setUpServer() {
+    private void setUpServer(Vertx vertx) {
         try {
             serverPort = choosePort();
             injectKetaProperties(props);
@@ -74,7 +76,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             LOG.info("Leader elected, starting server...");
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
-            engine.init();
+            engine.init(new KetaNotifier(vertx.eventBus()));
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);

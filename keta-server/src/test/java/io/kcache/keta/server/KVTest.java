@@ -70,8 +70,8 @@ public class KVTest extends RemoteClusterTestHarness {
     }
 
     @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(Vertx vertx) throws Exception {
+        super.setUp(vertx);
     }
 
     @AfterEach

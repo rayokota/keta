@@ -41,7 +41,7 @@ public class KetaMain extends AbstractVerticle {
         KetaEngine engine = KetaEngine.getInstance();
         engine.configure(config);
         Vertx vertx = Vertx.vertx();
-        engine.init();
+        engine.init(new KetaNotifier(vertx.eventBus()));
         vertx.deployVerticle(new KetaMain());
     }
 }
