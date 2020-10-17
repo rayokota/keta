@@ -313,7 +313,7 @@ public class SnapshotFilterImpl implements SnapshotFilter {
     }
 
     public List<VersionedValue> get(KetaTransaction transaction, byte[] key, VersionedValues versionedValues) {
-        List<VersionedValue> result = versionedCache.getAll(versionedValues, 0, Long.MAX_VALUE);
+        List<VersionedValue> result = VersionedCache.getAll(versionedValues, 0, Long.MAX_VALUE);
         return get(transaction, key, result);
     }
 

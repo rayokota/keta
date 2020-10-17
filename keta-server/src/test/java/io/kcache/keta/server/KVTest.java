@@ -47,6 +47,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static io.kcache.keta.server.utils.TestUtils.bytesOf;
+import static io.kcache.keta.server.utils.TestUtils.randomString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
@@ -66,7 +68,7 @@ public class KVTest extends RemoteClusterTestHarness {
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(new KetaMain(), testContext.completing());
         //TODO
-        kvClient = Client.builder().endpoints("http://127.0.0.1:8080").build().getKVClient();
+        kvClient = Client.builder().endpoints(ENDPOINTS).build().getKVClient();
     }
 
     @BeforeEach
@@ -265,13 +267,5 @@ public class KVTest extends RemoteClusterTestHarness {
         GetResponse getResp2 = kvClient.get(abc).get();
         assertThat(getResp2.getKvs()).hasSize(1);
         assertThat(getResp2.getKvs().get(0).getValue().toString(UTF_8)).isEqualTo(oneTwoThree.toString(UTF_8));
-    }
-
-    public static ByteSequence bytesOf(final String string) {
-        return ByteSequence.from(string, UTF_8);
-    }
-
-    public static String randomString() {
-        return java.util.UUID.randomUUID().toString();
     }
 }

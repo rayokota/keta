@@ -42,9 +42,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             public void onNext(WatchRequest request) {
                 LOG.debug("received a watchRequest {}", request);
                 switch (request.getRequestUnionCase()) {
-
                     case CREATE_REQUEST:
-
                         handleCreateRequest(request.getCreateRequest(), responseObserver);
                         break;
                     case CANCEL_REQUEST:
@@ -66,11 +64,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
             }
         };
-    }
-
-    private void handleCancelRequest(WatchCancelRequest cancelRequest) {
-        LOG.info("cancel watch");
-        //this.recordLayer.deleteWatch(tenantId, cancelRequest.getWatchId());
     }
 
     private void handleCreateRequest(WatchCreateRequest createRequest, StreamObserver<WatchResponse> responseObserver) {
@@ -96,5 +89,11 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             }
         });
         LOG.info("successfully registered new Watch");
+    }
+
+    private void handleCancelRequest(WatchCancelRequest cancelRequest) {
+        LOG.info("cancel watch");
+        KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
+        watchMgr.delete(cancelRequest.getWatchId());
     }
 }

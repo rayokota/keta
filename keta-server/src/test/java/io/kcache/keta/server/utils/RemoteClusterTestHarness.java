@@ -40,6 +40,8 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemoteClusterTestHarness.class);
 
+    public static final String ENDPOINTS = "http://127.0.0.1:8080";
+
     protected File tempDir;
     protected Properties props;
     protected Integer serverPort;

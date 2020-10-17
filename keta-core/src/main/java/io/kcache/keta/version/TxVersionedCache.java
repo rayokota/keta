@@ -214,9 +214,10 @@ public class TxVersionedCache implements Closeable {
         return filtered;
     }
 
-    public List<VersionedValue> getVersions(byte[] key, VersionedValues versionedValues) {
+    public List<VersionedValue> getVersions(byte[] key, VersionedValues versionedValues, boolean includeDeleted) {
         KetaTransaction tx = KetaTransaction.currentTransaction();
-        return filterDeleted(((SnapshotFilterImpl)snapshotFilter).get(tx, key, versionedValues));
+        List<VersionedValue> versions = ((SnapshotFilterImpl)snapshotFilter).get(tx, key, versionedValues);
+        return includeDeleted ? versions : filterDeleted(versions);
     }
 
     public KeyValueIterator<byte[], VersionedValue> range(

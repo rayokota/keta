@@ -17,7 +17,6 @@
 package io.kcache.keta;
 
 import io.kcache.Cache;
-import io.kcache.CacheUpdateHandler;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.keta.kafka.serialization.KafkaLeaseSerde;

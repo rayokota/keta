@@ -74,7 +74,7 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
         Transaction tx = null;
         try {
             tx = txMgr.begin();
-            List<VersionedValue> newValues = txCache.getVersions(key, value);
+            List<VersionedValue> newValues = txCache.getVersions(key, value, true);
             if (newValues.isEmpty()) {
                 return;
             }
@@ -92,7 +92,7 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
                         .setValue(ByteString.copyFrom(currValue.getValue()))
                         .build());
             }
-            List<VersionedValue> oldValues = txCache.getVersions(key, oldValue);
+            List<VersionedValue> oldValues = txCache.getVersions(key, oldValue, true);
             if (!oldValues.isEmpty()) {
                 VersionedValue prevValue = oldValues.get(0);
                 if (!prevValue.isDeleted()) {
@@ -118,33 +118,4 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
             // TODO
         }
     }
-
-    /*
-    @Override
-
-  @Override
-  public void publish(String tenant, long watchID, EtcdIoKvProto.Event event) {
-    log.info("publishing to {}", tenant + watchID);
-    this.eventBus.publish(tenant + watchID, event.toByteArray());
-  }
-
-  @Override
-  public void watch(String tenant, long watchID, Handler<EtcdIoKvProto.Event> handler) {
-    log.info("listening on {}", tenant + watchID);
-    this.eventBus.consumer(tenant + watchID, message -> {
-      log.info("received a message from the eventbus: '{}'", message);
-      if (message.body() instanceof byte[]) {
-        try {
-          EtcdIoKvProto.Event event = EtcdIoKvProto.Event.newBuilder().mergeFrom((byte[]) message.body()).build();
-          handler.handle(event);
-        } catch (InvalidProtocolBufferException e) {
-          log.error("cannot create Event: '{}', skipping", e.toString());
-        }
-      } else {
-        log.error("received a message wich is not byte[], skipping");
-      }
-    });
-  }
-
-     */
 }

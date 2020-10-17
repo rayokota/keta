@@ -45,6 +45,7 @@
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
         <jetcd.version>0.5.3</jetcd.version>
+        <junit-jupiter.version>5.7.0</junit-jupiter.version>
         <kafka.version>2.6.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
@@ -270,13 +271,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>5.7.0</version>
+                <version>${junit-jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.7.0</version>
+                <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit-jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

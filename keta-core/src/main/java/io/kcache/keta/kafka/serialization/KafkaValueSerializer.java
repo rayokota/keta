@@ -46,8 +46,8 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
     private final EncoderFactory encoderFactory = EncoderFactory.get();
-    private Schema avroSchema;
-    private DatumWriter<Object> writer;
+    private final Schema avroSchema;
+    private final DatumWriter<Object> writer;
 
     public KafkaValueSerializer(Schema avroSchema) {
         this.avroSchema = avroSchema;

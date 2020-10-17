@@ -39,7 +39,7 @@ public class KetaLeaseManager {
 
     private final TxVersionedCache txVersionedCache;
     private final Cache<Long, Lease> cache;
-    private ExpiringMap<Long, LeaseKeys> expiringMap;
+    private final ExpiringMap<Long, LeaseKeys> expiringMap;
 
     public KetaLeaseManager(TxVersionedCache txVersionedCache, Cache<Long, Lease> cache) {
         this.txVersionedCache = txVersionedCache;

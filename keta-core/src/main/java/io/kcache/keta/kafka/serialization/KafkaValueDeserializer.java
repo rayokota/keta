@@ -42,7 +42,7 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
     private final static Logger LOG = LoggerFactory.getLogger(KafkaValueDeserializer.class);
 
     private final DecoderFactory decoderFactory = DecoderFactory.get();
-    private DatumReader<GenericRecord> reader;
+    private final DatumReader<GenericRecord> reader;
 
     public KafkaValueDeserializer(Schema avroSchema) {
         this.reader = new GenericDatumReader<>(avroSchema, avroSchema, GENERIC);
@@ -79,6 +79,7 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
         return buffer;
     }
 
+    @SuppressWarnings("unchecked")
     private VersionedValues toValue(GenericRecord genericRecord) {
         NavigableMap<Long, VersionedValue> map = new TreeMap<>();
         Integer generationId = (Integer) genericRecord.get(0);
