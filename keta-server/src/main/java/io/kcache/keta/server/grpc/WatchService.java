@@ -78,8 +78,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);
         long watchId = watch.getId();
-        LOG.info("successfully registered new Watch");
-        watchMgr.getNotifier().watch(watchId, event -> {
+        watchMgr.watch(watch, event -> {
             LOG.info("inside WatchService");
             try {
                 responseObserver
@@ -96,5 +95,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                 LOG.error("cought an error writing response: {}", e.getMessage());
             }
         });
+        LOG.info("successfully registered new Watch");
     }
 }

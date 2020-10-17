@@ -17,6 +17,7 @@
  */
 package io.kcache.keta.watch;
 
+import io.etcd.jetcd.api.Event;
 import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.Lease;
@@ -24,6 +25,7 @@ import io.kcache.keta.lease.LeaseKeys;
 import io.kcache.keta.notifier.Notifier;
 import io.kcache.keta.utils.IntervalTree;
 import io.kcache.keta.version.TxVersionedCache;
+import io.vertx.core.Handler;
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
 import org.apache.kafka.common.utils.Bytes;
@@ -57,12 +59,12 @@ public class KetaWatchManager {
         this.watchers = new HashSet<>();
     }
 
-    public Notifier getNotifier() {
-        return notifier;
-    }
-
     public Watch add(Watch watch) {
         return null;
+    }
+
+    public void watch(Watch watch, Handler<Event> handler) {
+        notifier.watch(watch.getId(), handler);
     }
 
     public Set<Watch> getWatches(byte[] key) {
