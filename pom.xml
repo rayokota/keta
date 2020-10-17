@@ -404,10 +404,6 @@
                 <executions>
                     <execution>
                         <id>compile</id>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
-                            <clearOutputDirectory>false</clearOutputDirectory>
-                        </configuration>
                         <goals>
                             <goal>compile</goal>
                             <goal>compile-custom</goal>
