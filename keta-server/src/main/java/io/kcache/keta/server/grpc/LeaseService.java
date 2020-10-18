@@ -66,6 +66,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         }
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         leaseMgr.revoke(id);
+        // TODO handle error
         responseObserver.onNext(LeaseRevokeResponse.newBuilder().build());
         responseObserver.onCompleted();
     }
@@ -78,6 +79,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 long id = value.getID();
                 KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
                 LeaseKeys lease = leaseMgr.renew(id);
+                // TODO handle error
                 responseObserver.onNext(LeaseKeepAliveResponse.newBuilder().setID(id).setTTL(lease.getTtl()).build());
             }
 
@@ -98,9 +100,10 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         long id = request.getID();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         LeaseKeys lease = leaseMgr.get(id);
+        // TODO handle error
         LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
             .setID(id)
-            .setTTL(lease.getExpiry() - System.currentTimeMillis())
+            .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
             .setGrantedTTL(lease.getTtl());
         if (request.getKeys()) {
             builder.addAllKeys(lease.getKeys().stream()

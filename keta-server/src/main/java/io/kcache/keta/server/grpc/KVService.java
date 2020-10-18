@@ -74,7 +74,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            // TODO
+            throw new IllegalStateException(e);
         }
     }
 
@@ -125,7 +125,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            // TODO
+            throw new IllegalStateException(e);
         }
     }
 
@@ -182,7 +182,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            // TODO
+            throw new IllegalStateException(e);
         }
     }
 
@@ -241,7 +241,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            // TODO
+            throw new IllegalStateException(e);
         }
     }
 
