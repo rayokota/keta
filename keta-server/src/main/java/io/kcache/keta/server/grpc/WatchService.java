@@ -17,6 +17,7 @@
  */
 package io.kcache.keta.server.grpc;
 
+import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.WatchCancelRequest;
 import io.etcd.jetcd.api.WatchCreateRequest;
 import io.etcd.jetcd.api.WatchGrpc;
@@ -76,6 +77,8 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             try {
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
+                        // TODO add headers everywhere
+                        .setHeader(ResponseHeader.newBuilder().build())
                         .addEvents(event)
                         .setWatchId(watchId)
                         .build());

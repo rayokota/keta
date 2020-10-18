@@ -81,6 +81,7 @@ public class KetaLeaseManager {
     }
 
     private void revoke(LeaseKeys lk) {
+        // TODO check that is master
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {

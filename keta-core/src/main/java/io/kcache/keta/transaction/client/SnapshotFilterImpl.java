@@ -309,19 +309,11 @@ public class SnapshotFilterImpl implements SnapshotFilter {
     @Override
     public List<VersionedValue> get(KetaTransaction transaction, byte[] key) {
         List<VersionedValue> result = versionedCache.get(key, 0, Long.MAX_VALUE);
-        return get(transaction, key, result);
-    }
 
-    public List<VersionedValue> get(KetaTransaction transaction, byte[] key, VersionedValues versionedValues) {
-        List<VersionedValue> result = VersionedCache.getAll(versionedValues, 0, Long.MAX_VALUE);
-        return get(transaction, key, result);
-    }
-
-    private List<VersionedValue> get(KetaTransaction transaction, byte[] key, List<VersionedValue> versions) {
         try {
             List<VersionedValue> filteredKeyValues = Collections.emptyList();
-            if (!versions.isEmpty()) {
-                filteredKeyValues = filterCellsForSnapshot(transaction, key, versions);
+            if (!result.isEmpty()) {
+                filteredKeyValues = filterCellsForSnapshot(transaction, key, result);
             }
 
             return filteredKeyValues;

@@ -12,14 +12,19 @@ import io.vertx.core.Vertx;
 import io.vertx.grpc.VertxServer;
 import io.vertx.grpc.VertxServerBuilder;
 
+import java.util.logging.Logger;
+
 public class KetaMain extends AbstractVerticle {
+    private static final Logger LOG = Logger.getLogger(KetaMain.class.getName());
+
+    private int port = 8080;
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         VertxServerBuilder serverBuilder = VertxServerBuilder
             .forAddress(vertx,
                 this.context.config().getString("listen-address", "localhost"),
-                this.context.config().getInteger("listen-port", 8080))
+                this.context.config().getInteger("listen-port", port))
             .addService(new KVService())
             .addService(new LeaseService())
             .addService(new WatchService());
@@ -28,10 +33,11 @@ public class KetaMain extends AbstractVerticle {
 
         server.start(ar -> {
             if (ar.succeeded()) {
-                System.out.println("gRPC service started");
+                LOG.info("Server started, listening on " + port);
+                LOG.info("Ketsie is at your service...");
                 startPromise.complete();
             } else {
-                System.out.println("Could not start server " + ar.cause().getMessage());
+                LOG.info("Could not start server " + ar.cause().getLocalizedMessage());
                 startPromise.fail(ar.cause());
             }
         });
