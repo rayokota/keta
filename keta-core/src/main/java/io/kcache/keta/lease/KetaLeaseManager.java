@@ -60,6 +60,9 @@ public class KetaLeaseManager {
                 id = newId;
             }
         }
+        if (cache.containsKey(id)) {
+            throw new IllegalArgumentException("Lease with id " + id + " already exists");
+        }
         cache.put(lease.getId(), lease);
         LeaseKeys lk = new LeaseKeys(lease);
         // TODO check expiry is still valid

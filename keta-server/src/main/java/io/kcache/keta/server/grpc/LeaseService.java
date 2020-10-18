@@ -44,11 +44,17 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
         Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
-        LeaseKeys lk = leaseMgr.grant(lease);
-        responseObserver.onNext(LeaseGrantResponse.newBuilder()
-            .setID(lk.getLease().getId())
-            .setTTL(lk.getLease().getTtl())
-            .build());
+        try {
+            LeaseKeys lk = leaseMgr.grant(lease);
+            responseObserver.onNext(LeaseGrantResponse.newBuilder()
+                .setID(lk.getLease().getId())
+                .setTTL(lk.getLease().getTtl())
+                .build());
+        } catch (IllegalArgumentException e) {
+            responseObserver.onNext(LeaseGrantResponse.newBuilder()
+                .setError(e.getLocalizedMessage())
+                .build());
+        }
         responseObserver.onCompleted();
     }
 
@@ -92,12 +98,16 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         long id = request.getID();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         LeaseKeys lease = leaseMgr.get(id);
-        responseObserver.onNext(LeaseTimeToLiveResponse.newBuilder()
+        LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
             .setID(id)
-            .setTTL(lease.getTtl())
-            .addAllKeys(lease.getKeys().stream().map(k -> ByteString.copyFrom(k.get())).collect(Collectors.toList()))
-            .setGrantedTTL(lease.getTtl())
-            .build());
+            .setTTL(lease.getExpiry() - System.currentTimeMillis())
+            .setGrantedTTL(lease.getTtl());
+        if (request.getKeys()) {
+            builder.addAllKeys(lease.getKeys().stream()
+                .map(k -> ByteString.copyFrom(k.get()))
+                .collect(Collectors.toList()));
+        }
+        responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
     }
 }

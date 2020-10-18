@@ -33,6 +33,10 @@ import io.kcache.keta.watch.Watch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class WatchService extends WatchGrpc.WatchImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(LeaseService.class);
 
@@ -73,22 +77,29 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);
         long watchId = watch.getId();
+        List<WatchCreateRequest.FilterType> filters = createRequest.getFiltersList();
         boolean prevKv = createRequest.getPrevKv();
         watchMgr.watch(watch, event -> {
             LOG.info("inside WatchService");
             try {
-                if (!prevKv) {
-                    event = Event.newBuilder()
+                List<Event> events = Collections.singletonList(event);
+                events = events.stream()
+                    .filter(e -> (e.getType() == Event.EventType.PUT
+                        && !filters.contains(WatchCreateRequest.FilterType.NOPUT))
+                        || (e.getType() == Event.EventType.DELETE
+                        && !filters.contains(WatchCreateRequest.FilterType.NODELETE)))
+                    .map(e -> prevKv ? e : Event.newBuilder()
                         .mergeFrom(event)
                         .clearPrevKv()
-                        .build();
-                }
+                        .build())
+                    .collect(Collectors.toList());
+                ;
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
                         // TODO add headers everywhere
                         .setHeader(ResponseHeader.newBuilder().build())
                         .setWatchId(watchId)
-                        .addEvents(event)
+                        .addAllEvents(events)
                         .build());
             } catch (StatusRuntimeException e) {
                 if (e.getStatus().equals(Status.CANCELLED)) {
