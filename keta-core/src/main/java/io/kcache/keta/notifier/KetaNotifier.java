@@ -71,7 +71,6 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
     public void handleUpdate(byte[] key, VersionedValues value, VersionedValues oldValue, TopicPartition tp, long offset, long timestamp) {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         Iterator<Map.Entry<Long, VersionedValue>> newValues = value.getValues().descendingMap().entrySet().iterator();
-        Iterator<Map.Entry<Long, VersionedValue>> oldValues = oldValue.getValues().descendingMap().entrySet().iterator();
         if (!newValues.hasNext()) {
             return;
         }
@@ -81,13 +80,16 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
             return;
         }
         VersionedValue prevValue = null;
-        while (oldValues.hasNext()) {
-            VersionedValue val = oldValues.next().getValue();
-            long commit = val.getCommit();
-            if (commit == INVALID_TX || commit == PENDING_TX || commit == currCommit) {
-                continue;
+        if (oldValue != null) {
+            Iterator<Map.Entry<Long, VersionedValue>> oldValues = oldValue.getValues().descendingMap().entrySet().iterator();
+            while (oldValues.hasNext()) {
+                VersionedValue val = oldValues.next().getValue();
+                long commit = val.getCommit();
+                if (commit == INVALID_TX || commit == PENDING_TX || commit == currCommit) {
+                    continue;
+                }
+                prevValue = val;
             }
-            prevValue = val;
         }
         Event.Builder builder = Event.newBuilder();
         if (currValue.isDeleted()) {

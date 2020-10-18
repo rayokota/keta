@@ -93,9 +93,11 @@ public class KetaEngine implements Configurable, Closeable {
     }
 
     public void init(KetaNotifier notifier) {
+        watchManager = new KetaWatchManager(notifier);
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
+
         if (bootstrapServers != null) {
             String topic = "_commits";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -108,6 +110,7 @@ public class KetaEngine implements Configurable, Closeable {
         }
         commits = Caches.concurrentCache(commits);
         commits.init();
+
         if (bootstrapServers != null) {
             String topic = "_timestamps";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -120,6 +123,7 @@ public class KetaEngine implements Configurable, Closeable {
         }
         timestamps = Caches.concurrentCache(timestamps);
         timestamps.init();
+
         if (bootstrapServers != null) {
             String topic = "_leases";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -132,6 +136,7 @@ public class KetaEngine implements Configurable, Closeable {
         }
         leases = Caches.concurrentCache(leases);
         leases.init();
+
         Cache<byte[], VersionedValues> cache;
         if (bootstrapServers != null) {
             String topic = "_keta";
@@ -151,7 +156,6 @@ public class KetaEngine implements Configurable, Closeable {
         TimestampStorage timestampStorage = new KetaTimestampStorage(timestamps);
         transactionManager = KetaTransactionManager.newInstance(commitTable, timestampStorage);
         leaseManager = new KetaLeaseManager(txCache, leases);
-        watchManager = new KetaWatchManager(notifier);
 
         boolean isInitialized = initialized.compareAndSet(false, true);
         if (!isInitialized) {
