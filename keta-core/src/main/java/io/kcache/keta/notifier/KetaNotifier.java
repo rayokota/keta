@@ -29,6 +29,7 @@ import static io.kcache.keta.version.TxVersionedCache.PENDING_TX;
 public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>, Notifier {
     private static final Logger LOG = LoggerFactory.getLogger(KetaNotifier.class);
 
+    // TODO switch to Guava?
     private final EventBus eventBus;
 
     public KetaNotifier(EventBus eventBus) {
@@ -48,7 +49,8 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
             if (message.body() instanceof byte[]) {
                 try {
                     Event event = Event.newBuilder()
-                        .mergeFrom((byte[]) message.body()).build();
+                        .mergeFrom((byte[]) message.body())
+                        .build();
                     handler.handle(event);
                 } catch (InvalidProtocolBufferException e) {
                     LOG.error("cannot create Event: '{}', skipping", e.toString());
@@ -74,13 +76,15 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
             return;
         }
         VersionedValue currValue = newValues.next().getValue();
-        if (currValue.getCommit() == INVALID_TX || currValue.getCommit() == PENDING_TX) {
+        long currCommit = currValue.getCommit();
+        if (currCommit == INVALID_TX || currCommit == PENDING_TX) {
             return;
         }
         VersionedValue prevValue = null;
         while (oldValues.hasNext()) {
             VersionedValue val = oldValues.next().getValue();
-            if (currValue.getCommit() == INVALID_TX || currValue.getCommit() == PENDING_TX) {
+            long commit = val.getCommit();
+            if (commit == INVALID_TX || commit == PENDING_TX || commit == currCommit) {
                 continue;
             }
             prevValue = val;

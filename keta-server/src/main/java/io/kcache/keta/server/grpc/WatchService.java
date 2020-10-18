@@ -17,6 +17,7 @@
  */
 package io.kcache.keta.server.grpc;
 
+import io.etcd.jetcd.api.Event;
 import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.WatchCancelRequest;
 import io.etcd.jetcd.api.WatchCreateRequest;
@@ -47,7 +48,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                         handleCreateRequest(request.getCreateRequest(), responseObserver);
                         break;
                     case CANCEL_REQUEST:
-                        handleCancelRequest(request.getCancelRequest());
+                        handleCancelRequest(request.getCancelRequest(), responseObserver);
                         break;
                     case REQUESTUNION_NOT_SET:
                         LOG.warn("received an empty watch request");
@@ -72,15 +73,22 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);
         long watchId = watch.getId();
+        boolean prevKv = createRequest.getPrevKv();
         watchMgr.watch(watch, event -> {
             LOG.info("inside WatchService");
             try {
+                if (!prevKv) {
+                    event = Event.newBuilder()
+                        .mergeFrom(event)
+                        .clearPrevKv()
+                        .build();
+                }
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
                         // TODO add headers everywhere
                         .setHeader(ResponseHeader.newBuilder().build())
-                        .addEvents(event)
                         .setWatchId(watchId)
+                        .addEvents(event)
                         .build());
             } catch (StatusRuntimeException e) {
                 if (e.getStatus().equals(Status.CANCELLED)) {
@@ -91,12 +99,24 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                 LOG.error("cought an error writing response: {}", e.getMessage());
             }
         });
+        responseObserver.onNext(WatchResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder().build())
+            .setWatchId(watchId)
+            .setCreated(true)
+            .build());
         LOG.info("successfully registered new Watch");
     }
 
-    private void handleCancelRequest(WatchCancelRequest cancelRequest) {
+    private void handleCancelRequest(WatchCancelRequest cancelRequest, StreamObserver<WatchResponse> responseObserver) {
         LOG.info("cancel watch");
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
-        watchMgr.delete(cancelRequest.getWatchId());
+        long watchId = cancelRequest.getWatchId();
+        watchMgr.delete(watchId);
+        responseObserver.onNext(WatchResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder().build())
+            .setWatchId(watchId)
+            .setCanceled(true)
+            // TODO cancel reason
+            .build());
     }
 }
