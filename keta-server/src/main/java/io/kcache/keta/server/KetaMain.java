@@ -1,5 +1,7 @@
 package io.kcache.keta.server;
 
+import io.grpc.ServerBuilder;
+import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.server.grpc.KVService;
@@ -12,6 +14,7 @@ import io.vertx.core.Vertx;
 import io.vertx.grpc.VertxServer;
 import io.vertx.grpc.VertxServerBuilder;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class KetaMain extends AbstractVerticle {
@@ -24,7 +27,11 @@ public class KetaMain extends AbstractVerticle {
         VertxServerBuilder serverBuilder = VertxServerBuilder
             .forAddress(vertx,
                 this.context.config().getString("listen-address", "localhost"),
-                this.context.config().getInteger("listen-port", port))
+                this.context.config().getInteger("listen-port", port));
+
+        NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
+            .permitKeepAliveWithoutCalls(true)
+            .permitKeepAliveTime(5, TimeUnit.SECONDS)
             .addService(new KVService())
             .addService(new LeaseService())
             .addService(new WatchService());
