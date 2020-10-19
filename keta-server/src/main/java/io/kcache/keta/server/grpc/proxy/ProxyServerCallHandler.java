@@ -30,8 +30,7 @@ import io.grpc.Status;
 import java.io.InputStream;
 
 /**
- * A {@link ServerCallHandler} that handles calls for a particular method by delegating to a handler
- * in a {@link ServerServiceDefinition} returned by a factory.
+ * A {@link ServerCallHandler} that handles calls for a particular method.
  *
  * @param <RequestT>  the type of the request payloads
  * @param <ResponseT> the type of the response payloads
@@ -42,7 +41,7 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
     private final ServerMethodDefinition<RequestT, ResponseT> delegateMethod;
 
     /**
-     * Returns a proxy method definition for {@code methodDescriptor}.
+     * Returns a proxy method definition for {@code delegateMethod}.
      *
      * @param delegateMethod the delegate method definition
      */
@@ -72,6 +71,18 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
         return new ServerCallListenerAdapter(delegateListener);
     }
 
+    private static final Marshaller<InputStream> IDENTITY_MARSHALLER =
+        new Marshaller<InputStream>() {
+            @Override
+            public InputStream stream(InputStream value) {
+                return value;
+            }
+
+            @Override
+            public InputStream parse(InputStream stream) {
+                return stream;
+            }
+        };
     /**
      * A {@link Listener} that adapts {@code Listener<RequestT>} to {@code Listener<InputStream>}.
      */
@@ -149,17 +160,4 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
             return delegate.isCancelled();
         }
     }
-
-    public static final Marshaller<InputStream> IDENTITY_MARSHALLER =
-        new Marshaller<InputStream>() {
-            @Override
-            public InputStream stream(InputStream value) {
-                return value;
-            }
-
-            @Override
-            public InputStream parse(InputStream stream) {
-                return stream;
-            }
-        };
 }
