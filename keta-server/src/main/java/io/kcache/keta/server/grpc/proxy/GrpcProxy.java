@@ -17,54 +17,56 @@
  */
 package io.kcache.keta.server.grpc.proxy;
 
-import java.io.InputStream;
-import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.Optional;
-
+import com.google.common.io.ByteStreams;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
-import io.grpc.MethodDescriptor.Marshaller;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
-import io.grpc.Channel;
-import io.grpc.ServiceDescriptor;
-import io.grpc.stub.ClientCalls;
-import io.grpc.stub.ServerCalls;
-import io.grpc.stub.StreamObserver;
-import io.kcache.keta.server.leader.KetaIdentity;
+import io.grpc.Status;
 
-/**
- * Factory for grpc proxy, proxifying all calls to a delegate server.
- */
-public class GrpcProxy {
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
-    private KetaIdentity target;
-    private ManagedChannel delegateServer;
-    private final CallOptions callOptions;
+/** A grpc-level proxy. */
+public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
+    private static final Logger logger = Logger.getLogger(GrpcProxy.class.getName());
 
-    public GrpcProxy(CallOptions callOptions) {
-        this.target = null;
-        this.delegateServer = null;
-        this.callOptions = callOptions;
+    private String target;
+    private ManagedChannel channel;
+
+    public GrpcProxy(String target) {
+        setTarget(target);
     }
 
-    public synchronized boolean isLeader() {
-        return target == null;
+    public synchronized String getTarget() {
+        return target;
     }
 
-    public synchronized void setTarget(KetaIdentity target) {
+    public synchronized void setTarget(String target) {
         if (!Objects.equals(this.target, target)) {
-            if (delegateServer != null) {
-                delegateServer.shutdown();
-                delegateServer = null;
+            if (channel != null) {
+                channel.shutdown();
+                channel = null;
             }
             if (target != null) {
-                delegateServer = ManagedChannelBuilder.forAddress(target.getHost(), target.getPort())
+                channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
                     .build();
             }
@@ -72,101 +74,184 @@ public class GrpcProxy {
         }
     }
 
-    public synchronized Channel getDelegateServer() {
-        return delegateServer;
+    public synchronized ManagedChannel getChannel() {
+        return channel;
     }
 
-    public CallOptions getCallOptions() {
-        return callOptions;
+    @Override
+    public ServerCall.Listener<ReqT> startCall(
+        ServerCall<ReqT, RespT> serverCall, Metadata headers) {
+        ClientCall<ReqT, RespT> clientCall
+            = getChannel().newCall(serverCall.getMethodDescriptor(), CallOptions.DEFAULT);
+        CallProxy<ReqT, RespT> proxy = new CallProxy<>(serverCall, clientCall);
+        clientCall.start(proxy.clientCallListener, headers);
+        serverCall.request(1);
+        clientCall.request(1);
+        return proxy.serverCallListener;
     }
 
-    /**
-     * Creates a server service definition for a service proxifying all calls to a delegate server
-     *
-     * @param serviceDefinition the service definition
-     * @return a server definition for the proxy
-     */
-    public ServerServiceDefinition buildServiceProxy(ServerServiceDefinition serviceDefinition) {
-        ServiceDescriptor serviceDescriptor = serviceDefinition.getServiceDescriptor();
-        ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceDescriptor.getName());
-        serviceDescriptor.getMethods().forEach(m -> {
-            MethodDescriptor<InputStream, InputStream> proxyMethod =
-                MethodDescriptor.<InputStream, InputStream>newBuilder()
-                    .setType(m.getType())
-                    .setFullMethodName(m.getFullMethodName())
-                    .setRequestMarshaller(IDENTITY_MARSHALLER)
-                    .setResponseMarshaller(IDENTITY_MARSHALLER)
-                    .build();
-            builder.addMethod(createProxyMethodDefinition(serviceDefinition, proxyMethod));
-        });
-        return builder.build();
-    }
+    private static class CallProxy<ReqT, RespT> {
+        final RequestProxy serverCallListener;
+        final ResponseProxy clientCallListener;
 
-    private ServerMethodDefinition<InputStream, InputStream> createProxyMethodDefinition(
-        ServerServiceDefinition serviceDefinition,
-        MethodDescriptor<InputStream, InputStream> method) {
-        ServerMethodDefinition<?, ?> methodDefinition = serviceDefinition.getMethod(method.getFullMethodName());
-        Supplier<ClientCall<InputStream, InputStream>> newClientCall =
-            () -> getDelegateServer().newCall(method, getCallOptions());
-
-        ServerCallHandler<InputStream, InputStream> callHandler = null;
-        switch (method.getType()) {
-            case UNARY:
-                callHandler = ServerCalls.asyncUnaryCall(
-                    new ServerCalls.UnaryMethod<InputStream, InputStream>() {
-                        @Override
-                        public void invoke(InputStream request, StreamObserver<InputStream> responseObserver) {
-                            ClientCalls.asyncUnaryCall(newClientCall.get(), request, responseObserver);
-                        }
-                    });
-                break;
-            case CLIENT_STREAMING:
-                callHandler = ServerCalls.asyncClientStreamingCall(
-                    new ServerCalls.ClientStreamingMethod<InputStream, InputStream>() {
-                        @Override
-                        public StreamObserver<InputStream> invoke(StreamObserver<InputStream> responseObserver) {
-                            return ClientCalls.asyncClientStreamingCall(newClientCall.get(), responseObserver);
-                        }
-                    });
-                break;
-            case SERVER_STREAMING:
-                callHandler = ServerCalls.asyncServerStreamingCall(
-                    new ServerCalls.ServerStreamingMethod<InputStream, InputStream>() {
-                        @Override
-                        public void invoke(InputStream request, StreamObserver<InputStream> responseObserver) {
-                            ClientCalls.asyncServerStreamingCall(newClientCall.get(), request, responseObserver);
-                        }
-                    });
-                break;
-            case BIDI_STREAMING:
-                callHandler = ServerCalls.asyncBidiStreamingCall(
-                    new ServerCalls.BidiStreamingMethod<InputStream, InputStream>() {
-                        @Override
-                        public StreamObserver<InputStream> invoke(StreamObserver<InputStream> responseObserver) {
-                            return ClientCalls.asyncBidiStreamingCall(newClientCall.get(), responseObserver);
-                        }
-                    });
-                break;
-            case UNKNOWN:
-                throw new IllegalArgumentException(method.getFullMethodName() + " has unknown type");
+        public CallProxy(ServerCall<ReqT, RespT> serverCall, ClientCall<ReqT, RespT> clientCall) {
+            serverCallListener = new RequestProxy(clientCall);
+            clientCallListener = new ResponseProxy(serverCall);
         }
-        ProxyServerCallHandler<?, ?> proxyHandler = new ProxyServerCallHandler<>(
-            methodDefinition.getMethodDescriptor(), headers -> serviceDefinition);
-        callHandler = new ForwardingServerCallHandler<>(this, proxyHandler, callHandler);
-        // create a reverse proxy method which forwards the byte stream to the delegate server
-        return ServerMethodDefinition.create(method, callHandler);
+
+        private class RequestProxy extends ServerCall.Listener<ReqT> {
+            private final ClientCall<ReqT, ?> clientCall;
+            // Hold 'this' lock when accessing
+            private boolean needToRequest;
+
+            public RequestProxy(ClientCall<ReqT, ?> clientCall) {
+                this.clientCall = clientCall;
+            }
+
+            @Override public void onCancel() {
+                clientCall.cancel("Server cancelled", null);
+            }
+
+            @Override public void onHalfClose() {
+                clientCall.halfClose();
+            }
+
+            @Override public void onMessage(ReqT message) {
+                clientCall.sendMessage(message);
+                synchronized (this) {
+                    if (clientCall.isReady()) {
+                        clientCallListener.serverCall.request(1);
+                    } else {
+                        needToRequest = true;
+                    }
+                }
+            }
+
+            @Override public void onReady() {
+                clientCallListener.onServerReady();
+            }
+
+            synchronized void onClientReady() {
+                if (needToRequest) {
+                    clientCallListener.serverCall.request(1);
+                    needToRequest = false;
+                }
+            }
+        }
+
+        private class ResponseProxy extends ClientCall.Listener<RespT> {
+            private final ServerCall<?, RespT> serverCall;
+            // Hold 'this' lock when accessing
+            private boolean needToRequest;
+
+            public ResponseProxy(ServerCall<?, RespT> serverCall) {
+                this.serverCall = serverCall;
+            }
+
+            @Override public void onClose(Status status, Metadata trailers) {
+                serverCall.close(status, trailers);
+            }
+
+            @Override public void onHeaders(Metadata headers) {
+                serverCall.sendHeaders(headers);
+            }
+
+            @Override public void onMessage(RespT message) {
+                serverCall.sendMessage(message);
+                synchronized (this) {
+                    if (serverCall.isReady()) {
+                        serverCallListener.clientCall.request(1);
+                    } else {
+                        needToRequest = true;
+                    }
+                }
+            }
+
+            @Override public void onReady() {
+                serverCallListener.onClientReady();
+            }
+
+            synchronized void onServerReady() {
+                if (needToRequest) {
+                    serverCallListener.clientCall.request(1);
+                    needToRequest = false;
+                }
+            }
+        }
     }
 
-    public static final Marshaller<InputStream> IDENTITY_MARSHALLER =
-        new Marshaller<InputStream>() {
-            @Override
-            public InputStream stream(InputStream value) {
-                return value;
+    private static class ByteMarshaller implements MethodDescriptor.Marshaller<byte[]> {
+        @Override public byte[] parse(InputStream stream) {
+            try {
+                return ByteStreams.toByteArray(stream);
+            } catch (IOException ex) {
+                throw new RuntimeException();
             }
+        }
 
-            @Override
-            public InputStream parse(InputStream stream) {
-                return stream;
+        @Override public InputStream stream(byte[] value) {
+            return new ByteArrayInputStream(value);
+        }
+    }
+
+    public static class Registry extends HandlerRegistry {
+        private final MethodDescriptor.Marshaller<byte[]> byteMarshaller = new ByteMarshaller();
+        private final GrpcProxy<byte[], byte[]> proxy;
+        private final Map<String, ServerMethodDefinition<?, ?>> methods = new HashMap<>();
+
+        public Registry(GrpcProxy<byte[], byte[]> proxy, List<ServerServiceDefinition> services) {
+            this.proxy = proxy;
+            for (ServerServiceDefinition service : services) {
+                for (ServerMethodDefinition<?, ?> method : service.getMethods()) {
+                    methods.put(method.getMethodDescriptor().getFullMethodName(), method);
+                }
             }
-        };
+        }
+
+        @Override
+        public ServerMethodDefinition<?,?> lookupMethod(String methodName, String authority) {
+            if (proxy.getTarget() == null) {
+                return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
+            } else {
+                MethodDescriptor<byte[], byte[]> methodDescriptor
+                    = MethodDescriptor.newBuilder(byteMarshaller, byteMarshaller)
+                    .setFullMethodName(methodName)
+                    .setType(MethodDescriptor.MethodType.UNKNOWN)
+                    .build();
+                return ServerMethodDefinition.create(methodDescriptor, proxy);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        String target = "localhost:8980";
+        logger.info("Proxy will connect to " + target);
+        GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(target);
+        ManagedChannel channel = proxy.getChannel();
+        int port = 8981;
+        Server server = ServerBuilder.forPort(port)
+            .fallbackHandlerRegistry(new Registry(proxy, Collections.emptyList()))
+            .build()
+            .start();
+        logger.info("Proxy started, listening on " + port);
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                server.shutdown();
+                try {
+                    server.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+                if (!server.isTerminated()) {
+                    server.shutdownNow();
+                }
+                channel.shutdownNow();
+            }
+        });
+        server.awaitTermination();
+        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+            System.out.println("Channel didn't shut down promptly");
+        }
+    }
 }

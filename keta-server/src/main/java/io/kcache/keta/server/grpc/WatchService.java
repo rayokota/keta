@@ -93,7 +93,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                         .clearPrevKv()
                         .build())
                     .collect(Collectors.toList());
-                ;
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
                         // TODO add headers everywhere

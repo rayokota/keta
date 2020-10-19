@@ -53,7 +53,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,7 +69,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
     private static final String JMX_PREFIX = "kareldb";
 
     private final KetaEngine engine;
-    private final GrpcProxy proxy;
+    private final GrpcProxy<byte[], byte[]> proxy;
     private final int initTimeout;
     private final String clientId;
     private final ConsumerNetworkClient client;
@@ -78,14 +77,14 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
     private final Metadata metadata;
     private final long retryBackoffMs;
     private final KetaCoordinator coordinator;
-    private KetaIdentity myIdentity;
+    private final KetaIdentity myIdentity;
     private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
     private final CountDownLatch joinedLatch = new CountDownLatch(1);
 
-    public KetaLeaderElector(KetaConfig config, KetaEngine engine, GrpcProxy proxy) throws KetaElectionException {
+    public KetaLeaderElector(KetaConfig config, KetaEngine engine, GrpcProxy<byte[], byte[]> proxy) throws KetaElectionException {
         try {
             this.engine = engine;
             this.proxy = proxy;
@@ -325,7 +324,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
 
     private void setLeader(KetaIdentity leader) {
         KetaIdentity previousLeader = this.leader.getAndSet(leader);
-        proxy.setTarget(isLeader() ? null : leader);
+        proxy.setTarget(leader == null || leader.equals(myIdentity) ? null : leader.getHost() + ":" + leader.getPort());
 
         if (leader != null && !leader.equals(previousLeader) && leader.equals(myIdentity)) {
             LOG.info("Syncing caches...");

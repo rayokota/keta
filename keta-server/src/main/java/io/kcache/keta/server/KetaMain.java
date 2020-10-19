@@ -1,9 +1,6 @@
 package io.kcache.keta.server;
 
-import com.google.protobuf.Descriptors;
-import io.etcd.jetcd.api.JetcdProto;
-import io.etcd.jetcd.api.KVGrpc;
-import io.grpc.CallOptions;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
@@ -22,16 +19,23 @@ import io.vertx.grpc.VertxServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class KetaMain extends AbstractVerticle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaMain.class);
 
-    private GrpcProxy proxy;
-    private KetaIdentity identity;
+    private final GrpcProxy<byte[], byte[]> proxy;
+    private final KetaIdentity identity;
 
-    public KetaMain(GrpcProxy proxy, KetaIdentity identity) {
+    public KetaMain() {
+        this.proxy = null;
+        this.identity = new KetaIdentity("http", "localhost", 8080, true);
+    }
+
+    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaIdentity identity) {
         this.proxy = proxy;
         this.identity = identity;
     }
@@ -43,13 +47,13 @@ public class KetaMain extends AbstractVerticle {
                 this.context.config().getString("listen-address", identity.getHost()),
                 this.context.config().getInteger("listen-port", identity.getPort()));
 
-        Descriptors.ServiceDescriptor kv = JetcdProto.getDescriptor().findServiceByName("KV");
+        List<ServerServiceDefinition> services = Arrays.asList(new KVService().bindService());
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
-            .addService(proxy.buildServiceProxy(new KVService().bindService()))
             .addService(new LeaseService())
-            .addService(new WatchService());
+            .addService(new WatchService())
+            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
 
         VertxServer server = serverBuilder.build();
 
@@ -76,7 +80,7 @@ public class KetaMain extends AbstractVerticle {
             engine.configure(config);
             Vertx vertx = Vertx.vertx();
             engine.init(new KetaNotifier(vertx.eventBus()));
-            GrpcProxy proxy = new GrpcProxy(CallOptions.DEFAULT);
+            GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(null);
             LOG.info("Starting leader election...");
             KetaLeaderElector elector = new KetaLeaderElector(config, engine, proxy);
             elector.init();

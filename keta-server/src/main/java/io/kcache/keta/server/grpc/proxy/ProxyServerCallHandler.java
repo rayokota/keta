@@ -39,66 +39,37 @@ import java.io.InputStream;
 public final class ProxyServerCallHandler<RequestT, ResponseT>
     implements ServerCallHandler<InputStream, InputStream> {
 
-    /**
-     * A factory for the {@link ServerServiceDefinition} that a {@link ProxyServerCallHandler}
-     * delegates to.
-     */
-    public interface ServiceDefinitionFactory {
-        /**
-         * Returns a service definition that contains a {@link ServerCallHandler} for the
-         * {@link ProxyServerCallHandler}'s method.
-         */
-        ServerServiceDefinition getServiceDefinition(Metadata headers);
-    }
-
-    private final MethodDescriptor<RequestT, ResponseT> delegateMethodDescriptor;
-    private final ServiceDefinitionFactory delegateServiceDefinitionFactory;
+    private final ServerMethodDefinition<RequestT, ResponseT> delegateMethod;
 
     /**
      * Returns a proxy method definition for {@code methodDescriptor}.
      *
-     * @param delegateServiceDefinitionFactory factory for the delegate service definition
+     * @param delegateMethod the delegate method definition
      */
     public static <RequestT, ResponseT> ServerMethodDefinition<InputStream, InputStream> proxyMethod(
-        MethodDescriptor<RequestT, ResponseT> delegateMethodDescriptor,
-        ServiceDefinitionFactory delegateServiceDefinitionFactory) {
+        ServerMethodDefinition<RequestT, ResponseT> delegateMethod) {
+        MethodDescriptor<RequestT, ResponseT> delegateMethodDescriptor = delegateMethod.getMethodDescriptor();
         return ServerMethodDefinition.create(
             MethodDescriptor.<InputStream, InputStream>newBuilder()
                 .setType(delegateMethodDescriptor.getType())
                 .setFullMethodName(delegateMethodDescriptor.getFullMethodName())
-                .setRequestMarshaller(GrpcProxy.IDENTITY_MARSHALLER)
-                .setResponseMarshaller(GrpcProxy.IDENTITY_MARSHALLER)
+                .setRequestMarshaller(IDENTITY_MARSHALLER)
+                .setResponseMarshaller(IDENTITY_MARSHALLER)
                 .build(),
-            new ProxyServerCallHandler<>(delegateMethodDescriptor, delegateServiceDefinitionFactory));
+            new ProxyServerCallHandler<>(delegateMethod));
     }
 
-    ProxyServerCallHandler(
-        MethodDescriptor<RequestT, ResponseT> delegateMethodDescriptor,
-        ServiceDefinitionFactory delegateServiceDefinitionFactory) {
-        this.delegateMethodDescriptor = delegateMethodDescriptor;
-        this.delegateServiceDefinitionFactory = delegateServiceDefinitionFactory;
+    ProxyServerCallHandler(ServerMethodDefinition<RequestT, ResponseT> delegateMethod) {
+        this.delegateMethod = delegateMethod;
     }
 
     @Override
     public Listener<InputStream> startCall(ServerCall<InputStream, InputStream> call, Metadata headers) {
-        ServerMethodDefinition<RequestT, ResponseT> delegateMethod = getMethodDefinition(headers);
         Listener<RequestT> delegateListener =
             delegateMethod
                 .getServerCallHandler()
                 .startCall(new ServerCallAdapter(call, delegateMethod.getMethodDescriptor()), headers);
         return new ServerCallListenerAdapter(delegateListener);
-    }
-
-    @SuppressWarnings("unchecked") // Method definition is the correct type.
-    private ServerMethodDefinition<RequestT, ResponseT> getMethodDefinition(Metadata headers) {
-        String fullMethodName = delegateMethodDescriptor.getFullMethodName();
-        for (ServerMethodDefinition<?, ?> methodDefinition :
-            delegateServiceDefinitionFactory.getServiceDefinition(headers).getMethods()) {
-            if (methodDefinition.getMethodDescriptor().getFullMethodName().equals(fullMethodName)) {
-                return (ServerMethodDefinition<RequestT, ResponseT>) methodDefinition;
-            }
-        }
-        throw new IllegalStateException("Could not find " + fullMethodName);
     }
 
     /**
@@ -114,7 +85,7 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
 
         @Override
         public void onMessage(InputStream message) {
-            delegate.onMessage(delegateMethodDescriptor.parseRequest(message));
+            delegate.onMessage(delegateMethod.getMethodDescriptor().parseRequest(message));
         }
 
         @Override
@@ -165,7 +136,7 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
 
         @Override
         public void sendMessage(ResponseT message) {
-            delegate.sendMessage(delegateMethodDescriptor.streamResponse(message));
+            delegate.sendMessage(delegateMethod.getMethodDescriptor().streamResponse(message));
         }
 
         @Override
@@ -178,4 +149,17 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
             return delegate.isCancelled();
         }
     }
+
+    public static final Marshaller<InputStream> IDENTITY_MARSHALLER =
+        new Marshaller<InputStream>() {
+            @Override
+            public InputStream stream(InputStream value) {
+                return value;
+            }
+
+            @Override
+            public InputStream parse(InputStream stream) {
+                return stream;
+            }
+        };
 }
