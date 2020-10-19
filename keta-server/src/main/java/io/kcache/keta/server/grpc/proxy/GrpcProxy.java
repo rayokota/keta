@@ -210,7 +210,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
         @Override
         public ServerMethodDefinition<?,?> lookupMethod(String methodName, String authority) {
-            if (proxy.getTarget() == null) {
+            if (proxy == null || proxy.getTarget() == null) {
                 return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
             } else {
                 MethodDescriptor<byte[], byte[]> methodDescriptor
