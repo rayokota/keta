@@ -32,6 +32,8 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,11 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /** A grpc-level proxy. */
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
-    private static final Logger logger = Logger.getLogger(GrpcProxy.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(GrpcProxy.class);
 
     private String target;
     private ManagedChannel channel;
@@ -79,8 +80,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     }
 
     @Override
-    public ServerCall.Listener<ReqT> startCall(
-        ServerCall<ReqT, RespT> serverCall, Metadata headers) {
+    public ServerCall.Listener<ReqT> startCall(ServerCall<ReqT, RespT> serverCall, Metadata headers) {
         ClientCall<ReqT, RespT> clientCall
             = getChannel().newCall(serverCall.getMethodDescriptor(), CallOptions.DEFAULT);
         CallProxy<ReqT, RespT> proxy = new CallProxy<>(serverCall, clientCall);

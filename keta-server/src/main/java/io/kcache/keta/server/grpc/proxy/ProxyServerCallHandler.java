@@ -24,7 +24,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
-import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
 
 import java.io.InputStream;
@@ -83,6 +82,7 @@ public final class ProxyServerCallHandler<RequestT, ResponseT>
                 return stream;
             }
         };
+
     /**
      * A {@link Listener} that adapts {@code Listener<RequestT>} to {@code Listener<InputStream>}.
      */
