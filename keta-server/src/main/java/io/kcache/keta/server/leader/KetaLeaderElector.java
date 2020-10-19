@@ -20,6 +20,7 @@ package io.kcache.keta.server.leader;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
+import io.kcache.keta.transaction.client.KetaTransactionManager;
 import org.apache.kafka.clients.ApiVersions;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.ClientUtils;
@@ -41,6 +42,7 @@ import org.apache.kafka.common.network.Selector;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.common.utils.LogContext;
 import org.apache.kafka.common.utils.Time;
+import org.apache.omid.transaction.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,6 +263,9 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
 
     @Override
     public void onAssigned(KetaProtocol.Assignment assignment, int generation) {
+        LOG.info("Finished rebalance by joining generation {}", generation);
+        KetaTransactionManager txMgr = KetaEngine.getInstance().getTxManager();
+        txMgr.setGenerationId(generation);
         LOG.info("Finished rebalance with leader election result: {}", assignment);
         try {
             switch (assignment.error()) {

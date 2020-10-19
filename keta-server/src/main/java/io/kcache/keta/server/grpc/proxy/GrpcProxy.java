@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 /** A grpc-level proxy. */
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
-    private static final Logger logger = LoggerFactory.getLogger(GrpcProxy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GrpcProxy.class);
 
     private String target;
     private ManagedChannel channel;
@@ -225,7 +225,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         String target = "localhost:8980";
-        logger.info("Proxy will connect to " + target);
+        LOG.info("Proxy will connect to " + target);
         GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(target);
         ManagedChannel channel = proxy.getChannel();
         int port = 8981;
@@ -233,7 +233,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
             .fallbackHandlerRegistry(new Registry(proxy, Collections.emptyList()))
             .build()
             .start();
-        logger.info("Proxy started, listening on " + port);
+        LOG.info("Proxy started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

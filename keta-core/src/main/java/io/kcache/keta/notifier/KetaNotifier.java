@@ -32,6 +32,8 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
     // TODO switch to Guava?
     private final EventBus eventBus;
 
+    private int maxGenerationId = -1;
+
     public KetaNotifier(EventBus eventBus) {
         this.eventBus = eventBus;
     }
@@ -64,6 +66,12 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
 
     @Override
     public boolean validateUpdate(byte[] key, VersionedValues value, TopicPartition tp, long offset, long timestamp) {
+        int generationId = value.getGenerationId();
+        if (generationId < maxGenerationId) {
+            return false;
+        } else if (generationId > maxGenerationId) {
+            maxGenerationId = generationId;
+        }
         return true;
     }
 
