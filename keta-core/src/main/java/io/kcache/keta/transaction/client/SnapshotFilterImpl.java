@@ -25,7 +25,6 @@ import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValue;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
-import io.kcache.keta.version.VersionedValues;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.committable.CommitTable.CommitTimestamp;
 import org.apache.omid.transaction.AbstractTransaction.VisibilityLevel;

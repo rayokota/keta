@@ -47,12 +47,14 @@ public class KetaMain extends AbstractVerticle {
                 this.context.config().getString("listen-address", identity.getHost()),
                 this.context.config().getInteger("listen-port", identity.getPort()));
 
-        List<ServerServiceDefinition> services = Arrays.asList(new KVService().bindService());
+        List<ServerServiceDefinition> services = Arrays.asList(
+            new KVService().bindService(),
+            new LeaseService().bindService()
+        );
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
-            .addService(new LeaseService())
-            .addService(new WatchService())
+            .addService(new WatchService())  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
 
         VertxServer server = serverBuilder.build();

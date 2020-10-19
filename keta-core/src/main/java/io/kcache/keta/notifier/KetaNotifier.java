@@ -89,9 +89,8 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
         }
         VersionedValue prevValue = null;
         if (oldValue != null) {
-            Iterator<Map.Entry<Long, VersionedValue>> oldValues = oldValue.getValues().descendingMap().entrySet().iterator();
-            while (oldValues.hasNext()) {
-                VersionedValue val = oldValues.next().getValue();
+            for (Map.Entry<Long, VersionedValue> entry : oldValue.getValues().descendingMap().entrySet()) {
+                VersionedValue val = entry.getValue();
                 long commit = val.getCommit();
                 if (commit == INVALID_TX || commit == PENDING_TX || commit == currCommit) {
                     continue;
