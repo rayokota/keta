@@ -6,6 +6,7 @@ import io.etcd.jetcd.api.Event;
 import io.etcd.jetcd.api.KeyValue;
 import io.kcache.CacheUpdateHandler;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.VersionedValue;
 import io.kcache.keta.version.VersionedValues;
 import io.kcache.keta.watch.KetaWatchManager;
@@ -101,21 +102,13 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
         Event.Builder builder = Event.newBuilder();
         if (currValue.isDeleted()) {
             builder.setType(Event.EventType.DELETE)
-                .setKv(KeyValue.newBuilder()
-                    .setKey(ByteString.copyFrom(key))
-                    .build());
+                .setKv(ProtoUtils.toKeyValue(key, null));
         } else {
             builder.setType(Event.EventType.PUT)
-                .setKv(KeyValue.newBuilder()
-                    .setKey(ByteString.copyFrom(key))
-                    .setValue(ByteString.copyFrom(currValue.getValue()))
-                    .build());
+                .setKv(ProtoUtils.toKeyValue(key, currValue));
         }
         if (prevValue != null && !prevValue.isDeleted()) {
-            builder.setPrevKv(KeyValue.newBuilder()
-                .setKey(ByteString.copyFrom(key))
-                .setValue(ByteString.copyFrom(prevValue.getValue()))
-                .build());
+            builder.setPrevKv(ProtoUtils.toKeyValue(key, prevValue));
         }
         Set<Watch> watches = watchMgr.getWatches(key);
         for (Watch watch : watches) {

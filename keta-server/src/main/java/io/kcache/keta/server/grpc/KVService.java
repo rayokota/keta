@@ -17,7 +17,6 @@
  */
 package io.kcache.keta.server.grpc;
 
-import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.CompactionRequest;
 import io.etcd.jetcd.api.CompactionResponse;
 import io.etcd.jetcd.api.Compare;
@@ -38,6 +37,7 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValue;
@@ -89,7 +89,7 @@ public class KVService extends KVGrpc.KVImplBase {
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
                 while (iter.hasNext()) {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
-                    KeyValue kv = toKeyValue(entry.key, entry.value);
+                    KeyValue kv = ProtoUtils.toKeyValue(entry.key, entry.value);
                     responseBuilder.addKvs(kv);
                     count++;
                 }
@@ -98,7 +98,7 @@ public class KVService extends KVGrpc.KVImplBase {
         } else {
             VersionedValue versioned = cache.get(from);
             if (versioned != null) {
-                KeyValue kv = toKeyValue(from, versioned);
+                KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
                 responseBuilder.addKvs(kv);
                 responseBuilder.setCount(1L);
             }
@@ -157,7 +157,7 @@ public class KVService extends KVGrpc.KVImplBase {
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         if (request.getPrevKv() && versioned != null) {
-            KeyValue kv = toKeyValue(key, versioned);
+            KeyValue kv = ProtoUtils.toKeyValue(key, versioned);
             responseBuilder.setPrevKv(kv);
         }
         return responseBuilder.build();
@@ -199,7 +199,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
                     keys.add(entry.key);
                     if (request.getPrevKv()) {
-                        KeyValue kv = toKeyValue(entry.key, entry.value);
+                        KeyValue kv = ProtoUtils.toKeyValue(entry.key, entry.value);
                         responseBuilder.addPrevKvs(kv);
                     }
                     count++;
@@ -211,7 +211,7 @@ public class KVService extends KVGrpc.KVImplBase {
             if (versioned != null) {
                 keys.add(from);
                 if (request.getPrevKv()) {
-                    KeyValue kv = toKeyValue(from, versioned);
+                    KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
                     responseBuilder.addPrevKvs(kv);
                 }
                 responseBuilder.setDeleted(1);
@@ -266,10 +266,6 @@ public class KVService extends KVGrpc.KVImplBase {
     private boolean doCompare(Compare compare) {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         Compare.CompareTarget target = compare.getTarget();
-        if (target != Compare.CompareTarget.VALUE) {
-            // TODO
-            throw new IllegalArgumentException("Unsupported target type " + compare.getTarget());
-        }
         byte[] from = compare.getKey().toByteArray();
         byte[] to = compare.getRangeEnd().toByteArray();
         if (to.length > 0) {
@@ -289,6 +285,18 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private boolean doCompareOne(Compare compare, VersionedValue versioned) {
+        switch (compare.getTarget()) {
+            case VALUE:
+                return doCompareValue(compare, versioned);
+            case VERSION:
+                return doCompareVersion(compare, versioned);
+            default:
+                // TODO
+                throw new IllegalArgumentException("Unsupported target type " + compare.getTarget());
+        }
+    }
+
+    private boolean doCompareValue(Compare compare, VersionedValue versioned) {
         byte[] value = compare.getValue().toByteArray();
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
         switch (compare.getResult()) {
@@ -300,6 +308,25 @@ public class KVService extends KVGrpc.KVImplBase {
                 return cmp != null && cmp < 0;
             case NOT_EQUAL:
                 return cmp != null ? cmp != 0 : value != null && value.length != 0;
+            default:
+                // TODO
+                throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
+        }
+    }
+
+    private boolean doCompareVersion(Compare compare, VersionedValue versioned) {
+        long cmpVersion = compare.getVersion();
+        Long version = versioned != null ? versioned.getVersion() : 0L;
+        int cmp = version.compareTo(cmpVersion);
+        switch (compare.getResult()) {
+            case EQUAL:
+                return cmp == 0;
+            case GREATER:
+                return cmp > 0;
+            case LESS:
+                return cmp < 0;
+            case NOT_EQUAL:
+                return cmp != 0;
             default:
                 // TODO
                 throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
@@ -336,13 +363,5 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
         super.compact(request, responseObserver);
-    }
-
-    private static KeyValue toKeyValue(byte[] key, VersionedValue versioned) {
-        return KeyValue.newBuilder()
-            .setKey(ByteString.copyFrom(key))
-            .setValue(ByteString.copyFrom(versioned.getValue()))
-            .setModRevision(versioned.getVersion())
-            .build();
     }
 }
