@@ -17,11 +17,13 @@
 
 package io.kcache.keta.server.leader;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * This class implements the protocol for members in a Kafka group. It includes
@@ -45,6 +47,7 @@ class KetaProtocol {
         return Assignment.fromJson(buffer);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Assignment {
         public static final int CURRENT_VERSION = 1;
 
@@ -58,14 +61,17 @@ class KetaProtocol {
         private final short error;
         private final String leader;
         private final KetaIdentity leaderIdentity;
+        private final List<KetaIdentity> members;
 
         public Assignment(@JsonProperty("error") short error,
                           @JsonProperty("leader") String leader,
-                          @JsonProperty("leader_identity") KetaIdentity leaderIdentity) {
+                          @JsonProperty("leader_identity") KetaIdentity leaderIdentity,
+                          @JsonProperty("members") List<KetaIdentity> members) {
             this.version = CURRENT_VERSION;
             this.error = error;
             this.leader = leader;
             this.leaderIdentity = leaderIdentity;
+            this.members = members;
         }
 
         public static Assignment fromJson(ByteBuffer json) {
@@ -98,6 +104,11 @@ class KetaProtocol {
             return leaderIdentity;
         }
 
+        @JsonProperty("members")
+        public List<KetaIdentity> members() {
+            return members;
+        }
+
         public boolean failed() {
             return error != NO_ERROR;
         }
@@ -117,6 +128,7 @@ class KetaProtocol {
                 + ", error=" + error
                 + ", leader='" + leader + '\''
                 + ", leaderIdentity=" + leaderIdentity
+                + ", members=" + members
                 + '}';
         }
     }

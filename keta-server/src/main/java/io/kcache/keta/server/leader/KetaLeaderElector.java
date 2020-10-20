@@ -80,6 +80,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
     private final KetaCoordinator coordinator;
     private final KetaIdentity myIdentity;
     private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
+    private volatile List<KetaIdentity> members;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
@@ -277,6 +278,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
                         );
                     }
                     setLeader(assignment.leaderIdentity());
+                    setMembers(assignment.members());
                     LOG.info(isLeader() ? "Registered as leader" : "Registered as replica");
                     joinedLatch.countDown();
                     break;
@@ -334,6 +336,15 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
             LOG.info("Syncing caches...");
             engine.sync();
         }
+    }
+
+    public List<KetaIdentity> getMembers() {
+        List<KetaIdentity> members = this.members;
+        return members != null ? members : Collections.singletonList(myIdentity);
+    }
+
+    private void setMembers(List<KetaIdentity> members) {
+        this.members = members;
     }
 
     private void stop(boolean swallowException) {

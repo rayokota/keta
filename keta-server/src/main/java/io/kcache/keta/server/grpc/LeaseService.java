@@ -27,6 +27,7 @@ import io.etcd.jetcd.api.LeaseRevokeRequest;
 import io.etcd.jetcd.api.LeaseRevokeResponse;
 import io.etcd.jetcd.api.LeaseTimeToLiveRequest;
 import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
+import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
@@ -47,11 +48,13 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         try {
             LeaseKeys lk = leaseMgr.grant(lease);
             responseObserver.onNext(LeaseGrantResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder().build())
                 .setID(lk.getLease().getId())
                 .setTTL(lk.getLease().getTtl())
                 .build());
         } catch (IllegalArgumentException e) {
             responseObserver.onNext(LeaseGrantResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder().build())
                 .setError(e.getLocalizedMessage())
                 .build());
         }
@@ -67,7 +70,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         leaseMgr.revoke(id);
         // TODO handle error
-        responseObserver.onNext(LeaseRevokeResponse.newBuilder().build());
+        responseObserver.onNext(LeaseRevokeResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder().build())
+            .build());
         responseObserver.onCompleted();
     }
 
@@ -80,7 +85,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
                 LeaseKeys lease = leaseMgr.renew(id);
                 // TODO handle error
-                responseObserver.onNext(LeaseKeepAliveResponse.newBuilder().setID(id).setTTL(lease.getTtl()).build());
+                responseObserver.onNext(LeaseKeepAliveResponse.newBuilder()
+                    .setHeader(ResponseHeader.newBuilder().build())
+                    .setID(id).setTTL(lease.getTtl()).build());
             }
 
             @Override
@@ -102,6 +109,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         LeaseKeys lease = leaseMgr.get(id);
         // TODO handle error
         LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder().build())
             .setID(id)
             .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
             .setGrantedTTL(lease.getTtl());

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,11 +155,13 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
     ) {
         LOG.debug("Performing assignment");
 
+        List<KetaIdentity> members = new ArrayList<>();
         Map<String, KetaIdentity> memberConfigs = new HashMap<>();
         for (JoinGroupResponseData.JoinGroupResponseMember entry : allMemberMetadata) {
             KetaIdentity identity
                 = KetaProtocol.deserializeMetadata(ByteBuffer.wrap(entry.metadata()));
             memberConfigs.put(entry.memberId(), identity);
+            members.add(identity);
         }
 
         LOG.debug("Member information: {}", memberConfigs);
@@ -194,7 +197,7 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
 
         // All members currently receive the same assignment information since it is just the leader ID
         Map<String, ByteBuffer> groupAssignment = new HashMap<>();
-        KetaProtocol.Assignment assignment = new KetaProtocol.Assignment(error, leaderKafkaId, leaderIdentity);
+        KetaProtocol.Assignment assignment = new KetaProtocol.Assignment(error, leaderKafkaId, leaderIdentity, members);
         LOG.debug("Assignment: {}", assignment);
         for (String member : memberConfigs.keySet()) {
             groupAssignment.put(member, KetaProtocol.serializeAssignment(assignment));

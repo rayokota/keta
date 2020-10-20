@@ -29,6 +29,7 @@ import io.etcd.jetcd.api.PutResponse;
 import io.etcd.jetcd.api.RangeRequest;
 import io.etcd.jetcd.api.RangeResponse;
 import io.etcd.jetcd.api.RequestOp;
+import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.ResponseOp;
 import io.etcd.jetcd.api.TxnRequest;
 import io.etcd.jetcd.api.TxnResponse;
@@ -84,6 +85,7 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] to = request.getRangeEnd().toByteArray();
         boolean descending = request.getSortOrder() == RangeRequest.SortOrder.DESCEND;
         RangeResponse.Builder responseBuilder = RangeResponse.newBuilder();
+        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
         if (to.length > 0) {
             long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
@@ -156,6 +158,7 @@ public class KVService extends KVGrpc.KVImplBase {
             }
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
+        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
         if (request.getPrevKv() && versioned != null) {
             KeyValue kv = ProtoUtils.toKeyValue(key, versioned);
             responseBuilder.setPrevKv(kv);
@@ -192,6 +195,7 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] to = request.getRangeEnd().toByteArray();
         List<byte[]> keys = new ArrayList<>();
         DeleteRangeResponse.Builder responseBuilder = DeleteRangeResponse.newBuilder();
+        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
         if (to.length > 0) {
             long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
@@ -249,6 +253,7 @@ public class KVService extends KVGrpc.KVImplBase {
         boolean succeeded = doCompares(request.getCompareList());
         List<ResponseOp> responses = doRequests(succeeded ? request.getSuccessList() : request.getFailureList());
         return TxnResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder().build())
             .setSucceeded(succeeded)
             .addAllResponses(responses)
             .build();

@@ -4,6 +4,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.server.grpc.ClusterService;
 import io.kcache.keta.server.grpc.KVService;
 import io.kcache.keta.server.grpc.LeaseService;
 import io.kcache.keta.server.grpc.WatchService;
@@ -28,16 +29,19 @@ public class KetaMain extends AbstractVerticle {
     private static final Logger LOG = LoggerFactory.getLogger(KetaMain.class);
 
     private final GrpcProxy<byte[], byte[]> proxy;
+    private final KetaLeaderElector elector;
     private final KetaIdentity identity;
 
     public KetaMain() {
         this.proxy = null;
+        this.elector = null;
         this.identity = new KetaIdentity("http", "localhost", 8080, true);
     }
 
-    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaIdentity identity) {
+    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaLeaderElector elector) {
         this.proxy = proxy;
-        this.identity = identity;
+        this.elector = elector;
+        this.identity = elector.getIdentity();
     }
 
     @Override
@@ -54,6 +58,7 @@ public class KetaMain extends AbstractVerticle {
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
+            .addService(new ClusterService(elector))
             .addService(new WatchService())  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
 
@@ -88,7 +93,7 @@ public class KetaMain extends AbstractVerticle {
             elector.init();
             boolean isLeader = elector.isLeader();
             LOG.info("Leader: {}, starting server...", isLeader);
-            vertx.deployVerticle(new KetaMain(proxy, elector.getIdentity()));
+            vertx.deployVerticle(new KetaMain(proxy, elector));
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);
