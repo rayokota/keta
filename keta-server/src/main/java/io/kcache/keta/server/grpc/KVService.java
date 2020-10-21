@@ -291,13 +291,33 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private boolean doCompareOne(Compare compare, VersionedValue versioned) {
         switch (compare.getTarget()) {
+            case VERSION:
+            case MOD:
+                return doCompareVersion(compare, versioned);
             case VALUE:
                 return doCompareValue(compare, versioned);
-            case VERSION:
-                return doCompareVersion(compare, versioned);
             default:
                 // TODO
                 throw new IllegalArgumentException("Unsupported target type " + compare.getTarget());
+        }
+    }
+
+    private boolean doCompareVersion(Compare compare, VersionedValue versioned) {
+        long cmpVersion = compare.getVersion();
+        long version = versioned != null ? versioned.getVersion() : 0L;
+        int cmp = Long.compare(version, cmpVersion);
+        switch (compare.getResult()) {
+            case EQUAL:
+                return cmp == 0;
+            case GREATER:
+                return cmp > 0;
+            case LESS:
+                return cmp < 0;
+            case NOT_EQUAL:
+                return cmp != 0;
+            default:
+                // TODO
+                throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
         }
     }
 
@@ -313,25 +333,6 @@ public class KVService extends KVGrpc.KVImplBase {
                 return cmp != null && cmp < 0;
             case NOT_EQUAL:
                 return cmp != null ? cmp != 0 : value != null && value.length != 0;
-            default:
-                // TODO
-                throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
-        }
-    }
-
-    private boolean doCompareVersion(Compare compare, VersionedValue versioned) {
-        long cmpVersion = compare.getVersion();
-        Long version = versioned != null ? versioned.getVersion() : 0L;
-        int cmp = version.compareTo(cmpVersion);
-        switch (compare.getResult()) {
-            case EQUAL:
-                return cmp == 0;
-            case GREATER:
-                return cmp > 0;
-            case LESS:
-                return cmp < 0;
-            case NOT_EQUAL:
-                return cmp != 0;
             default:
                 // TODO
                 throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
