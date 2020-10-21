@@ -94,21 +94,20 @@ public class TxVersionedCache implements Closeable {
         }
     }
 
-    public void put(byte[] key, byte[] value) {
-        put(key, value, VersionedCache.NO_LEASE);
+    public VersionedValue put(byte[] key, byte[] value) {
+        return put(key, value, VersionedCache.NO_LEASE);
     }
 
-    public void put(byte[] key, byte[] value, long lease) {
+    public VersionedValue put(byte[] key, byte[] value, long lease) {
         Lock lock = striped.get(Bytes.wrap(key)).writeLock();
         lock.lock();
         try {
             KetaTransaction tx = KetaTransaction.currentTransaction();
             List<VersionedValue> values = getVersions(key);
-            if (values.size() > 0) {
-                throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(key));
-            }
+            VersionedValue oldValue = values.size() > 0 ? values.get(0) : null;
             addWriteSetElement(tx, new KetaCellId(cache, key, tx.getWriteTimestamp()));
             cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), value, lease);
+            return oldValue;
         } finally {
             lock.unlock();
         }
@@ -146,10 +145,6 @@ public class TxVersionedCache implements Closeable {
                     return true;
                 }
             } else {
-                List<VersionedValue> newValues = getVersions(newKey);
-                if (newValues.size() > 0) {
-                    throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(newKey));
-                }
                 addWriteSetElement(tx, new KetaCellId(cache, oldKey, tx.getWriteTimestamp()));
                 addWriteSetElement(tx, new KetaCellId(cache, newKey, tx.getWriteTimestamp()));
                 cache.remove(tx.getGenerationId(), oldKey, tx.getWriteTimestamp());

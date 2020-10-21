@@ -138,11 +138,10 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] key = request.getKey().toByteArray();
         byte[] value = request.getValue().toByteArray();
         long lease = request.getLease();
-        VersionedValue versioned = cache.get(key);
-        byte[] oldValue = versioned != null ? versioned.getValue() : null;
-        long oldLease = versioned != null ? versioned.getLease() : 0;
+        VersionedValue versioned = null;
         if (!request.getIgnoreValue()) {
-            cache.replace(key, oldValue, value, lease);
+            versioned = cache.put(key, value, lease);
+            long oldLease = versioned != null ? versioned.getLease() : 0;
             if (oldLease > 0) {
                 LeaseKeys lk = leaseMgr.get(oldLease);
                 if (lk == null) {
@@ -157,6 +156,8 @@ public class KVService extends KVGrpc.KVImplBase {
                 }
                 lk.getKeys().add(Bytes.wrap(key));
             }
+        } else {
+            versioned = cache.get(key);
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
