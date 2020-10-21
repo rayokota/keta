@@ -71,7 +71,7 @@ public class KetaMain extends AbstractVerticle {
         server.start(ar -> {
             if (ar.succeeded()) {
                 LOG.info("Server started, listening on " + listener.getPort());
-                LOG.info("Ketsie is at your service...");
+                LOG.info("Keta is at your service...");
                 startPromise.complete();
             } else {
                 LOG.info("Could not start server " + ar.cause().getLocalizedMessage());

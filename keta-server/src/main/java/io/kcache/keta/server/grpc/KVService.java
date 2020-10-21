@@ -138,7 +138,7 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] key = request.getKey().toByteArray();
         byte[] value = request.getValue().toByteArray();
         long lease = request.getLease();
-        VersionedValue versioned = null;
+        VersionedValue versioned;
         if (!request.getIgnoreValue()) {
             versioned = cache.put(key, value, lease);
             long oldLease = versioned != null ? versioned.getLease() : 0;
@@ -272,7 +272,6 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private boolean doCompare(Compare compare) {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
-        Compare.CompareTarget target = compare.getTarget();
         byte[] from = compare.getKey().toByteArray();
         byte[] to = compare.getRangeEnd().toByteArray();
         if (to.length > 0) {

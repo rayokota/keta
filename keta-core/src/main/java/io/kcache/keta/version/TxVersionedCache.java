@@ -49,7 +49,7 @@ public class TxVersionedCache implements Closeable {
 
     public static final long INVALID_TX = CommitTable.INVALID_TRANSACTION_MARKER;
     public static final long PENDING_TX = 0L;
-    public static final long NEW_SEQUENCE = 0L;
+    public static final long NEW_SEQUENCE = 1L;
 
     private final VersionedCache cache;
     private final boolean conflictFree;

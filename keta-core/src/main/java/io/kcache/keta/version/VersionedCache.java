@@ -109,7 +109,7 @@ public class VersionedCache implements Closeable {
         if (commit == INVALID_TX) {
             rowData.getValues().remove(version);
         } else {
-            long create = value.isDeleted() || value.getCreate() > 0 ? value.getCreate() : commit;
+            long create = value.getCreate() > 0 ? value.getCreate() : commit;
             rowData.getValues().put(version,
                 new VersionedValue(version, commit, create, value.getSequence(),
                     value.isDeleted(), value.getValue(), value.getLease()));
@@ -121,7 +121,7 @@ public class VersionedCache implements Closeable {
 
     public void remove(int generationId, byte[] key, long version) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, -1, -1, true, EMPTY_VALUE, NO_LEASE));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, PENDING_TX, 0, true, EMPTY_VALUE, NO_LEASE));
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }
