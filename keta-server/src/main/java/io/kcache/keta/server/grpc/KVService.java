@@ -38,6 +38,7 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
@@ -85,7 +86,7 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] to = request.getRangeEnd().toByteArray();
         boolean descending = request.getSortOrder() == RangeRequest.SortOrder.DESCEND;
         RangeResponse.Builder responseBuilder = RangeResponse.newBuilder();
-        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
+        responseBuilder.setHeader(toResponseHeader());
         if (to.length > 0) {
             long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
@@ -158,7 +159,7 @@ public class KVService extends KVGrpc.KVImplBase {
             }
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
-        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
+        responseBuilder.setHeader(toResponseHeader());
         if (request.getPrevKv() && versioned != null) {
             KeyValue kv = ProtoUtils.toKeyValue(key, versioned);
             responseBuilder.setPrevKv(kv);
@@ -195,7 +196,7 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] to = request.getRangeEnd().toByteArray();
         List<byte[]> keys = new ArrayList<>();
         DeleteRangeResponse.Builder responseBuilder = DeleteRangeResponse.newBuilder();
-        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
+        responseBuilder.setHeader(toResponseHeader());
         if (to.length > 0) {
             long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
@@ -253,7 +254,7 @@ public class KVService extends KVGrpc.KVImplBase {
         boolean succeeded = doCompares(request.getCompareList());
         List<ResponseOp> responses = doRequests(succeeded ? request.getSuccessList() : request.getFailureList());
         return TxnResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder().build())
+            .setHeader(toResponseHeader())
             .setSucceeded(succeeded)
             .addAllResponses(responses)
             .build();
@@ -369,5 +370,10 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
         super.compact(request, responseObserver);
+    }
+
+    private static ResponseHeader toResponseHeader() {
+        KetaTransaction tx = KetaTransaction.currentTransaction();
+        return ResponseHeader.newBuilder().setRevision(tx.getStartTimestamp()).build();
     }
 }
