@@ -78,6 +78,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
     private final Metadata metadata;
     private final long retryBackoffMs;
     private final KetaCoordinator coordinator;
+    private final List<URI> listeners;
     private final KetaIdentity myIdentity;
     private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
     private volatile List<KetaIdentity> members;
@@ -92,8 +93,10 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
             this.proxy = proxy;
             this.clientId = "kdb-" + KDB_CLIENT_ID_SEQUENCE.getAndIncrement();
 
+            this.listeners = parseListeners(config.getList(KetaConfig.LISTENERS_CONFIG));
             this.myIdentity = findIdentity(
-                config.getList(KetaConfig.LISTENERS_CONFIG),
+                listeners,
+                config.getString(KetaConfig.HOST_NAME_CONFIG),
                 config.getBoolean(KetaConfig.LEADER_ELIGIBILITY_CONFIG));
 
             Map<String, String> metricsTags = new LinkedHashMap<>();
@@ -184,10 +187,9 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
         }
     }
 
-    static KetaIdentity findIdentity(List<String> configuredListeners, boolean leaderEligibility) {
-        List<URI> listeners = parseListeners(configuredListeners);
+    static KetaIdentity findIdentity(List<URI> listeners, String host, boolean leaderEligibility) {
         for (URI listener : listeners) {
-            return new KetaIdentity(listener.getScheme(), listener.getHost(), listener.getPort(), leaderEligibility);
+            return new KetaIdentity(listener.getScheme(), host, listener.getPort(), leaderEligibility);
         }
         throw new ConfigException("No listeners are configured. Must have at least one listener.");
     }
@@ -321,6 +323,10 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
 
     public KetaIdentity getIdentity() {
         return myIdentity;
+    }
+
+    public List<URI> getListeners() {
+        return listeners;
     }
 
     public boolean isLeader() {

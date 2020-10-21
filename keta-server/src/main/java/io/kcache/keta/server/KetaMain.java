@@ -20,6 +20,8 @@ import io.vertx.grpc.VertxServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -30,26 +32,28 @@ public class KetaMain extends AbstractVerticle {
 
     private final GrpcProxy<byte[], byte[]> proxy;
     private final KetaLeaderElector elector;
-    private final KetaIdentity identity;
+    private final URI listener;
 
-    public KetaMain() {
+    public KetaMain() throws URISyntaxException {
         this.proxy = null;
         this.elector = null;
-        this.identity = new KetaIdentity("http", "localhost", 8080, true);
+        this.listener = new URI("http://0.0.0.0:2379");
     }
 
-    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaLeaderElector elector) {
+    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaLeaderElector elector) throws URISyntaxException {
         this.proxy = proxy;
         this.elector = elector;
-        this.identity = elector.getIdentity();
+        this.listener = elector.getListeners().isEmpty()
+            ? new URI("http://0.0.0.0:2379")
+            : elector.getListeners().get(0);
     }
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         VertxServerBuilder serverBuilder = VertxServerBuilder
             .forAddress(vertx,
-                this.context.config().getString("listen-address", identity.getHost()),
-                this.context.config().getInteger("listen-port", identity.getPort()));
+                this.context.config().getString("listen-address", listener.getHost()),
+                this.context.config().getInteger("listen-port", listener.getPort()));
 
         List<ServerServiceDefinition> services = Arrays.asList(
             new KVService().bindService(),
@@ -66,7 +70,7 @@ public class KetaMain extends AbstractVerticle {
 
         server.start(ar -> {
             if (ar.succeeded()) {
-                LOG.info("Server started, listening on " + identity.getPort());
+                LOG.info("Server started, listening on " + listener.getPort());
                 LOG.info("Ketsie is at your service...");
                 startPromise.complete();
             } else {
