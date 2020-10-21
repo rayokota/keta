@@ -253,7 +253,7 @@ public class KVTest extends RemoteClusterTestHarness {
         ByteSequence oneTwoThree = bytesOf("txn_123");
 
         Txn txn = kvClient.txn();
-        Cmp cmp = new Cmp(foo, Cmp.Op.NOT_EQUAL, CmpTarget.value(bytesOf("nonexistent_value")));
+        Cmp cmp = new Cmp(foo, Cmp.Op.EQUAL, CmpTarget.version(0));
         CompletableFuture<io.etcd.jetcd.kv.TxnResponse> txnResp = txn.If(cmp)
             .Then(Op.put(foo, bar, PutOption.DEFAULT),
                 Op.txn(null, new Op[] { Op.put(abc, oneTwoThree, PutOption.DEFAULT) }, null))

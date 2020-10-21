@@ -93,9 +93,9 @@ public class VersionedCache implements Closeable {
         return all;
     }
 
-    public void put(int generationId, byte[] key, long version, byte[] value, long lease) {
+    public void put(int generationId, byte[] key, long version, long create, long sequence, byte[] value, long lease) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, false, value, lease));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, create, sequence, false, value, lease));
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }
@@ -109,8 +109,10 @@ public class VersionedCache implements Closeable {
         if (commit == INVALID_TX) {
             rowData.getValues().remove(version);
         } else {
+            long create = value.isDeleted() || value.getCreate() > 0 ? value.getCreate() : commit;
             rowData.getValues().put(version,
-                new VersionedValue(version, commit, value.isDeleted(), value.getValue(), value.getLease()));
+                new VersionedValue(version, commit, create, value.getSequence(),
+                    value.isDeleted(), value.getValue(), value.getLease()));
         }
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
@@ -119,7 +121,7 @@ public class VersionedCache implements Closeable {
 
     public void remove(int generationId, byte[] key, long version) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, true, EMPTY_VALUE, NO_LEASE));
+        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, -1, -1, true, EMPTY_VALUE, NO_LEASE));
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }

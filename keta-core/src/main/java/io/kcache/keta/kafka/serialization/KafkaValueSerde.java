@@ -65,6 +65,8 @@ public class KafkaValueSerde implements Serde<VersionedValues> {
         valueSchemaBuilder = valueSchemaBuilder
             .name("_version").type().longType().noDefault()
             .name("_commit").type().longType().noDefault()
+            .name("_create").type().longType().noDefault()
+            .name("_sequence").type().longType().noDefault()
             .name("_deleted").type().booleanType().noDefault()
             .name("_lease").type().longType().noDefault()
             .name("_value").type().bytesType().noDefault();

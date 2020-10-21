@@ -294,20 +294,38 @@ public class KVService extends KVGrpc.KVImplBase {
     private boolean doCompareOne(Compare compare, VersionedValue versioned) {
         switch (compare.getTarget()) {
             case VERSION:
-            case MOD:
                 return doCompareVersion(compare, versioned);
+            case CREATE:
+                return doCompareCreate(compare, versioned);
+            case MOD:
+                return doCompareRevision(compare, versioned);
             case VALUE:
                 return doCompareValue(compare, versioned);
             default:
-                // TODO
                 throw new IllegalArgumentException("Unsupported target type " + compare.getTarget());
         }
     }
 
     private boolean doCompareVersion(Compare compare, VersionedValue versioned) {
         long cmpVersion = compare.getVersion();
-        long version = versioned != null ? versioned.getVersion() : 0L;
-        int cmp = Long.compare(version, cmpVersion);
+        long version = versioned != null ? versioned.getSequence() : 0L;
+        return doCompareLongs(compare, version, cmpVersion);
+    }
+
+    private boolean doCompareCreate(Compare compare, VersionedValue versioned) {
+        long cmpCreate = compare.getCreateRevision();
+        long create = versioned != null ? versioned.getCreate() : 0L;
+        return doCompareLongs(compare, create, cmpCreate);
+    }
+
+    private boolean doCompareRevision(Compare compare, VersionedValue versioned) {
+        long cmpMod = compare.getModRevision();
+        long mod = versioned != null ? versioned.getCommit() : 0L;
+        return doCompareLongs(compare, mod, cmpMod);
+    }
+
+    private boolean doCompareLongs(Compare compare, long value1, long value2) {
+        int cmp = Long.compare(value1, value2);
         switch (compare.getResult()) {
             case EQUAL:
                 return cmp == 0;
@@ -318,11 +336,9 @@ public class KVService extends KVGrpc.KVImplBase {
             case NOT_EQUAL:
                 return cmp != 0;
             default:
-                // TODO
                 throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
         }
     }
-
     private boolean doCompareValue(Compare compare, VersionedValue versioned) {
         byte[] value = compare.getValue().toByteArray();
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
@@ -336,7 +352,6 @@ public class KVService extends KVGrpc.KVImplBase {
             case NOT_EQUAL:
                 return cmp != null ? cmp != 0 : value != null && value.length != 0;
             default:
-                // TODO
                 throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
         }
     }
@@ -375,6 +390,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private static ResponseHeader toResponseHeader() {
         KetaTransaction tx = KetaTransaction.currentTransaction();
+        // TODO is this right?
         return ResponseHeader.newBuilder().setRevision(tx.getStartTimestamp()).build();
     }
 }

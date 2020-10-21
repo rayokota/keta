@@ -27,8 +27,9 @@ public class ProtoUtils {
             .setKey(ByteString.copyFrom(key));
         if (value != null) {
             builder.setValue(ByteString.copyFrom(value.getValue()))
-                .setModRevision(value.getVersion())
-                .setVersion(value.getVersion());
+                .setCreateRevision(value.getCreate())
+                .setModRevision(value.getCommit())
+                .setVersion(value.getSequence());
         }
         return builder.build();
     }

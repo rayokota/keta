@@ -87,10 +87,12 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
         for (GenericRecord record : array) {
             Long version = (Long) record.get(0);
             Long commit = (Long) record.get(1);
-            boolean deleted = (Boolean) record.get(2);
-            Long lease = (Long) record.get(3);
-            ByteBuffer bytes = (ByteBuffer) record.get(4);
-            map.put(version, new VersionedValue(version, commit, deleted, bytes.array(), lease));
+            Long create = (Long) record.get(2);
+            Long sequence = (Long) record.get(3);
+            boolean deleted = (Boolean) record.get(4);
+            Long lease = (Long) record.get(5);
+            ByteBuffer bytes = (ByteBuffer) record.get(6);
+            map.put(version, new VersionedValue(version, commit, create, sequence, deleted, bytes.array(), lease));
         }
         return new VersionedValues(generationId, map);
     }

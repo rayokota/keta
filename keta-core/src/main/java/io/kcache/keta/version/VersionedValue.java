@@ -26,29 +26,37 @@ import static io.kcache.keta.version.VersionedCache.NO_LEASE;
 public class VersionedValue {
     private final long version;
     private final long commit;
+    private final long create;
+    private final long sequence;
     private final boolean deleted;
     private final byte[] value;
     private final long lease;
 
-    public VersionedValue(long version, byte[] value) {
+    public VersionedValue(long version, long create, long sequence, byte[] value) {
         this.version = version;
         this.commit = PENDING_TX;
+        this.create = create;
+        this.sequence = sequence;
         this.deleted = false;
         this.value = value;
         this.lease = NO_LEASE;
     }
 
-    public VersionedValue(long version, long commit, byte[] value, long lease) {
+    public VersionedValue(long version, long commit, long create, long sequence, byte[] value, long lease) {
         this.version = version;
         this.commit = commit;
+        this.create = create;
+        this.sequence = sequence;
         this.deleted = false;
         this.value = value;
         this.lease = lease;
     }
 
-    public VersionedValue(long version, long commit, boolean deleted, byte[] value, long lease) {
+    public VersionedValue(long version, long commit, long create, long sequence, boolean deleted, byte[] value, long lease) {
         this.version = version;
         this.commit = commit;
+        this.create = create;
+        this.sequence = sequence;
         this.deleted = deleted;
         this.value = value;
         this.lease = lease;
@@ -60,6 +68,14 @@ public class VersionedValue {
 
     public long getCommit() {
         return commit;
+    }
+
+    public long getCreate() {
+        return create;
+    }
+
+    public long getSequence() {
+        return sequence;
     }
 
     public boolean isDeleted() {
@@ -85,6 +101,8 @@ public class VersionedValue {
         VersionedValue that = (VersionedValue) o;
         return version == that.version
             && commit == that.commit
+            && create == that.create
+            && sequence == that.sequence
             && deleted == that.deleted
             && lease == that.lease
             && Arrays.equals(value, that.value);
@@ -92,7 +110,7 @@ public class VersionedValue {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(version, commit, deleted, lease);
+        int result = Objects.hash(version, commit, create, sequence, deleted, lease);
         result = 31 * result + Arrays.hashCode(value);
         return result;
     }

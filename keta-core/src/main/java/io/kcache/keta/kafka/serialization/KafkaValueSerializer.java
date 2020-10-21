@@ -89,6 +89,8 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
             GenericRecordBuilder nested = new GenericRecordBuilder(arraySchema.getElementType());
             nested.set("_version", versionedValue.getVersion());
             nested.set("_commit", versionedValue.getCommit());
+            nested.set("_create", versionedValue.getCreate());
+            nested.set("_sequence", versionedValue.getSequence());
             nested.set("_deleted", versionedValue.isDeleted());
             nested.set("_lease", versionedValue.getLease());
             if (!versionedValue.isDeleted()) {

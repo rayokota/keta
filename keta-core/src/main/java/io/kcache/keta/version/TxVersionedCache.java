@@ -49,6 +49,7 @@ public class TxVersionedCache implements Closeable {
 
     public static final long INVALID_TX = CommitTable.INVALID_TRANSACTION_MARKER;
     public static final long PENDING_TX = 0L;
+    public static final long NEW_SEQUENCE = 0L;
 
     private final VersionedCache cache;
     private final boolean conflictFree;
@@ -104,10 +105,12 @@ public class TxVersionedCache implements Closeable {
         try {
             KetaTransaction tx = KetaTransaction.currentTransaction();
             List<VersionedValue> values = getVersions(key);
-            VersionedValue oldValue = values.size() > 0 ? values.get(0) : null;
+            VersionedValue oldVersioned = values.size() > 0 ? values.get(0) : null;
             addWriteSetElement(tx, new KetaCellId(cache, key, tx.getWriteTimestamp()));
-            cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), value, lease);
-            return oldValue;
+            long create = oldVersioned != null ? oldVersioned.getCreate() : PENDING_TX;
+            long sequence = oldVersioned != null ? oldVersioned.getSequence() + 1 : NEW_SEQUENCE;
+            cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), create, sequence, value, lease);
+            return oldVersioned;
         } finally {
             lock.unlock();
         }
@@ -132,7 +135,8 @@ public class TxVersionedCache implements Closeable {
             KetaTransaction tx = KetaTransaction.currentTransaction();
             // Ensure the value hasn't changed
             List<VersionedValue> oldValues = getVersions(oldKey);
-            byte[] oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0).getValue() : null;
+            VersionedValue oldVersioned = oldValues.size() > 0 ? oldValues.get(0) : null;
+            byte[] oldVersionedValue = oldVersioned != null ? oldVersioned.getValue() : null;
             if (!(oldValue == null && oldVersionedValue == null) && !Arrays.equals(oldValue, oldVersionedValue)) {
                 throw new IllegalStateException("Previous value has changed");
             }
@@ -141,14 +145,16 @@ public class TxVersionedCache implements Closeable {
                     return false;
                 } else {
                     addWriteSetElement(tx, new KetaCellId(cache, newKey, tx.getWriteTimestamp()));
-                    cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue, lease);
+                    long create = oldVersioned != null ? oldVersioned.getCreate() : PENDING_TX;
+                    long sequence = oldVersioned != null ? oldVersioned.getSequence() + 1 : NEW_SEQUENCE;
+                    cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), create, sequence, newValue, lease);
                     return true;
                 }
             } else {
                 addWriteSetElement(tx, new KetaCellId(cache, oldKey, tx.getWriteTimestamp()));
                 addWriteSetElement(tx, new KetaCellId(cache, newKey, tx.getWriteTimestamp()));
                 cache.remove(tx.getGenerationId(), oldKey, tx.getWriteTimestamp());
-                cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), newValue, lease);
+                cache.put(tx.getGenerationId(), newKey, tx.getWriteTimestamp(), PENDING_TX, NEW_SEQUENCE, newValue, lease);
                 return true;
             }
         } finally {
