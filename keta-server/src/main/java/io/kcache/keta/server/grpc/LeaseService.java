@@ -33,6 +33,7 @@ import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +42,16 @@ import java.util.stream.Collectors;
 public class LeaseService extends LeaseGrpc.LeaseImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(LeaseService.class);
 
+    private final KetaLeaderElector elector;
+
+    public LeaseService(KetaLeaderElector elector) {
+        this.elector = elector;
+    }
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         try {
@@ -63,6 +72,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         long id = request.getID();
         if (id == 0) {
             throw new IllegalArgumentException("No lease id");
@@ -78,6 +90,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public StreamObserver<LeaseKeepAliveRequest> leaseKeepAlive(StreamObserver<LeaseKeepAliveResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         return new StreamObserver<LeaseKeepAliveRequest>() {
             @Override
             public void onNext(LeaseKeepAliveRequest value) {
@@ -104,6 +119,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         long id = request.getID();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         LeaseKeys lease = leaseMgr.get(id);

@@ -56,8 +56,8 @@ public class KetaMain extends AbstractVerticle {
                 this.context.config().getInteger("listen-port", listener.getPort()));
 
         List<ServerServiceDefinition> services = Arrays.asList(
-            new KVService().bindService(),
-            new LeaseService().bindService()
+            new KVService(elector).bindService(),
+            new LeaseService(elector).bindService()
         );
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)

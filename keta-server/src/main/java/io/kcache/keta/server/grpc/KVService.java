@@ -38,6 +38,7 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.TxVersionedCache;
@@ -57,8 +58,17 @@ import java.util.List;
 public class KVService extends KVGrpc.KVImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(KVService.class);
 
+    private final KetaLeaderElector elector;
+
+    public KVService(KetaLeaderElector elector) {
+        this.elector = elector;
+    }
+
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
         // TODO limit, keys_only, count_only
@@ -116,6 +126,9 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         LOG.info("Put request: {}", request.getKey());
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
@@ -175,6 +188,9 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
@@ -235,6 +251,9 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         LOG.info("Txn request: {}", request.getCompareList());
         // TODO check cmp < value
         // TODO both key and range_end \0
@@ -391,6 +410,9 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
+        if (!elector.isLeader()) {
+            throw new IllegalStateException("Not leader");
+        }
         super.compact(request, responseObserver);
     }
 
