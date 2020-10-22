@@ -345,8 +345,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
     }
 
     public List<KetaIdentity> getMembers() {
-        List<KetaIdentity> members = this.members;
-        return members != null ? members : Collections.singletonList(myIdentity);
+        return members;
     }
 
     private void setMembers(List<KetaIdentity> members) {
