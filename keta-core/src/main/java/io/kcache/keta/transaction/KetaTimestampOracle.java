@@ -43,7 +43,7 @@ import static org.apache.omid.metrics.MetricsUtils.name;
 @Singleton
 public class KetaTimestampOracle implements TimestampOracle {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TimestampOracleImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KetaTimestampOracle.class);
 
     @VisibleForTesting
     static class InMemoryTimestampStorage implements TimestampStorage {

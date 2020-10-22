@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 import io.kcache.keta.transaction.InMemoryCommitTable;
 import io.kcache.keta.transaction.InMemoryTimestampStorage;
 import io.kcache.keta.transaction.KetaTimestampClient;
+import io.kcache.keta.transaction.KetaTimestampOracle;
 import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.committable.CommitTable;
@@ -80,7 +81,7 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
                                                      TimestampStorage timestampStorage) {
         try {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
-            TimestampOracle timestampOracle = new TimestampOracleImpl(
+            TimestampOracle timestampOracle = new KetaTimestampOracle(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
             timestampOracle.initialize();
             PostCommitActions postCommitter = new KetaSyncPostCommitter(commitTable.getClient());
