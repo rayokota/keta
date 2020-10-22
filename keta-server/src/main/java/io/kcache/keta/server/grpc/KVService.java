@@ -48,14 +48,18 @@ import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KVService extends KVGrpc.KVImplBase {
+    private static final Logger LOG = LoggerFactory.getLogger(KVService.class);
 
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
+        LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
         // TODO limit, keys_only, count_only
         // TODO error on sort_target
@@ -112,6 +116,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
+        LOG.info("Put request: {}", request.getKey());
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -170,6 +175,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
+        LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
@@ -229,6 +235,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
+        LOG.info("Txn request: {}", request.getCompareList());
         // TODO check cmp < value
         // TODO both key and range_end \0
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
