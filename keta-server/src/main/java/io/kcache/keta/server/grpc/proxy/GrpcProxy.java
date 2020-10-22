@@ -32,7 +32,6 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
-import io.kcache.keta.server.leader.KetaIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,45 +43,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /** A grpc-level proxy. */
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcProxy.class);
 
-    private KetaIdentity myIdentity;
-    private volatile KetaIdentity leader;
-    private volatile ManagedChannel channel;
+    private String target;
+    private ManagedChannel channel;
 
-    public GrpcProxy() {
+    public GrpcProxy(String target) {
+        setTarget(target);
     }
 
-    public KetaIdentity getIdentity() {
-        return myIdentity;
+    public synchronized String getTarget() {
+        return target;
     }
 
-    public void setIdentity(KetaIdentity identity) {
-        this.myIdentity = identity;
-    }
-
-    public Boolean isLeader() {
-        return leader != null ? leader.equals(myIdentity) : null;
-    }
-
-    public void setLeader(KetaIdentity leader) {
-        if (!Objects.equals(this.leader, leader)) {
-            this.leader = leader;
+    public synchronized void setTarget(String target) {
+        if (!Objects.equals(this.target, target)) {
             if (channel != null) {
                 channel.shutdown();
                 channel = null;
             }
-            if (Boolean.FALSE.equals(isLeader())) {
-                String target = leader.getHost() + ":" + leader.getPort();
+            if (target != null) {
                 channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
                     .build();
             }
+            this.target = target;
         }
     }
 
@@ -221,11 +210,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
         @Override
         public ServerMethodDefinition<?,?> lookupMethod(String methodName, String authority) {
-            Boolean isLeader = proxy != null ? proxy.isLeader() : Boolean.TRUE;  // for testing
-            if (isLeader == null) {
-                throw new IllegalStateException("Leader unknown");
-            }
-            if (isLeader) {
+            if (proxy == null || proxy.getTarget() == null) {
                 return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
             } else {
                 MethodDescriptor<byte[], byte[]> methodDescriptor
@@ -235,6 +220,38 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                     .build();
                 return ServerMethodDefinition.create(methodDescriptor, proxy);
             }
+        }
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        String target = "localhost:8980";
+        LOG.info("Proxy will connect to " + target);
+        GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(target);
+        ManagedChannel channel = proxy.getChannel();
+        int port = 8981;
+        Server server = ServerBuilder.forPort(port)
+            .fallbackHandlerRegistry(new Registry(proxy, Collections.emptyList()))
+            .build()
+            .start();
+        LOG.info("Proxy started, listening on " + port);
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                server.shutdown();
+                try {
+                    server.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+                if (!server.isTerminated()) {
+                    server.shutdownNow();
+                }
+                channel.shutdownNow();
+            }
+        });
+        server.awaitTermination();
+        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+            System.out.println("Channel didn't shut down promptly");
         }
     }
 }
