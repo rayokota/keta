@@ -336,7 +336,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
 
     private void setLeader(KetaIdentity leader) {
         KetaIdentity previousLeader = this.leader.getAndSet(leader);
-        proxy.setTarget(leader == null || leader.equals(myIdentity) ? null : leader.getHost() + ":" + leader.getPort());
+        proxy.setLeader(leader);
 
         if (leader != null && !leader.equals(previousLeader) && leader.equals(myIdentity)) {
             LOG.info("Syncing caches...");
