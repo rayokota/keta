@@ -51,6 +51,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -272,6 +273,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
         try {
             switch (assignment.error()) {
                 case KetaProtocol.Assignment.NO_ERROR:
+                case KetaProtocol.Assignment.DUPLICATE_URLS:
                     if (assignment.leaderIdentity() == null) {
                         LOG.error(
                             "No leader eligible instances joined the group. "
@@ -280,17 +282,20 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
                         );
                     }
                     setLeader(assignment.leaderIdentity());
-                    setMembers(assignment.members());
+                    if (assignment.error() == KetaProtocol.Assignment.DUPLICATE_URLS) {
+                        LOG.warn(
+                            "The group contained multiple members advertising the same URL. "
+                                + "Verify that each instance has a unique, routable listener by setting the "
+                                + "'listeners' configuration. This error may happen if executing in containers "
+                                + "where the default hostname is 'localhost'."
+                        );
+                        setMembers(new ArrayList<>(new HashSet<>(assignment.members())));
+                    } else {
+                        setMembers(assignment.members());
+                    }
                     LOG.info(isLeader() ? "Registered as leader" : "Registered as replica");
                     joinedLatch.countDown();
                     break;
-                case KetaProtocol.Assignment.DUPLICATE_URLS:
-                    throw new IllegalStateException(
-                        "The group contained multiple members advertising the same URL. "
-                            + "Verify that each instance has a unique, routable listener by setting the "
-                            + "'listeners' configuration. This error may happen if executing in containers "
-                            + "where the default hostname is 'localhost'."
-                    );
                 default:
                     throw new IllegalStateException("Unknown error returned from the coordination protocol");
             }
