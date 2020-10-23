@@ -25,7 +25,6 @@ import org.apache.omid.metrics.MetricsRegistry;
 import org.apache.omid.timestamp.storage.TimestampStorage;
 import org.apache.omid.tso.Panicker;
 import org.apache.omid.tso.TimestampOracle;
-import org.apache.omid.tso.TimestampOracleImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +74,7 @@ public class KetaTimestampOracle implements TimestampOracle {
             long newMaxTimestamp = previousMaxTimestamp + TIMESTAMP_BATCH;
             try {
                 storage.updateMaxTimestamp(previousMaxTimestamp, newMaxTimestamp);
+                LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, newMaxTimestamp);
                 maxAllocatedTimestamp = newMaxTimestamp;
                 previousMaxTimestamp = newMaxTimestamp;
             } catch (Throwable e) {

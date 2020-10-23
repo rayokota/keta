@@ -67,6 +67,9 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
 
     @Override
     public boolean validateUpdate(byte[] key, VersionedValues value, TopicPartition tp, long offset, long timestamp) {
+        if (value == null) {
+            return true;
+        }
         int generationId = value.getGenerationId();
         if (generationId < maxGenerationId) {
             return false;
