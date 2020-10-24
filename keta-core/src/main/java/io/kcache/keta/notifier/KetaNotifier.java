@@ -81,7 +81,6 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
 
     @Override
     public void handleUpdate(byte[] key, VersionedValues value, VersionedValues oldValue, TopicPartition tp, long offset, long timestamp) {
-        KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         if (value == null) {
             return;
         }
@@ -116,6 +115,7 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
         if (prevValue != null && !prevValue.isDeleted()) {
             builder.setPrevKv(ProtoUtils.toKeyValue(key, prevValue));
         }
+        KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         Set<Watch> watches = watchMgr.getWatches(key);
         for (Watch watch : watches) {
             publish(watch.getId(), builder.build());
