@@ -57,7 +57,10 @@ public class KetaMain extends AbstractVerticle {
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
+            // may help with "java.net.BindException: address already in use"
+            // see https://issues.apache.org/jira/browse/RATIS-606
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
+            .withChildOption(ChannelOption.TCP_NODELAY, true)
             .addService(new ClusterService(elector))
             .addService(new WatchService())  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
