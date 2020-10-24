@@ -60,6 +60,8 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
+    private final TimestampOracle timestampOracle;
+
     private volatile int generationId = -1;
 
     private static KetaTransactionManager INSTANCE;
@@ -83,7 +85,6 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
             TimestampOracle timestampOracle = new KetaTimestampOracle(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
-            timestampOracle.initialize();
             PostCommitActions postCommitter = new KetaSyncPostCommitter(commitTable.getClient());
             return newInstance(commitTable, timestampOracle, postCommitter);
         } catch (IOException e) {
@@ -98,12 +99,11 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
             CommitTable.Client commitTableClient = commitTable.getClient();
             CommitTable.Writer commitTableWriter = commitTable.getWriter();
-            TSOProtocol tsoClient = new KetaTimestampClient(timestampOracle, commitTableWriter);
 
             INSTANCE = new KetaTransactionManager(
                 metricsRegistry,
                 postCommitter,
-                tsoClient,
+                timestampOracle,
                 commitTableClient,
                 commitTableWriter,
                 new KetaTransactionFactory());
@@ -113,19 +113,27 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
-
     private KetaTransactionManager(MetricsRegistry metricsRegistry,
                                    PostCommitActions postCommitter,
-                                   TSOProtocol tsoClient,
+                                   TimestampOracle timestampOracle,
                                    CommitTable.Client commitTableClient,
                                    CommitTable.Writer commitTableWriter,
                                    KetaTransactionFactory transactionFactory) {
         super(metricsRegistry,
             postCommitter,
-            tsoClient,
+            new KetaTimestampClient(timestampOracle, commitTableWriter),
             commitTableClient,
             commitTableWriter,
             transactionFactory);
+        this.timestampOracle = timestampOracle;
+    }
+
+    public void init() {
+        try {
+            timestampOracle.initialize();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public int getGenerationId() {

@@ -172,6 +172,7 @@ public class KetaEngine implements Configurable, Closeable {
         timestamps.sync();
         leases.sync();
         cache.sync();
+        transactionManager.init();
     }
 
     public TxVersionedCache getTxCache() {

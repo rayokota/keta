@@ -126,8 +126,7 @@ public class KetaTimestampOracle implements TimestampOracle {
 
         this.allocateTimestampsBatchTask = new AllocateTimestampBatchTask(lastTimestamp);
 
-        // NOTE: Don't trigger first allocation of timestamps, as this node might not be leader
-        //executor.execute(allocateTimestampsBatchTask);
+        executor.execute(allocateTimestampsBatchTask);
 
         LOG.info("Initializing timestamp oracle with timestamp {}", this.lastTimestamp);
     }
