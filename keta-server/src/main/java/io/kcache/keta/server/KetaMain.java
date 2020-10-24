@@ -34,9 +34,9 @@ public class KetaMain extends AbstractVerticle {
     private final KetaLeaderElector elector;
     private final URI listener;
 
-    public KetaMain() throws URISyntaxException {
+    public KetaMain(KetaLeaderElector elector) throws URISyntaxException {
         this.proxy = null;
-        this.elector = null;
+        this.elector = elector;
         this.listener = new URI("http://0.0.0.0:2379");
     }
 

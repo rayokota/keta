@@ -31,6 +31,7 @@ import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.GetOption.SortOrder;
 import io.etcd.jetcd.options.GetOption.SortTarget;
 import io.etcd.jetcd.options.PutOption;
+import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.server.utils.RemoteClusterTestHarness;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -51,6 +52,8 @@ import static io.kcache.keta.server.utils.TestUtils.bytesOf;
 import static io.kcache.keta.server.utils.TestUtils.randomString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -66,7 +69,9 @@ public class KVTest extends RemoteClusterTestHarness {
 
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
-        vertx.deployVerticle(new KetaMain(), testContext.completing());
+        KetaLeaderElector elector = mock(KetaLeaderElector.class);
+        when(elector.isLeader()).thenReturn(true);
+        vertx.deployVerticle(new KetaMain(elector), testContext.completing());
         //TODO
         kvClient = Client.builder().endpoints(ENDPOINTS).build().getKVClient();
     }

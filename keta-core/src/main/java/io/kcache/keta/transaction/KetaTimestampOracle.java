@@ -100,7 +100,7 @@ public class KetaTimestampOracle implements TimestampOracle {
     private Executor executor = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
 
-    private Runnable allocateTimestampsBatchTask;
+    private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
 
     @Inject
     public KetaTimestampOracle(MetricsRegistry metrics,
