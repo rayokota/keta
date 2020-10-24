@@ -74,11 +74,11 @@ public class KetaTimestampOracle implements TimestampOracle {
             long newMaxTimestamp = previousMaxTimestamp + TIMESTAMP_BATCH;
             try {
                 storage.updateMaxTimestamp(previousMaxTimestamp, newMaxTimestamp);
-                LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, newMaxTimestamp);
+                LOG.info("Updating timestamp oracle with max timestamp: (previous:{}, new:{})", previousMaxTimestamp, newMaxTimestamp);
                 maxAllocatedTimestamp = newMaxTimestamp;
                 previousMaxTimestamp = newMaxTimestamp;
             } catch (Throwable e) {
-                panicker.panic("Can't store the new max timestamp", e);
+                panicker.panic("Can't store the new max timestamp in timestamp oracle", e);
             }
         }
     }
