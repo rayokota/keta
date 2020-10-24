@@ -10,7 +10,6 @@ import io.kcache.keta.server.grpc.LeaseService;
 import io.kcache.keta.server.grpc.WatchService;
 import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
-import io.kcache.keta.server.leader.KetaIdentity;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.netty.channel.ChannelOption;
 import io.vertx.core.AbstractVerticle;

@@ -1,9 +1,7 @@
 package io.kcache.keta.notifier;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.etcd.jetcd.api.Event;
-import io.etcd.jetcd.api.KeyValue;
 import io.kcache.CacheUpdateHandler;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.utils.ProtoUtils;

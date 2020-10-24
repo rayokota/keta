@@ -49,7 +49,7 @@ import static org.apache.omid.committable.CommitTable.CommitTimestamp.Location.S
 
 public class SnapshotFilterImpl implements SnapshotFilter {
 
-    private static Logger LOG = LoggerFactory.getLogger(SnapshotFilterImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SnapshotFilterImpl.class);
 
     private final VersionedCache versionedCache;
 

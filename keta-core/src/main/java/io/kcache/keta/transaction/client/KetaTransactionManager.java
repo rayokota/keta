@@ -37,9 +37,7 @@ import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManagerException;
 import org.apache.omid.tso.RuntimeExceptionPanicker;
 import org.apache.omid.tso.TimestampOracle;
-import org.apache.omid.tso.TimestampOracleImpl;
 import org.apache.omid.tso.client.CellId;
-import org.apache.omid.tso.client.TSOProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

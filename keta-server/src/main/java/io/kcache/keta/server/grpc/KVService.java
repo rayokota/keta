@@ -45,7 +45,6 @@ import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
 import io.kcache.keta.version.VersionedValue;
 import org.apache.kafka.common.utils.Bytes;
-import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManager;
