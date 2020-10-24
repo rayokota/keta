@@ -85,12 +85,6 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             injectKetaProperties(props);
 
             KetaConfig config = new KetaConfig(props);
-            // TODO
-            LOG.info("Starting leader election...");
-            //KetaLeaderElector elector = new KetaLeaderElector(config, engine);
-            //elector.init();
-            //boolean isLeader = elector.isLeader();
-            LOG.info("Leader elected, starting server...");
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
             engine.init(new KetaNotifier(vertx.eventBus()));

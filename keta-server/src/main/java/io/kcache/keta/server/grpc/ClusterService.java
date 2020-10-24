@@ -67,7 +67,8 @@ public class ClusterService extends ClusterGrpc.ClusterImplBase {
         if (elector != null) {
             List<KetaIdentity> members = elector.getMembers();
             if (members == null) {
-                throw new IllegalStateException("Leader election in process");
+                responseObserver.onError(new IllegalStateException("Leader election in process"));
+                return;
             }
             for (KetaIdentity member : members) {
                 responseBuilder.addMembers(Member.newBuilder().setName(member.getUrl()));

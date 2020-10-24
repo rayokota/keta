@@ -63,7 +63,6 @@ public class LeaseTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        //TODO
         client = Client.builder().endpoints(ENDPOINTS).build();
         kvClient = client.getKVClient();
         leaseClient = client.getLeaseClient();

@@ -106,7 +106,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                     return;
                 }
 
-                LOG.error("cought an error writing response: {}", e.getMessage());
+                LOG.error("caught an error writing response: {}", e.getMessage());
             }
         });
         responseObserver.onNext(WatchResponse.newBuilder()

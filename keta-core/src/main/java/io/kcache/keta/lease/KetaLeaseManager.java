@@ -71,7 +71,11 @@ public class KetaLeaseManager {
     }
 
     public LeaseKeys get(long id) {
-        return expiringMap.get(id);
+        LeaseKeys lk = expiringMap.get(id);
+        if (lk == null) {
+            throw new IllegalArgumentException("No lease with id " + id);
+        }
+        return lk;
     }
 
     public LeaseKeys revoke(long id) {

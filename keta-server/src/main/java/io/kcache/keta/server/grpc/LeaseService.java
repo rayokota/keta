@@ -50,7 +50,8 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
@@ -61,48 +62,54 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 .setID(lk.getLease().getId())
                 .setTTL(lk.getLease().getTtl())
                 .build());
-        } catch (IllegalArgumentException e) {
-            responseObserver.onNext(LeaseGrantResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder().build())
-                .setError(e.getLocalizedMessage())
-                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(e);
         }
-        responseObserver.onCompleted();
     }
 
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         long id = request.getID();
         if (id == 0) {
-            throw new IllegalArgumentException("No lease id");
+            responseObserver.onError(new IllegalArgumentException("No lease id"));
+            return;
         }
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
-        leaseMgr.revoke(id);
-        // TODO handle error
-        responseObserver.onNext(LeaseRevokeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder().build())
-            .build());
-        responseObserver.onCompleted();
+        try {
+            leaseMgr.revoke(id);
+            responseObserver.onNext(LeaseRevokeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder().build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(e);
+        }
     }
 
     @Override
     public StreamObserver<LeaseKeepAliveRequest> leaseKeepAlive(StreamObserver<LeaseKeepAliveResponse> responseObserver) {
-        if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
-        }
         return new StreamObserver<LeaseKeepAliveRequest>() {
             @Override
             public void onNext(LeaseKeepAliveRequest value) {
+                if (!elector.isLeader()) {
+                    responseObserver.onError(new IllegalStateException("Not leader"));
+                    return;
+                }
                 long id = value.getID();
                 KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
-                LeaseKeys lease = leaseMgr.renew(id);
-                // TODO handle error
-                responseObserver.onNext(LeaseKeepAliveResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder().build())
-                    .setID(id).setTTL(lease.getTtl()).build());
+                try {
+                    LeaseKeys lease = leaseMgr.renew(id);
+                    responseObserver.onNext(LeaseKeepAliveResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder().build())
+                        .setID(id).setTTL(lease.getTtl()).build());
+                } catch (Exception e) {
+                    responseObserver.onError(e);
+                }
             }
 
             @Override
@@ -120,23 +127,27 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         long id = request.getID();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
-        LeaseKeys lease = leaseMgr.get(id);
-        // TODO handle error
-        LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder().build())
-            .setID(id)
-            .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
-            .setGrantedTTL(lease.getTtl());
-        if (request.getKeys()) {
-            builder.addAllKeys(lease.getKeys().stream()
-                .map(k -> ByteString.copyFrom(k.get()))
-                .collect(Collectors.toList()));
+        try {
+            LeaseKeys lease = leaseMgr.get(id);
+            LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder().build())
+                .setID(id)
+                .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
+                .setGrantedTTL(lease.getTtl());
+            if (request.getKeys()) {
+                builder.addAllKeys(lease.getKeys().stream()
+                    .map(k -> ByteString.copyFrom(k.get()))
+                    .collect(Collectors.toList()));
+            }
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(e);
         }
-        responseObserver.onNext(builder.build());
-        responseObserver.onCompleted();
     }
 }

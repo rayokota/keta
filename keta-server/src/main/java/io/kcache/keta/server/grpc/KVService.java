@@ -67,7 +67,8 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
@@ -82,7 +83,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (TransactionException | RollbackException e) {
+        } catch (Exception e) {
             if (tx != null) {
                 try {
                     txMgr.rollback(tx);
@@ -90,7 +91,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            throw new IllegalStateException(e);
+            responseObserver.onError(e);
         }
     }
 
@@ -127,7 +128,8 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         LOG.info("Put request: {}", request.getKey());
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
@@ -138,7 +140,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (TransactionException | RollbackException e) {
+        } catch (Exception e) {
             if (tx != null) {
                 try {
                     txMgr.rollback(tx);
@@ -146,7 +148,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            throw new IllegalStateException(e);
+            responseObserver.onError(e);
         }
     }
 
@@ -162,16 +164,10 @@ public class KVService extends KVGrpc.KVImplBase {
             long oldLease = versioned != null ? versioned.getLease() : 0;
             if (oldLease > 0) {
                 LeaseKeys lk = leaseMgr.get(oldLease);
-                if (lk == null) {
-                    throw new IllegalArgumentException("No lease with id " + oldLease);
-                }
                 lk.getKeys().remove(Bytes.wrap(key));
             }
             if (lease > 0) {
                 LeaseKeys lk = leaseMgr.get(lease);
-                if (lk == null) {
-                    throw new IllegalArgumentException("No lease with id " + lease);
-                }
                 lk.getKeys().add(Bytes.wrap(key));
             }
         } else {
@@ -189,7 +185,8 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
         // TODO both key and range_end \0
@@ -201,7 +198,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (TransactionException | RollbackException e) {
+        } catch (Exception e) {
             if (tx != null) {
                 try {
                     txMgr.rollback(tx);
@@ -209,7 +206,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            throw new IllegalStateException(e);
+            responseObserver.onError(e);
         }
     }
 
@@ -252,7 +249,8 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         LOG.info("Txn request: {}", request.getCompareList());
         // TODO check cmp < value
@@ -265,7 +263,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (TransactionException | RollbackException e) {
+        } catch (Exception e) {
             if (tx != null) {
                 try {
                     txMgr.rollback(tx);
@@ -273,7 +271,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            throw new IllegalStateException(e);
+            responseObserver.onError(e);
         }
     }
 
@@ -403,7 +401,6 @@ public class KVService extends KVGrpc.KVImplBase {
             case REQUEST_NOT_SET:
                 return responseBuilder.build();
             default:
-                // TODO
                 throw new IllegalArgumentException("Unsupported request type " + request.getRequestCase());
         }
     }
@@ -411,7 +408,8 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
         if (!elector.isLeader()) {
-            throw new IllegalStateException("Not leader");
+            responseObserver.onError(new IllegalStateException("Not leader"));
+            return;
         }
         super.compact(request, responseObserver);
     }

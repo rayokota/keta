@@ -107,6 +107,7 @@ public class KetaNotifier implements CacheUpdateHandler<byte[], VersionedValues>
         Event.Builder builder = Event.newBuilder();
         if (currValue.isDeleted()) {
             builder.setType(Event.EventType.DELETE)
+                // TODO need revision?
                 .setKv(ProtoUtils.toKeyValue(key, null));
         } else {
             builder.setType(Event.EventType.PUT)
