@@ -12,6 +12,7 @@ import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.server.leader.KetaIdentity;
 import io.kcache.keta.server.leader.KetaLeaderElector;
+import io.netty.channel.ChannelOption;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -56,6 +57,7 @@ public class KetaMain extends AbstractVerticle {
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
+            .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .addService(new ClusterService(elector))
             .addService(new WatchService())  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
