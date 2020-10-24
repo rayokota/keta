@@ -18,6 +18,9 @@ import com.google.common.io.Files;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.notifier.KetaNotifier;
+import io.kcache.keta.server.KetaMain;
+import io.kcache.keta.server.grpc.proxy.GrpcProxy;
+import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.utils.ClusterTestHarness;
 import io.vertx.core.Vertx;
 import org.apache.commons.io.FileUtils;
@@ -30,7 +33,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.Collections;
 import java.util.Properties;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test harness to run against a real, local Kafka cluster. This is essentially
@@ -52,6 +59,14 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     public RemoteClusterTestHarness(int numBrokers) {
         super(numBrokers);
+    }
+
+    public static KetaMain createKeta() throws Exception {
+        GrpcProxy<byte[], byte[]> proxy = mock(GrpcProxy.class);
+        KetaLeaderElector elector = mock(KetaLeaderElector.class);
+        when(elector.isLeader()).thenReturn(true);
+        when(elector.getListeners()).thenReturn(Collections.emptyList());
+        return new KetaMain(proxy, elector);
     }
 
     @BeforeEach

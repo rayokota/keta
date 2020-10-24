@@ -27,7 +27,6 @@ import io.etcd.jetcd.options.WatchOption;
 import io.etcd.jetcd.watch.WatchEvent;
 import io.etcd.jetcd.watch.WatchEvent.EventType;
 import io.etcd.jetcd.watch.WatchResponse;
-import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.server.utils.RemoteClusterTestHarness;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -51,8 +50,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static io.kcache.keta.server.utils.TestUtils.bytesOf;
 import static io.kcache.keta.server.utils.TestUtils.randomByteSequence;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -64,9 +61,7 @@ public class WatchTest extends RemoteClusterTestHarness {
 
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
-        KetaLeaderElector elector = mock(KetaLeaderElector.class);
-        when(elector.isLeader()).thenReturn(true);
-        vertx.deployVerticle(new KetaMain(elector), testContext.completing());
+        vertx.deployVerticle(createKeta(), testContext.completing());
         client = Client.builder().endpoints(ENDPOINTS).build();
     }
 
