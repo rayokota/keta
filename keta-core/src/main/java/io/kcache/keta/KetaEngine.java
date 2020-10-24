@@ -99,7 +99,7 @@ public class KetaEngine implements Configurable, Closeable {
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
 
         if (bootstrapServers != null) {
-            String topic = "_commits";
+            String topic = "_keta_commits";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
@@ -112,7 +112,7 @@ public class KetaEngine implements Configurable, Closeable {
         commits.init();
 
         if (bootstrapServers != null) {
-            String topic = "_timestamps";
+            String topic = "_keta_timestamps";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
@@ -125,7 +125,7 @@ public class KetaEngine implements Configurable, Closeable {
         timestamps.init();
 
         if (bootstrapServers != null) {
-            String topic = "_leases";
+            String topic = "_keta_leases";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
@@ -138,7 +138,7 @@ public class KetaEngine implements Configurable, Closeable {
         leases.init();
 
         if (bootstrapServers != null) {
-            String topic = "_keta";
+            String topic = "_keta_kv";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
