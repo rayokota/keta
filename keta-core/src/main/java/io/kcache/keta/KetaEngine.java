@@ -137,7 +137,6 @@ public class KetaEngine implements Configurable, Closeable {
         leases = Caches.concurrentCache(leases);
         leases.init();
 
-        Cache<byte[], VersionedValues> cache;
         if (bootstrapServers != null) {
             String topic = "_keta";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
@@ -171,6 +170,8 @@ public class KetaEngine implements Configurable, Closeable {
     public void sync() {
         commits.sync();
         timestamps.sync();
+        leases.sync();
+        cache.sync();
     }
 
     public TxVersionedCache getTxCache() {
@@ -194,6 +195,8 @@ public class KetaEngine implements Configurable, Closeable {
         transactionManager.close();
         timestamps.close();
         commits.close();
+        leases.close();
+        cache.close();
     }
 
     @SuppressWarnings("unchecked")
