@@ -44,8 +44,8 @@ public class KetaTimestampOracle implements TimestampOracle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaTimestampOracle.class);
 
-    static final long TIMESTAMP_BATCH = 10_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 10 million
-    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 1 million
+    static final long TIMESTAMP_BATCH = 10_000_000; // 10 million
+    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000; // 1 million
 
     private long lastTimestamp;
 
@@ -97,7 +97,6 @@ public class KetaTimestampOracle implements TimestampOracle {
                 return maxTimestamp;
             }
         });
-
     }
 
     @Override
@@ -118,7 +117,7 @@ public class KetaTimestampOracle implements TimestampOracle {
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public long next() {
-        lastTimestamp += CommitTable.MAX_CHECKPOINTS_PER_TXN;
+        lastTimestamp += 1;
 
         if (lastTimestamp >= nextAllocationThreshold) {
             // set the nextAllocationThread to max value of long in order to
@@ -151,5 +150,4 @@ public class KetaTimestampOracle implements TimestampOracle {
     public String toString() {
         return String.format("TimestampOracle -> LastTimestamp: %d, MaxTimestamp: %d", lastTimestamp, maxTimestamp);
     }
-
 }
