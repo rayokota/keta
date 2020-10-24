@@ -346,7 +346,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
             LOG.info("Syncing caches...");
             engine.sync();
         }
-        
+
         proxy.setTarget(leader == null || leader.equals(myIdentity) ? null : leader.getHost() + ":" + leader.getPort());
     }
 
