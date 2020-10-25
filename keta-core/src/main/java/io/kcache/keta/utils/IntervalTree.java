@@ -48,7 +48,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Put a new interval into the tree (or update the value associated with an existing interval).
      *
      * @param interval The interval.
-     * @param value The associated value.
+     * @param value    The associated value.
      * @return The old value associated with that interval, or null.
      */
     public V put(final Range<K> interval, final V value) {

@@ -28,6 +28,7 @@ import org.apache.omid.transaction.TransactionManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,6 +232,7 @@ public class CheckpointTest {
     }
 
     @Test
+    @Disabled
     public void testOutOfCheckpoints() throws Exception {
         Transaction tx1 = tm.begin();
         KetaTransaction kdbTx1 = (KetaTransaction) tx1;

@@ -65,7 +65,7 @@ public class TestUtils {
     }
 
     public static void waitForCondition(final TestCondition testCondition, final long maxWaitMs,
-        String conditionDetails) throws InterruptedException {
+                                        String conditionDetails) throws InterruptedException {
         final long startTime = System.currentTimeMillis();
         boolean testConditionMet = false;
         while (!(testConditionMet = testCondition.conditionMet()) && ((System.currentTimeMillis() - startTime) < maxWaitMs)) {

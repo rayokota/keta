@@ -31,7 +31,7 @@ public class KafkaValueSerializerTest {
     public void testSerializer() throws Exception {
         KafkaValueSerde serde = new KafkaValueSerde();
         NavigableMap<Long, VersionedValue> map = new TreeMap<>();
-        map.put(2L, new VersionedValue(2, 1, 0,  "hi".getBytes()));
+        map.put(2L, new VersionedValue(2, 1, 0, "hi".getBytes()));
         map.put(4L, new VersionedValue(4, 2, 1, "bye".getBytes()));
         VersionedValues values = new VersionedValues(1, map);
         byte[] bytes = serde.serializer().serialize(null, values);

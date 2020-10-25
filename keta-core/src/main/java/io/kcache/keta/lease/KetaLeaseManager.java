@@ -65,8 +65,10 @@ public class KetaLeaseManager {
         }
         cache.put(lease.getId(), lease);
         LeaseKeys lk = new LeaseKeys(lease);
-        // TODO check expiry is still valid
-        expiringMap.put(lease.getId(), lk, lease.getExpiry() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        long duration = lease.getExpiry() - System.currentTimeMillis();
+        if (duration > 0) {
+            expiringMap.put(lease.getId(), lk, duration, TimeUnit.MILLISECONDS);
+        }
         return lk;
     }
 
@@ -88,7 +90,9 @@ public class KetaLeaseManager {
     }
 
     private void revoke(LeaseKeys lk) {
-        // TODO check that is master
+        if (!KetaEngine.getInstance().isLeader()) {
+            return;
+        }
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -119,7 +123,10 @@ public class KetaLeaseManager {
         Lease newLease = new Lease(id, oldLease.getTtl(), System.currentTimeMillis() + oldLease.getTtl() * 1000);
         cache.put(id, newLease);
         LeaseKeys newlk = new LeaseKeys(newLease, lk.getKeys());
-        expiringMap.put(id, newlk, newLease.getExpiry() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        long duration = newLease.getExpiry() - System.currentTimeMillis();
+        if (duration > 0) {
+            expiringMap.put(id, newlk, duration, TimeUnit.MILLISECONDS);
+        }
         return newlk;
     }
 }

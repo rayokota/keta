@@ -45,7 +45,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-/** A grpc-level proxy. */
+/**
+ * A grpc-level proxy.
+ */
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcProxy.class);
 
@@ -108,15 +110,18 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                 this.clientCall = clientCall;
             }
 
-            @Override public void onCancel() {
+            @Override
+            public void onCancel() {
                 clientCall.cancel("Server cancelled", null);
             }
 
-            @Override public void onHalfClose() {
+            @Override
+            public void onHalfClose() {
                 clientCall.halfClose();
             }
 
-            @Override public void onMessage(ReqT message) {
+            @Override
+            public void onMessage(ReqT message) {
                 clientCall.sendMessage(message);
                 synchronized (this) {
                     if (clientCall.isReady()) {
@@ -127,7 +132,8 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                 }
             }
 
-            @Override public void onReady() {
+            @Override
+            public void onReady() {
                 clientCallListener.onServerReady();
             }
 
@@ -148,15 +154,18 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                 this.serverCall = serverCall;
             }
 
-            @Override public void onClose(Status status, Metadata trailers) {
+            @Override
+            public void onClose(Status status, Metadata trailers) {
                 serverCall.close(status, trailers);
             }
 
-            @Override public void onHeaders(Metadata headers) {
+            @Override
+            public void onHeaders(Metadata headers) {
                 serverCall.sendHeaders(headers);
             }
 
-            @Override public void onMessage(RespT message) {
+            @Override
+            public void onMessage(RespT message) {
                 serverCall.sendMessage(message);
                 synchronized (this) {
                     if (serverCall.isReady()) {
@@ -167,7 +176,8 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                 }
             }
 
-            @Override public void onReady() {
+            @Override
+            public void onReady() {
                 serverCallListener.onClientReady();
             }
 
@@ -181,7 +191,8 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     }
 
     private static class ByteMarshaller implements MethodDescriptor.Marshaller<byte[]> {
-        @Override public byte[] parse(InputStream stream) {
+        @Override
+        public byte[] parse(InputStream stream) {
             try {
                 return ByteStreams.toByteArray(stream);
             } catch (IOException ex) {
@@ -189,7 +200,8 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
             }
         }
 
-        @Override public InputStream stream(byte[] value) {
+        @Override
+        public InputStream stream(byte[] value) {
             return new ByteArrayInputStream(value);
         }
     }
@@ -209,7 +221,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
         }
 
         @Override
-        public ServerMethodDefinition<?,?> lookupMethod(String methodName, String authority) {
+        public ServerMethodDefinition<?, ?> lookupMethod(String methodName, String authority) {
             if (proxy == null || proxy.getTarget() == null) {
                 return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
             } else {

@@ -95,7 +95,6 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                     .collect(Collectors.toList());
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
-                        // TODO add headers everywhere
                         .setHeader(ResponseHeader.newBuilder().build())
                         .setWatchId(watchId)
                         .addAllEvents(events)

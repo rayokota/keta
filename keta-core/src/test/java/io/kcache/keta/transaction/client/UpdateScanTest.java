@@ -45,7 +45,7 @@ public class UpdateScanTest {
         KetaTransaction.setCurrentTransaction((KetaTransaction) t);
         int[] lInts = new int[]{100, 243, 2342, 22, 1, 5, 43, 56};
         for (int lInt : lInts) {
-            versionedCache.put(new byte[]{(byte)lInt}, dataValue1);
+            versionedCache.put(new byte[]{(byte) lInt}, dataValue1);
         }
 
         byte[] key = {22};
@@ -73,7 +73,7 @@ public class UpdateScanTest {
         KetaTransaction.setCurrentTransaction((KetaTransaction) t);
         int[] lInts = new int[]{100, 243, 2342, 22, 1, 5, 43, 56};
         for (int lInt : lInts) {
-            versionedCache.put(new byte[]{(byte)lInt}, dataValue1);
+            versionedCache.put(new byte[]{(byte) lInt}, dataValue1);
         }
 
         int count = (int) Streams.streamOf(versionedCache.all()).count();
@@ -100,7 +100,7 @@ public class UpdateScanTest {
         KetaTransaction.setCurrentTransaction((KetaTransaction) t);
         int[] lIntsA = new int[]{100, 243, 2342, 22, 1, 5, 43, 56};
         for (int element : lIntsA) {
-            versionedCache.put(new byte[]{(byte)element}, dataValue1);
+            versionedCache.put(new byte[]{(byte) element}, dataValue1);
         }
 
         tm.commit(t);
@@ -110,7 +110,7 @@ public class UpdateScanTest {
         KetaTransaction.setCurrentTransaction((KetaTransaction) tu);
         int[] lIntsB = new int[]{105, 24, 4342, 32, 7, 3, 30, 40};
         for (int item : lIntsB) {
-            versionedCache.put(new byte[]{(byte)item}, dataValue1);
+            versionedCache.put(new byte[]{(byte) item}, dataValue1);
         }
 
         t = tm.begin();
@@ -118,7 +118,7 @@ public class UpdateScanTest {
         KetaTransaction.setCurrentTransaction((KetaTransaction) t);
         int[] lIntsC = new int[]{109, 224, 242, 2, 16, 59, 23, 26};
         for (int value : lIntsC) {
-            versionedCache.put(new byte[]{(byte)value}, dataValue1);
+            versionedCache.put(new byte[]{(byte) value}, dataValue1);
         }
 
         tm.commit(t);

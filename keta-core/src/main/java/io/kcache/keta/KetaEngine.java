@@ -21,9 +21,10 @@ import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.keta.kafka.serialization.KafkaLeaseSerde;
 import io.kcache.keta.kafka.serialization.KafkaValueSerde;
+import io.kcache.keta.leader.LeaderElector;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.Lease;
-import io.kcache.keta.notifier.KetaNotifier;
+import io.kcache.keta.notifier.Notifier;
 import io.kcache.keta.transaction.KetaCommitTable;
 import io.kcache.keta.transaction.KetaTimestampStorage;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
@@ -51,6 +52,7 @@ public class KetaEngine implements Configurable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(KetaEngine.class);
 
     private KetaConfig config;
+    private LeaderElector elector;
     private Cache<Long, Long> commits;
     private Cache<Long, Long> timestamps;
     private Cache<Long, Lease> leases;
@@ -92,8 +94,9 @@ public class KetaEngine implements Configurable, Closeable {
         this.config = config;
     }
 
-    public void init(KetaNotifier notifier) {
-        watchManager = new KetaWatchManager(notifier);
+    public void init(LeaderElector elector, Notifier notifier) {
+        this.elector = elector;
+        this.watchManager = new KetaWatchManager(notifier);
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
@@ -173,6 +176,10 @@ public class KetaEngine implements Configurable, Closeable {
         leases.sync();
         cache.sync();
         transactionManager.init();
+    }
+
+    public boolean isLeader() {
+        return elector.isLeader();
     }
 
     public TxVersionedCache getTxCache() {

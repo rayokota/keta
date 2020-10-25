@@ -102,7 +102,7 @@ public class KetaWatchManager {
             return ranges.get(0);
         }
 
-        Set<Watch> union  = new HashSet<>(keys);
+        Set<Watch> union = new HashSet<>(keys);
         for (Set<Watch> range : ranges) {
             union.addAll(range);
         }
@@ -135,6 +135,10 @@ public class KetaWatchManager {
             return removed;
         }
         return false;
+    }
+
+    public void unwatch(long id) {
+        notifier.unwatch(id);
     }
 
 }

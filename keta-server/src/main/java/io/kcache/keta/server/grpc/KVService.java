@@ -361,6 +361,7 @@ public class KVService extends KVGrpc.KVImplBase {
                 throw new IllegalArgumentException("Unsupported compare type " + compare.getResult());
         }
     }
+
     private boolean doCompareValue(Compare compare, VersionedValue versioned) {
         byte[] value = compare.getValue().toByteArray();
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;

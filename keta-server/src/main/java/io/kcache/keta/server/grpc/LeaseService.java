@@ -47,6 +47,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     public LeaseService(KetaLeaderElector elector) {
         this.elector = elector;
     }
+
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
         if (!elector.isLeader()) {

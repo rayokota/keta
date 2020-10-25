@@ -19,6 +19,7 @@ package io.kcache.keta.server.leader;
 
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.leader.LeaderElector;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
 import org.apache.kafka.clients.ApiVersions;
@@ -63,7 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class KetaLeaderElector implements KetaRebalanceListener, Closeable {
+public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaLeaderElector.class);
 

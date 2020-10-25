@@ -49,6 +49,10 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     public static final String ENDPOINTS = "http://127.0.0.1:2379";
 
+
+    private GrpcProxy<byte[], byte[]> proxy;
+    private KetaLeaderElector elector;
+
     protected File tempDir;
     protected Properties props;
     protected Integer serverPort;
@@ -61,9 +65,9 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
         super(numBrokers);
     }
 
-    public static KetaMain createKeta() throws Exception {
-        GrpcProxy<byte[], byte[]> proxy = mock(GrpcProxy.class);
-        KetaLeaderElector elector = mock(KetaLeaderElector.class);
+    public KetaMain createKeta() throws Exception {
+        proxy = mock(GrpcProxy.class);
+        elector = mock(KetaLeaderElector.class);
         when(elector.isLeader()).thenReturn(true);
         when(elector.getListeners()).thenReturn(Collections.emptyList());
         return new KetaMain(proxy, elector);
@@ -87,7 +91,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             KetaConfig config = new KetaConfig(props);
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
-            engine.init(new KetaNotifier(vertx.eventBus()));
+            engine.init(elector, new KetaNotifier(vertx.eventBus()));
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);

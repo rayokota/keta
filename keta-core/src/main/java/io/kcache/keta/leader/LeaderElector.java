@@ -15,20 +15,8 @@
  * limitations under the License.
  */
 
-package io.kcache.keta.notifier;
+package io.kcache.keta.leader;
 
-import io.etcd.jetcd.api.Event;
-import io.kcache.CacheUpdateHandler;
-import io.kcache.keta.version.VersionedValues;
-import io.vertx.core.Handler;
-
-/**
- * Notifier are used to pass watched keys between KVService and WatchService
- */
-public interface Notifier extends CacheUpdateHandler<byte[], VersionedValues> {
-    void publish(long watchID, Event event);
-
-    void watch(long watchID, Handler<Event> handler);
-
-    void unwatch(long watchID);
+public interface LeaderElector {
+    boolean isLeader();
 }

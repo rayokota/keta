@@ -45,7 +45,7 @@ public class MultiplePutTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx);
         for (int i = 0; i <= NUM_ROWS_TO_ADD; i++) {
-            versionedCache.put(new byte[]{(byte)i}, ("testData" + i).getBytes());
+            versionedCache.put(new byte[]{(byte) i}, ("testData" + i).getBytes());
         }
 
         tm.commit(tx);
@@ -67,7 +67,7 @@ public class MultiplePutTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx);
         for (int i = 0; i <= NUM_ROWS_TO_ADD; i++) {
-            versionedCache.put(new byte[]{(byte)i}, ("testData" + i).getBytes());
+            versionedCache.put(new byte[]{(byte) i}, ("testData" + i).getBytes());
         }
 
         tm.commit(tx);

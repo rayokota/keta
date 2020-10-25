@@ -255,7 +255,7 @@ public class KVTest extends RemoteClusterTestHarness {
         Cmp cmp = new Cmp(foo, Cmp.Op.EQUAL, CmpTarget.version(0));
         CompletableFuture<io.etcd.jetcd.kv.TxnResponse> txnResp = txn.If(cmp)
             .Then(Op.put(foo, bar, PutOption.DEFAULT),
-                Op.txn(null, new Op[] { Op.put(abc, oneTwoThree, PutOption.DEFAULT) }, null))
+                Op.txn(null, new Op[]{Op.put(abc, oneTwoThree, PutOption.DEFAULT)}, null))
             .Else(Op.put(foo, barz, PutOption.DEFAULT)).commit();
         txnResp.get();
 
