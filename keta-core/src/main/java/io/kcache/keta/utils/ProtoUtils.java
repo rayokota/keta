@@ -23,13 +23,25 @@ import io.kcache.keta.version.VersionedValue;
 
 public class ProtoUtils {
     public static KeyValue toKeyValue(byte[] key, VersionedValue value) {
+        return toKeyValue(key, value, false);
+    }
+
+    public static KeyValue toKeyValue(byte[] key, VersionedValue value, boolean keysOnly) {
         KeyValue.Builder builder = KeyValue.newBuilder()
             .setKey(ByteString.copyFrom(key));
         if (value != null) {
-            builder.setValue(ByteString.copyFrom(value.getValue()))
-                .setCreateRevision(value.getCreate())
-                .setModRevision(value.getCommit())
-                .setVersion(value.getSequence());
+            if (value.isDeleted()) {
+                builder.setCreateRevision(0)
+                    .setModRevision(value.getCommit())
+                    .setVersion(0);
+            } else {
+                if (!keysOnly) {
+                    builder.setValue(ByteString.copyFrom(value.getValue()));
+                }
+                builder.setCreateRevision(value.getCreate())
+                    .setModRevision(value.getCommit())
+                    .setVersion(value.getSequence());
+            }
         }
         return builder.build();
     }

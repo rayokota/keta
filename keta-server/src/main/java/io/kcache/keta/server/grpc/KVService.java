@@ -70,10 +70,7 @@ public class KVService extends KVGrpc.KVImplBase {
             return;
         }
         LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
-        // TODO both key and range_end \0
-        // TODO limit, keys_only, count_only
-        // TODO error on sort_target
-        // TODO more
+        // TODO test limit/more
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -99,27 +96,38 @@ public class KVService extends KVGrpc.KVImplBase {
         byte[] from = request.getKey().toByteArray();
         byte[] to = request.getRangeEnd().toByteArray();
         boolean descending = request.getSortOrder() == RangeRequest.SortOrder.DESCEND;
+        boolean keysOnly = request.getKeysOnly();
+        boolean countOnly = request.getCountOnly();
+        long limit = request.getLimit();
         RangeResponse.Builder responseBuilder = RangeResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
-        if (to.length > 0) {
-            long count = 0L;
-            try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
-                while (iter.hasNext()) {
-                    io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
-                    KeyValue kv = ProtoUtils.toKeyValue(entry.key, entry.value);
-                    responseBuilder.addKvs(kv);
-                    count++;
-                }
-            }
-            responseBuilder.setCount(count);
-        } else {
+        if (to.length == 0) {
             VersionedValue versioned = cache.get(from);
             if (versioned != null) {
                 KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
                 responseBuilder.addKvs(kv);
                 responseBuilder.setCount(1L);
             }
-
+        } else {
+            if (to.length == 1 && to[0] == 0) {
+                to = null;
+            }
+            long count = 0L;
+            try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false, descending)) {
+                while (iter.hasNext()) {
+                    io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
+                    if (!countOnly) {
+                        KeyValue kv = ProtoUtils.toKeyValue(entry.key, entry.value, keysOnly);
+                        responseBuilder.addKvs(kv);
+                    }
+                    count++;
+                    if (limit > 0 && count == limit) {
+                        responseBuilder.setMore(iter.hasNext());
+                        break;
+                    }
+                }
+            }
+            responseBuilder.setCount(count);
         }
         return responseBuilder.build();
     }
@@ -188,7 +196,6 @@ public class KVService extends KVGrpc.KVImplBase {
             return;
         }
         LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
-        // TODO both key and range_end \0
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -216,7 +223,20 @@ public class KVService extends KVGrpc.KVImplBase {
         List<byte[]> keys = new ArrayList<>();
         DeleteRangeResponse.Builder responseBuilder = DeleteRangeResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
-        if (to.length > 0) {
+        if (to.length == 0) {
+            VersionedValue versioned = cache.get(from);
+            if (versioned != null) {
+                keys.add(from);
+                if (request.getPrevKv()) {
+                    KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
+                    responseBuilder.addPrevKvs(kv);
+                }
+                responseBuilder.setDeleted(1);
+            }
+        } else {
+            if (to.length == 1 && to[0] == 0) {
+                to = null;
+            }
             long count = 0L;
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
                 while (iter.hasNext()) {
@@ -230,16 +250,6 @@ public class KVService extends KVGrpc.KVImplBase {
                 }
             }
             responseBuilder.setDeleted(count);
-        } else {
-            VersionedValue versioned = cache.get(from);
-            if (versioned != null) {
-                keys.add(from);
-                if (request.getPrevKv()) {
-                    KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
-                    responseBuilder.addPrevKvs(kv);
-                }
-                responseBuilder.setDeleted(1);
-            }
         }
         cache.remove(keys);
         return responseBuilder.build();
@@ -252,8 +262,6 @@ public class KVService extends KVGrpc.KVImplBase {
             return;
         }
         LOG.info("Txn request: {}", request.getCompareList());
-        // TODO check cmp < value
-        // TODO both key and range_end \0
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -297,7 +305,13 @@ public class KVService extends KVGrpc.KVImplBase {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = compare.getKey().toByteArray();
         byte[] to = compare.getRangeEnd().toByteArray();
-        if (to.length > 0) {
+        if (to.length == 0) {
+            VersionedValue versioned = cache.get(from);
+            return doCompareOne(compare, versioned);
+        } else {
+            if (to.length == 1 && to[0] == 0) {
+                to = null;
+            }
             try (KeyValueIterator<byte[], VersionedValue> iter = cache.range(from, true, to, false)) {
                 while (iter.hasNext()) {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
@@ -307,9 +321,6 @@ public class KVService extends KVGrpc.KVImplBase {
                 }
             }
             return true;
-        } else {
-            VersionedValue versioned = cache.get(from);
-            return doCompareOne(compare, versioned);
         }
     }
 
