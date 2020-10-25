@@ -69,7 +69,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
@@ -141,7 +141,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         LOG.info("Put request: {}", request.getKey());
@@ -204,7 +204,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
@@ -273,7 +273,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         LOG.info("Txn request: {}", request.getCompareList());
@@ -438,7 +438,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         super.compact(request, responseObserver);

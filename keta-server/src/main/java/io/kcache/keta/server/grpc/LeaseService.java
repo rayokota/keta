@@ -53,7 +53,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
@@ -74,7 +74,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         long id = request.getID();
@@ -100,7 +100,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             @Override
             public void onNext(LeaseKeepAliveRequest value) {
                 if (!elector.isLeader()) {
-                    responseObserver.onError((KetaErrorType.NotLeader.toException()));
+                    responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
                     return;
                 }
                 long id = value.getID();
@@ -130,7 +130,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError((KetaErrorType.NotLeader.toException()));
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
         long id = request.getID();
