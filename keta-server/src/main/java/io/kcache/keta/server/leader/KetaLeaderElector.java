@@ -317,7 +317,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         LOG.info("Rebalance started");
         try {
             setLeader(null);
-            setMembers(null);
+            setMembers(Collections.emptyList());
         } catch (KetaElectionException e) {
             // This shouldn't be possible with this implementation. The exceptions from setLeader come
             // from it calling nextRange in this class, but this implementation doesn't require doing
@@ -367,9 +367,6 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
 
     private void setMembers(Collection<KetaIdentity> members) {
         this.members.clear();
-        if (members == null) {
-            return;
-        }
         int i = 0;
         int generation = generationId * 100; // allow 100 members per generation
         for (KetaIdentity member : members) {
