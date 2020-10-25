@@ -393,6 +393,7 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private boolean doCompareValue(Compare compare, VersionedValue versioned) {
+        LOG.info("Compare value: v {} cmp {}", versioned != null ? new String(versioned.getValue()) : null, compare.getValue());
         byte[] value = compare.getValue().toByteArray();
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
         switch (compare.getResult()) {
