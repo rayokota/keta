@@ -21,13 +21,13 @@ public class KetaException extends RuntimeException {
 
     private KetaErrorType type;
 
-    public KetaException(KetaErrorType type, Throwable cause) {
-        super(type.getDescription(), cause);
+    public KetaException(KetaErrorType type) {
+        super(type.getDescription());
         this.type = type;
     }
 
-    public KetaException(KetaErrorType type) {
-        super(type.getDescription());
+    public KetaException(KetaErrorType type, Throwable cause) {
+        super(type.getDescription(), cause);
         this.type = type;
     }
 
