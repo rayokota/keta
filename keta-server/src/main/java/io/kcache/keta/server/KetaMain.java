@@ -74,6 +74,7 @@ public class KetaMain extends AbstractVerticle {
             } else {
                 LOG.info("Could not start server " + ar.cause().getLocalizedMessage());
                 startPromise.fail(ar.cause());
+                LOG.error("Server died unexpectedly: ", ar.cause());
                 System.exit(1);
             }
         });
