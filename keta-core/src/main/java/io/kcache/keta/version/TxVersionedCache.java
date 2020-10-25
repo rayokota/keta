@@ -96,7 +96,7 @@ public class TxVersionedCache implements Closeable {
     }
 
     public VersionedValue put(byte[] key, byte[] value) {
-        return put(key, value, VersionedCache.NO_LEASE, false, true);
+        return put(key, value, VersionedCache.NO_LEASE, false, false);
     }
 
     public VersionedValue put(byte[] key, byte[] value, long lease, boolean ignoreValue, boolean ignoreLease) {
