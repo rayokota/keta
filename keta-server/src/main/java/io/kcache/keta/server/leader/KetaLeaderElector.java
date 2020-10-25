@@ -84,7 +84,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     private final List<URI> listeners;
     private final KetaIdentity myIdentity;
     private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
-    private volatile Map<KetaIdentity, Integer> members;
+    private final Map<KetaIdentity, Integer> members = new HashMap<>();
     private int generationId;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -366,13 +366,14 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     }
 
     private void setMembers(Collection<KetaIdentity> members) {
+        this.members.clear();
+        if (members == null) {
+            return;
+        }
         int i = 0;
         int generation = generationId * 100; // allow 100 members per generation
-        this.members = new HashMap<>();
-        if (members != null) {
-            for (KetaIdentity member : members) {
-                this.members.put(member, generation + (++i));
-            }
+        for (KetaIdentity member : members) {
+            this.members.put(member, generation + (++i));
         }
     }
 

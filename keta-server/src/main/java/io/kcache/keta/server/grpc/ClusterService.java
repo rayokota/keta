@@ -68,7 +68,7 @@ public class ClusterService extends ClusterGrpc.ClusterImplBase {
         MemberListResponse.Builder responseBuilder = MemberListResponse.newBuilder();
         responseBuilder.setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()));
         Collection<KetaIdentity> members = elector.getMembers();
-        if (members == null) {
+        if (members.isEmpty()) {
             responseObserver.onError((KetaErrorType.NoLeader.toException()));
             return;
         }
