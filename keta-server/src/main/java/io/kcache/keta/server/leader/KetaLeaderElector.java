@@ -369,8 +369,10 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         int i = 0;
         int generation = generationId * 100; // allow 100 members per generation
         this.members = new HashMap<>();
-        for (KetaIdentity member : members) {
-            this.members.put(member, generation + (++i));
+        if (members != null) {
+            for (KetaIdentity member : members) {
+                this.members.put(member, generation + (++i));
+            }
         }
     }
 
