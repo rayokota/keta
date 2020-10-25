@@ -33,7 +33,7 @@ import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseKeys;
-import io.kcache.keta.server.grpc.errors.GrpcErrorUtils;
+import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
@@ -61,13 +61,13 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         try {
             LeaseKeys lk = leaseMgr.grant(lease);
             responseObserver.onNext(LeaseGrantResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder().build())
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                 .setID(lk.getLease().getId())
                 .setTTL(lk.getLease().getTtl())
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -86,11 +86,11 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         try {
             leaseMgr.revoke(id);
             responseObserver.onNext(LeaseRevokeResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder().build())
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -108,10 +108,10 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 try {
                     LeaseKeys lease = leaseMgr.renew(id);
                     responseObserver.onNext(LeaseKeepAliveResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder().build())
+                        .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                         .setID(id).setTTL(lease.getTtl()).build());
                 } catch (Exception e) {
-                    responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+                    responseObserver.onError(GrpcUtils.toStatusException(e));
                 }
             }
 
@@ -138,7 +138,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         try {
             LeaseKeys lease = leaseMgr.get(id);
             LeaseTimeToLiveResponse.Builder builder = LeaseTimeToLiveResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder().build())
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                 .setID(id)
                 .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
                 .setGrantedTTL(lease.getTtl());
@@ -150,7 +150,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 }

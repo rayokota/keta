@@ -51,7 +51,7 @@ public class KetaNotifier implements Notifier {
 
     private final Map<Long, MessageConsumer<byte[]>> consumers;
 
-    private int maxGenerationId = -1;
+    private volatile int maxGenerationId = -1;
 
     public KetaNotifier(EventBus eventBus) {
         this.eventBus = eventBus;
@@ -98,6 +98,7 @@ public class KetaNotifier implements Notifier {
         }
         int generationId = value.getGenerationId();
         if (generationId < maxGenerationId) {
+            LOG.error("Value with generation {}, but max generation {}", generationId, maxGenerationId);
             return false;
         } else if (generationId > maxGenerationId) {
             maxGenerationId = generationId;

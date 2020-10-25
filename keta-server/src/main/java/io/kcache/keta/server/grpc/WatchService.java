@@ -28,6 +28,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.server.grpc.utils.GrpcUtils;
+import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.watch.KetaWatchManager;
 import io.kcache.keta.watch.Watch;
 import org.slf4j.Logger;
@@ -39,6 +41,12 @@ import java.util.stream.Collectors;
 
 public class WatchService extends WatchGrpc.WatchImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(LeaseService.class);
+
+    private final KetaLeaderElector elector;
+
+    public WatchService(KetaLeaderElector elector) {
+        this.elector = elector;
+    }
 
     @Override
     public StreamObserver<WatchRequest> watch(StreamObserver<WatchResponse> responseObserver) {
@@ -95,7 +103,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                     .collect(Collectors.toList());
                 responseObserver
                     .onNext(WatchResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder().build())
+                        .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                         .setWatchId(watchId)
                         .addAllEvents(events)
                         .build());
@@ -110,7 +118,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             }
         });
         responseObserver.onNext(WatchResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder().build())
+            .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
             .setWatchId(watchId)
             .setCreated(true)
             .build());
@@ -123,7 +131,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         long watchId = cancelRequest.getWatchId();
         watchMgr.delete(watchId);
         responseObserver.onNext(WatchResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder().build())
+            .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
             .setWatchId(watchId)
             .setCanceled(true)
             // TODO cancel reason

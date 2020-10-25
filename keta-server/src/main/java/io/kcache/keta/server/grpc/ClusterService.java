@@ -30,11 +30,13 @@ import io.etcd.jetcd.api.MemberUpdateResponse;
 import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
+import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaIdentity;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 
 public class ClusterService extends ClusterGrpc.ClusterImplBase {
@@ -64,16 +66,14 @@ public class ClusterService extends ClusterGrpc.ClusterImplBase {
     @Override
     public void memberList(MemberListRequest request, StreamObserver<MemberListResponse> responseObserver) {
         MemberListResponse.Builder responseBuilder = MemberListResponse.newBuilder();
-        responseBuilder.setHeader(ResponseHeader.newBuilder().build());
-        if (elector != null) {
-            List<KetaIdentity> members = elector.getMembers();
-            if (members == null) {
-                responseObserver.onError((KetaErrorType.NoLeader.toException()));
-                return;
-            }
-            for (KetaIdentity member : members) {
-                responseBuilder.addMembers(Member.newBuilder().setName(member.getUrl()));
-            }
+        responseBuilder.setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()));
+        Collection<KetaIdentity> members = elector.getMembers();
+        if (members == null) {
+            responseObserver.onError((KetaErrorType.NoLeader.toException()));
+            return;
+        }
+        for (KetaIdentity member : members) {
+            responseBuilder.addMembers(Member.newBuilder().setName(member.getUrl()));
         }
         responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();

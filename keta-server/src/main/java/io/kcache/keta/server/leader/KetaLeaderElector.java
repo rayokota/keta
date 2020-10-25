@@ -51,8 +51,9 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +84,8 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     private final List<URI> listeners;
     private final KetaIdentity myIdentity;
     private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
-    private volatile List<KetaIdentity> members;
+    private volatile Map<KetaIdentity, Integer> members;
+    private int generationId;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
@@ -268,6 +270,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     @Override
     public void onAssigned(KetaProtocol.Assignment assignment, int generation) {
         LOG.info("Finished rebalance by joining generation {}", generation);
+        this.generationId = generation;
         KetaTransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         txMgr.setGenerationId(generation);
         LOG.info("Finished rebalance with leader election result: {}", assignment);
@@ -290,10 +293,8 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
                                 + "'listeners' configuration. This error may happen if executing in containers "
                                 + "where the default hostname is 'localhost'."
                         );
-                        setMembers(new ArrayList<>(new HashSet<>(assignment.members())));
-                    } else {
-                        setMembers(assignment.members());
                     }
+                    setMembers(assignment.members());
                     LOG.info(isLeader() ? "Registered as leader" : "Registered as replica");
                     joinedLatch.countDown();
                     break;
@@ -316,6 +317,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         LOG.info("Rebalance started");
         try {
             setLeader(null);
+            setMembers(null);
         } catch (KetaElectionException e) {
             // This shouldn't be possible with this implementation. The exceptions from setLeader come
             // from it calling nextRange in this class, but this implementation doesn't require doing
@@ -331,6 +333,10 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         return myIdentity;
     }
 
+    public int getMemberId() {
+        return members.getOrDefault(getIdentity(), 0);
+    }
+
     public List<URI> getListeners() {
         return listeners;
     }
@@ -338,6 +344,10 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     public boolean isLeader() {
         KetaIdentity leader = this.leader.get();
         return leader != null && leader.equals(myIdentity);
+    }
+
+    public int getLeaderId() {
+        return members.getOrDefault(this.leader.get(), 0);
     }
 
     private void setLeader(KetaIdentity leader) {
@@ -351,12 +361,17 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         proxy.setTarget(leader == null || leader.equals(myIdentity) ? null : leader.getHost() + ":" + leader.getPort());
     }
 
-    public List<KetaIdentity> getMembers() {
-        return members;
+    public Collection<KetaIdentity> getMembers() {
+        return members.keySet();
     }
 
-    private void setMembers(List<KetaIdentity> members) {
-        this.members = members;
+    private void setMembers(Collection<KetaIdentity> members) {
+        int i = 0;
+        int generation = generationId * 100; // allow 100 members per generation
+        this.members = new HashMap<>();
+        for (KetaIdentity member : members) {
+            this.members.put(member, generation + (++i));
+        }
     }
 
     private void stop(boolean swallowException) {

@@ -15,15 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.server.grpc.errors;
+package io.kcache.keta.server.grpc.utils;
 
+import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.kcache.keta.lease.LeaseExistsException;
 import io.kcache.keta.lease.LeaseNotFoundException;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
+import io.kcache.keta.server.grpc.errors.KetaException;
 import io.kcache.keta.version.KeyNotFoundException;
 
-public class GrpcErrorUtils {
+public class GrpcUtils {
+
+    public static ResponseHeader toResponseHeader(int memberId) {
+        return ResponseHeader.newBuilder()
+            .setMemberId(memberId)
+            .build();
+    }
+
+    public static ResponseHeader toResponseHeader(int memberId, long revision) {
+        return ResponseHeader.newBuilder()
+            .setMemberId(memberId)
+            .setRevision(revision)
+            .build();
+    }
 
     public static StatusRuntimeException toStatusException(Exception ex) {
         if (ex instanceof KeyNotFoundException) {

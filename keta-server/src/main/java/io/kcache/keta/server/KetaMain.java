@@ -8,6 +8,7 @@ import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.server.grpc.ClusterService;
 import io.kcache.keta.server.grpc.KVService;
 import io.kcache.keta.server.grpc.LeaseService;
+import io.kcache.keta.server.grpc.MaintenanceService;
 import io.kcache.keta.server.grpc.WatchService;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.server.leader.KetaLeaderElector;
@@ -61,7 +62,8 @@ public class KetaMain extends AbstractVerticle {
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .withChildOption(ChannelOption.TCP_NODELAY, true)
             .addService(new ClusterService(elector))
-            .addService(new WatchService())  // WatchService can go to any node
+            .addService(new MaintenanceService(elector))
+            .addService(new WatchService(elector))  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
 
         VertxServer server = serverBuilder.build();

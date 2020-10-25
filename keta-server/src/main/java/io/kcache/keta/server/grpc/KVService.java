@@ -38,7 +38,7 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
-import io.kcache.keta.server.grpc.errors.GrpcErrorUtils;
+import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.errors.KetaException;
 import io.kcache.keta.server.leader.KetaLeaderElector;
@@ -90,7 +90,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -161,7 +161,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -224,7 +224,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -293,7 +293,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
+            responseObserver.onError(GrpcUtils.toStatusException(e));
         }
     }
 
@@ -444,9 +444,9 @@ public class KVService extends KVGrpc.KVImplBase {
         super.compact(request, responseObserver);
     }
 
-    private static ResponseHeader toResponseHeader() {
+    private ResponseHeader toResponseHeader() {
         KetaTransaction tx = KetaTransaction.currentTransaction();
         // TODO is this right?
-        return ResponseHeader.newBuilder().setRevision(tx.getStartTimestamp()).build();
+        return GrpcUtils.toResponseHeader(elector.getMemberId(), tx.getStartTimestamp());
     }
 }
