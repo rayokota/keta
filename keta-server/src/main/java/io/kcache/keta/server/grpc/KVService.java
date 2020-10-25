@@ -38,6 +38,9 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.server.grpc.errors.GrpcErrorUtils;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
+import io.kcache.keta.server.grpc.errors.KetaException;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.utils.ProtoUtils;
@@ -66,7 +69,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
@@ -87,13 +90,16 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
     private RangeResponse doRange(RangeRequest request) {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
+        if (from.length == 0) {
+            throw new KetaException(KetaErrorType.EmptyKey);
+        }
         byte[] to = request.getRangeEnd().toByteArray();
         boolean descending = request.getSortOrder() == RangeRequest.SortOrder.DESCEND;
         boolean keysOnly = request.getKeysOnly();
@@ -135,7 +141,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         LOG.info("Put request: {}", request.getKey());
@@ -155,7 +161,7 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
@@ -163,22 +169,28 @@ public class KVService extends KVGrpc.KVImplBase {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         byte[] key = request.getKey().toByteArray();
+        if (key.length == 0) {
+            throw new KetaException(KetaErrorType.EmptyKey);
+        }
         byte[] value = request.getValue().toByteArray();
         long lease = request.getLease();
-        VersionedValue versioned;
-        if (!request.getIgnoreValue()) {
-            versioned = cache.put(key, value, lease);
-            long oldLease = versioned != null ? versioned.getLease() : 0;
-            if (oldLease > 0) {
-                LeaseKeys lk = leaseMgr.get(oldLease);
-                lk.getKeys().remove(Bytes.wrap(key));
-            }
-            if (lease > 0) {
-                LeaseKeys lk = leaseMgr.get(lease);
-                lk.getKeys().add(Bytes.wrap(key));
-            }
-        } else {
-            versioned = cache.get(key);
+        boolean ignoreValue = request.getIgnoreValue();
+        boolean ignoreLease = request.getIgnoreLease();
+        if (ignoreValue && value.length != 0) {
+            throw new KetaException(KetaErrorType.ValueProvided);
+        }
+        if (ignoreLease && lease != 0) {
+            throw new KetaException(KetaErrorType.LeaseProvided);
+        }
+        VersionedValue versioned = cache.put(key, value, lease, ignoreValue, ignoreLease);
+        long oldLease = versioned != null ? versioned.getLease() : 0;
+        if (oldLease > 0) {
+            LeaseKeys lk = leaseMgr.get(oldLease);
+            lk.getKeys().remove(Bytes.wrap(key));
+        }
+        if (lease > 0) {
+            LeaseKeys lk = leaseMgr.get(lease);
+            lk.getKeys().add(Bytes.wrap(key));
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
@@ -192,7 +204,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
@@ -212,13 +224,16 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
     private DeleteRangeResponse doDeleteRange(DeleteRangeRequest request) {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
+        if (from.length == 0) {
+            throw new KetaException(KetaErrorType.EmptyKey);
+        }
         byte[] to = request.getRangeEnd().toByteArray();
         List<byte[]> keys = new ArrayList<>();
         DeleteRangeResponse.Builder responseBuilder = DeleteRangeResponse.newBuilder();
@@ -258,7 +273,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         LOG.info("Txn request: {}", request.getCompareList());
@@ -278,11 +293,12 @@ public class KVService extends KVGrpc.KVImplBase {
                     // ignore
                 }
             }
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
     private TxnResponse doTxn(TxnRequest request) {
+        // TODO recursively checkIntervals for duplicate kesy
         boolean succeeded = doCompares(request.getCompareList());
         List<ResponseOp> responses = doRequests(succeeded ? request.getSuccessList() : request.getFailureList());
         return TxnResponse.newBuilder()
@@ -304,6 +320,9 @@ public class KVService extends KVGrpc.KVImplBase {
     private boolean doCompare(Compare compare) {
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = compare.getKey().toByteArray();
+        if (from.length == 0) {
+            throw new KetaException(KetaErrorType.EmptyKey);
+        }
         byte[] to = compare.getRangeEnd().toByteArray();
         if (to.length == 0) {
             VersionedValue versioned = cache.get(from);
@@ -419,7 +438,7 @@ public class KVService extends KVGrpc.KVImplBase {
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         super.compact(request, responseObserver);

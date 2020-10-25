@@ -18,7 +18,6 @@
 package io.kcache.keta.utils;
 
 import com.google.common.collect.Range;
-import io.kcache.keta.utils.IntervalTree;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

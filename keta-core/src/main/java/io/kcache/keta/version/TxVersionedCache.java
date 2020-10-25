@@ -21,12 +21,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.Striped;
+import io.kcache.KeyValue;
+import io.kcache.KeyValueIterator;
 import io.kcache.keta.transaction.client.KetaCellId;
 import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.transaction.client.SnapshotFilter;
 import io.kcache.keta.transaction.client.SnapshotFilterImpl;
-import io.kcache.KeyValue;
-import io.kcache.KeyValueIterator;
 import io.kcache.utils.Streams;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.committable.CommitTable;
@@ -96,10 +96,10 @@ public class TxVersionedCache implements Closeable {
     }
 
     public VersionedValue put(byte[] key, byte[] value) {
-        return put(key, value, VersionedCache.NO_LEASE);
+        return put(key, value, VersionedCache.NO_LEASE, false, true);
     }
 
-    public VersionedValue put(byte[] key, byte[] value, long lease) {
+    public VersionedValue put(byte[] key, byte[] value, long lease, boolean ignoreValue, boolean ignoreLease) {
         Lock lock = striped.get(Bytes.wrap(key)).writeLock();
         lock.lock();
         try {
@@ -109,6 +109,18 @@ public class TxVersionedCache implements Closeable {
             addWriteSetElement(tx, new KetaCellId(cache, key, tx.getWriteTimestamp()));
             long create = oldVersioned != null ? oldVersioned.getCreate() : PENDING_TX;
             long sequence = oldVersioned != null ? oldVersioned.getSequence() + 1 : NEW_SEQUENCE;
+            if (ignoreValue || ignoreLease) {
+                VersionedValue versioned = get(key);
+                if (versioned == null) {
+                    throw new KeyNotFoundException(key);
+                }
+                if (ignoreValue) {
+                    value = versioned.getValue();
+                }
+                if (ignoreLease) {
+                    lease = versioned.getLease();
+                }
+            }
             cache.put(tx.getGenerationId(), key, tx.getWriteTimestamp(), create, sequence, value, lease);
             return oldVersioned;
         } finally {

@@ -22,6 +22,7 @@ import io.etcd.jetcd.api.KeyValue;
 import io.kcache.keta.version.VersionedValue;
 
 public class ProtoUtils {
+
     public static KeyValue toKeyValue(byte[] key, VersionedValue value) {
         return toKeyValue(key, value, false);
     }

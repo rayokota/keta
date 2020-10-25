@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.transaction.client;
+package io.kcache.keta.lease;
 
-import io.kcache.KeyValueIterator;
-import io.kcache.keta.version.VersionedValue;
+public class LeaseNotFoundException extends RuntimeException {
 
-import java.util.List;
+    private long id;
 
+    public LeaseNotFoundException(long id) {
+        this.id = id;
+    }
 
-public interface SnapshotFilter {
+    public LeaseNotFoundException(long id, Throwable cause) {
+        super(cause);
+        this.id = id;
+    }
 
-    List<VersionedValue> get(KetaTransaction transaction, byte[] key);
-
-    KeyValueIterator<byte[], List<VersionedValue>> range(
-        KetaTransaction transaction, byte[] from, boolean fromInclusive, byte[] to,
-        boolean toInclusive, boolean descending);
-
-    KeyValueIterator<byte[], List<VersionedValue>> all(KetaTransaction transaction);
+    public long getId() {
+        return id;
+    }
 }

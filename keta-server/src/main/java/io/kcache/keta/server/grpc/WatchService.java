@@ -105,6 +105,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
                     return;
                 }
 
+                // TODO: is this right?
                 LOG.error("caught an error writing response: {}", e.getMessage());
             }
         });

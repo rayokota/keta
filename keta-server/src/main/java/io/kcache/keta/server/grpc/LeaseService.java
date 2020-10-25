@@ -33,6 +33,8 @@ import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.server.grpc.errors.GrpcErrorUtils;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +53,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
@@ -65,19 +67,19 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         long id = request.getID();
         if (id == 0) {
-            responseObserver.onError(new IllegalArgumentException("No lease id"));
+            responseObserver.onError(KetaErrorType.LeaseNotFound.toException());
             return;
         }
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
@@ -88,7 +90,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 
@@ -98,7 +100,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             @Override
             public void onNext(LeaseKeepAliveRequest value) {
                 if (!elector.isLeader()) {
-                    responseObserver.onError(new IllegalStateException("Not leader"));
+                    responseObserver.onError((KetaErrorType.NotLeader.toException()));
                     return;
                 }
                 long id = value.getID();
@@ -109,7 +111,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                         .setHeader(ResponseHeader.newBuilder().build())
                         .setID(id).setTTL(lease.getTtl()).build());
                 } catch (Exception e) {
-                    responseObserver.onError(e);
+                    responseObserver.onError(GrpcErrorUtils.toStatusException(e));
                 }
             }
 
@@ -128,7 +130,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
         if (!elector.isLeader()) {
-            responseObserver.onError(new IllegalStateException("Not leader"));
+            responseObserver.onError((KetaErrorType.NotLeader.toException()));
             return;
         }
         long id = request.getID();
@@ -148,7 +150,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(e);
+            responseObserver.onError(GrpcErrorUtils.toStatusException(e));
         }
     }
 }

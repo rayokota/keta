@@ -15,21 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.transaction.client;
+package io.kcache.keta.server.grpc.errors;
 
-import io.kcache.KeyValueIterator;
-import io.kcache.keta.version.VersionedValue;
+public class KetaException extends RuntimeException {
 
-import java.util.List;
+    private KetaErrorType type;
 
+    public KetaException(KetaErrorType type, Throwable cause) {
+        super(type.getDescription(), cause);
+        this.type = type;
+    }
 
-public interface SnapshotFilter {
+    public KetaException(KetaErrorType type) {
+        super(type.getDescription());
+        this.type = type;
+    }
 
-    List<VersionedValue> get(KetaTransaction transaction, byte[] key);
-
-    KeyValueIterator<byte[], List<VersionedValue>> range(
-        KetaTransaction transaction, byte[] from, boolean fromInclusive, byte[] to,
-        boolean toInclusive, boolean descending);
-
-    KeyValueIterator<byte[], List<VersionedValue>> all(KetaTransaction transaction);
+    public KetaErrorType getType() {
+        return type;
+    }
 }

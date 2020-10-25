@@ -29,6 +29,7 @@ import io.etcd.jetcd.api.MemberUpdateRequest;
 import io.etcd.jetcd.api.MemberUpdateResponse;
 import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.stub.StreamObserver;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaIdentity;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public class ClusterService extends ClusterGrpc.ClusterImplBase {
         if (elector != null) {
             List<KetaIdentity> members = elector.getMembers();
             if (members == null) {
-                responseObserver.onError(new IllegalStateException("Leader election in process"));
+                responseObserver.onError((KetaErrorType.NoLeader.toException()));
                 return;
             }
             for (KetaIdentity member : members) {

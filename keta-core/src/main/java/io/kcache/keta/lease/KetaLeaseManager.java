@@ -61,7 +61,7 @@ public class KetaLeaseManager {
             }
         }
         if (cache.containsKey(id)) {
-            throw new IllegalArgumentException("Lease with id " + id + " already exists");
+            throw new LeaseExistsException(id);
         }
         cache.put(lease.getId(), lease);
         LeaseKeys lk = new LeaseKeys(lease);
@@ -75,7 +75,7 @@ public class KetaLeaseManager {
     public LeaseKeys get(long id) {
         LeaseKeys lk = expiringMap.get(id);
         if (lk == null) {
-            throw new IllegalArgumentException("No lease with id " + id);
+            throw new LeaseNotFoundException(id);
         }
         return lk;
     }
@@ -83,7 +83,7 @@ public class KetaLeaseManager {
     public LeaseKeys revoke(long id) {
         LeaseKeys lk = expiringMap.remove(id);
         if (lk == null) {
-            throw new IllegalArgumentException("No lease with id " + id);
+            throw new LeaseNotFoundException(id);
         }
         revoke(lk);
         return lk;
@@ -117,7 +117,7 @@ public class KetaLeaseManager {
     public LeaseKeys renew(long id) {
         LeaseKeys lk = expiringMap.remove(id);
         if (lk == null) {
-            throw new IllegalArgumentException("No lease with id " + id);
+            throw new LeaseNotFoundException(id);
         }
         Lease oldLease = lk.getLease();
         Lease newLease = new Lease(id, oldLease.getTtl(), System.currentTimeMillis() + oldLease.getTtl() * 1000);

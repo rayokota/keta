@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.transaction.client;
+package io.kcache.keta.version;
 
-import io.kcache.KeyValueIterator;
-import io.kcache.keta.version.VersionedValue;
+public class KeyNotFoundException extends RuntimeException {
 
-import java.util.List;
+    private byte[] key;
 
+    public KeyNotFoundException(byte[] key) {
+        this.key = key;
+    }
 
-public interface SnapshotFilter {
+    public KeyNotFoundException(byte[] key, Throwable cause) {
+        super(cause);
+        this.key = key;
+    }
 
-    List<VersionedValue> get(KetaTransaction transaction, byte[] key);
-
-    KeyValueIterator<byte[], List<VersionedValue>> range(
-        KetaTransaction transaction, byte[] from, boolean fromInclusive, byte[] to,
-        boolean toInclusive, boolean descending);
-
-    KeyValueIterator<byte[], List<VersionedValue>> all(KetaTransaction transaction);
+    public byte[] getKey() {
+        return key;
+    }
 }
