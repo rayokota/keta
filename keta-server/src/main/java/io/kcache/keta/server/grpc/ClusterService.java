@@ -73,7 +73,11 @@ public class ClusterService extends ClusterGrpc.ClusterImplBase {
             return;
         }
         for (KetaIdentity member : members) {
-            responseBuilder.addMembers(Member.newBuilder().setName(member.getUrl()));
+            responseBuilder.addMembers(Member.newBuilder()
+                .setID(elector.getMemberId())
+                .setName(member.getHost())
+                .build()
+            );
         }
         responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();
