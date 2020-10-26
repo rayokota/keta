@@ -398,6 +398,7 @@ public class KVService extends KVGrpc.KVImplBase {
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
         switch (compare.getResult()) {
             case EQUAL:
+                LOG.info("Compare result: {}", cmp != null ? cmp == 0 : value == null || value.length == 0);
                 return cmp != null ? cmp == 0 : value == null || value.length == 0;
             case GREATER:
                 return cmp != null && cmp > 0;
