@@ -35,7 +35,7 @@ import org.apache.omid.transaction.CommitTimestampLocator;
 import org.apache.omid.transaction.PostCommitActions;
 import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManagerException;
-import org.apache.omid.tso.RuntimeExceptionPanicker;
+import org.apache.omid.tso.SystemExitPanicker;
 import org.apache.omid.tso.TimestampOracle;
 import org.apache.omid.tso.client.CellId;
 import org.slf4j.Logger;
@@ -82,7 +82,7 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
         try {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
             TimestampOracle timestampOracle = new KetaTimestampOracle(
-                metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
+                metricsRegistry, timestampStorage, new SystemExitPanicker());
             PostCommitActions postCommitter = new KetaSyncPostCommitter(commitTable.getClient());
             return newInstance(commitTable, timestampOracle, postCommitter);
         } catch (IOException e) {
