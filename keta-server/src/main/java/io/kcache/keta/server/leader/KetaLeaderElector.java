@@ -341,7 +341,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
 
     public boolean isLeader() {
         KetaIdentity leader = this.leader.get();
-        return leader != null && leader.equals(myIdentity);
+        return myIdentity.equals(leader);
     }
 
     public int getLeaderId() {
@@ -349,14 +349,13 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     }
 
     private void setLeader(KetaIdentity leader) {
-        KetaIdentity previousLeader = this.leader.getAndSet(leader);
-
-        if (leader != null && !leader.equals(previousLeader) && leader.equals(myIdentity)) {
+        if (!isLeader() && myIdentity.equals(leader)) {
             LOG.info("Syncing caches...");
             engine.sync();
         }
 
-        proxy.setTarget(leader == null || leader.equals(myIdentity) ? null : leader.getHost() + ":" + leader.getPort());
+        this.leader.set(leader);
+        proxy.setTarget(leader == null || myIdentity.equals(leader) ? null : leader.getHost() + ":" + leader.getPort());
     }
 
     public Collection<KetaIdentity> getMembers() {
