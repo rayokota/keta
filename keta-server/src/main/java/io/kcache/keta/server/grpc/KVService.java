@@ -82,6 +82,8 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            LOG.info("Range success: [{}, {})", request.getKey(), request.getRangeEnd());
+            // TODO test limit/more
         } catch (Exception e) {
             if (tx != null) {
                 try {
@@ -153,6 +155,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            LOG.info("Put success: {}", request.getKey());
         } catch (Exception e) {
             if (tx != null) {
                 try {
@@ -216,6 +219,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            LOG.info("Delete success: [{}, {})", request.getKey(), request.getRangeEnd());
         } catch (Exception e) {
             if (tx != null) {
                 try {
@@ -285,6 +289,7 @@ public class KVService extends KVGrpc.KVImplBase {
             txMgr.commit(tx);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            LOG.info("Txn success: {}", request.getCompareList());
         } catch (Exception e) {
             if (tx != null) {
                 try {
