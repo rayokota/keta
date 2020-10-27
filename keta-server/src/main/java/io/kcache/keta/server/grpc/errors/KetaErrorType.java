@@ -93,7 +93,10 @@ public enum KetaErrorType {
     WrongDowngradeVersionFormat   (INVALID_ARGUMENT, "ketaserver: wrong downgrade target version format"),
     InvalidDowngradeTargetVersion (INVALID_ARGUMENT, "ketaserver: invalid downgrade target version"),
     DowngradeInProcess            (FAILED_PRECONDITION, "ketaserver: cluster has a downgrade job in progress"),
-    NoInflightDowngrade           (FAILED_PRECONDITION, "ketaserver: no inflight downgrade job");
+    NoInflightDowngrade           (FAILED_PRECONDITION, "ketaserver: no inflight downgrade job"),
+
+    // Added
+    Starting                   (UNAVAILABLE, "ketaserver: server starting");
 
     private Status.Code code;
     private String description;

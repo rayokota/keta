@@ -28,6 +28,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.watch.KetaWatchManager;
@@ -50,6 +51,11 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
     @Override
     public StreamObserver<WatchRequest> watch(StreamObserver<WatchResponse> responseObserver) {
+        if (!KetaEngine.getInstance().isInitialized()) {
+            responseObserver.onError((KetaErrorType.Starting.toException()));
+            // TODO check this
+            return null;
+        }
         return new StreamObserver<WatchRequest>() {
 
             @Override
