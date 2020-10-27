@@ -277,7 +277,6 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         try {
             switch (assignment.error()) {
                 case KetaProtocol.Assignment.NO_ERROR:
-                case KetaProtocol.Assignment.DUPLICATE_URLS:
                     if (assignment.leaderIdentity() == null) {
                         LOG.error(
                             "No leader eligible instances joined the group. "
@@ -286,18 +285,17 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
                         );
                     }
                     setLeader(assignment.leaderIdentity());
-                    if (assignment.error() == KetaProtocol.Assignment.DUPLICATE_URLS) {
-                        LOG.warn(
-                            "The group contained multiple members advertising the same URL. "
-                                + "Verify that each instance has a unique, routable listener by setting the "
-                                + "'listeners' configuration. This error may happen if executing in containers "
-                                + "where the default hostname is 'localhost'."
-                        );
-                    }
                     setMembers(assignment.members());
                     LOG.info(isLeader() ? "Registered as leader" : "Registered as replica");
                     joinedLatch.countDown();
                     break;
+                case KetaProtocol.Assignment.DUPLICATE_URLS:
+                    throw new IllegalStateException(
+                        "The group contained multiple members advertising the same URL. "
+                            + "Verify that each instance has a unique, routable listener by setting the "
+                            + "'listeners' configuration. This error may happen if executing in containers "
+                            + "where the default hostname is 'localhost'."
+                    );
                 default:
                     throw new IllegalStateException("Unknown error returned from the coordination protocol");
             }
