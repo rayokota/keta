@@ -52,7 +52,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseGrant(LeaseGrantRequest request, StreamObserver<LeaseGrantResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
@@ -73,7 +73,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseRevoke(LeaseRevokeRequest request, StreamObserver<LeaseRevokeResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
@@ -99,7 +99,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         return new StreamObserver<LeaseKeepAliveRequest>() {
             @Override
             public void onNext(LeaseKeepAliveRequest value) {
-                if (!elector.isLeader()) {
+                if (!KetaEngine.getInstance().isLeader()) {
                     responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
                     return;
                 }
@@ -129,7 +129,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
 
     @Override
     public void leaseTimeToLive(LeaseTimeToLiveRequest request, StreamObserver<LeaseTimeToLiveResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }

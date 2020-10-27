@@ -179,7 +179,7 @@ public class KetaEngine implements Configurable, Closeable {
     }
 
     public boolean isLeader() {
-        return elector.isLeader();
+        return isInitialized() && elector.isLeader();
     }
 
     public TxVersionedCache getTxCache() {

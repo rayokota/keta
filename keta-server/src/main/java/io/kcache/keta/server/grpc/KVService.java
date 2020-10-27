@@ -68,11 +68,11 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
-        LOG.info("Range request: {}, {}", request.getKey(), request.getRangeEnd());
+        LOG.info("Range request: [{}, {})", request.getKey(), request.getRangeEnd());
         // TODO test limit/more
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
@@ -140,7 +140,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
@@ -203,11 +203,11 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void deleteRange(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
-        LOG.info("Delete request: {}, {}", request.getKey(), request.getRangeEnd());
+        LOG.info("Delete request: [{}, {})", request.getKey(), request.getRangeEnd());
         TransactionManager txMgr = KetaEngine.getInstance().getTxManager();
         Transaction tx = null;
         try {
@@ -272,7 +272,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
@@ -393,12 +393,10 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private boolean doCompareValue(Compare compare, VersionedValue versioned) {
-        LOG.info("Compare value: v {} cmp {}", versioned != null ? new String(versioned.getValue()) : null, compare.getValue());
         byte[] value = compare.getValue().toByteArray();
         Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
         switch (compare.getResult()) {
             case EQUAL:
-                LOG.info("Compare result: {}", cmp != null ? cmp == 0 : value == null || value.length == 0);
                 return cmp != null ? cmp == 0 : value == null || value.length == 0;
             case GREATER:
                 return cmp != null && cmp > 0;
@@ -439,7 +437,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     @Override
     public void compact(CompactionRequest request, StreamObserver<CompactionResponse> responseObserver) {
-        if (!elector.isLeader()) {
+        if (!KetaEngine.getInstance().isLeader()) {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
