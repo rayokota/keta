@@ -88,7 +88,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         List<WatchCreateRequest.FilterType> filters = createRequest.getFiltersList();
         boolean prevKv = createRequest.getPrevKv();
         watchMgr.watch(watch, event -> {
-            LOG.info("inside WatchService");
+            LOG.debug("inside WatchService");
             try {
                 List<Event> events = Collections.singletonList(event);
                 events = events.stream()
@@ -122,11 +122,11 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             .setWatchId(watchId)
             .setCreated(true)
             .build());
-        LOG.info("successfully registered new Watch");
+        LOG.debug("successfully registered new Watch");
     }
 
     private void handleCancelRequest(WatchCancelRequest cancelRequest, StreamObserver<WatchResponse> responseObserver) {
-        LOG.info("cancel watch");
+        LOG.debug("cancel watch");
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         long watchId = cancelRequest.getWatchId();
         watchMgr.delete(watchId);

@@ -56,7 +56,9 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
             return;
         }
-        Lease lease = new Lease(request.getID(), request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
+        long id = request.getID();
+        LOG.info("Lease grant request: {}", id);
+        Lease lease = new Lease(id, request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         try {
             LeaseKeys lk = leaseMgr.grant(lease);
@@ -78,6 +80,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             return;
         }
         long id = request.getID();
+        LOG.info("Lease revoke request: {}", id);
         if (id == 0) {
             responseObserver.onError(KetaErrorType.LeaseNotFound.toException());
             return;
@@ -104,6 +107,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                     return;
                 }
                 long id = value.getID();
+                LOG.info("Lease keep alive request: {}", id);
                 KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
                 try {
                     LeaseKeys lease = leaseMgr.renew(id);
@@ -134,6 +138,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             return;
         }
         long id = request.getID();
+        LOG.info("Lease time to live request: {}", id);
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         try {
             LeaseKeys lease = leaseMgr.get(id);
