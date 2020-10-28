@@ -45,7 +45,9 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class KetaEngine implements Configurable, Closeable {
@@ -101,59 +103,21 @@ public class KetaEngine implements Configurable, Closeable {
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
 
-        if (bootstrapServers != null) {
-            String topic = "_keta_commits";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            commits = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
-        } else {
-            commits = new InMemoryCache<>();
+        try {
+            CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() ->
+                commits = initCommits(new HashMap<>(configs), bootstrapServers, groupId));
+            CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+                timestamps = initTimestamps(new HashMap<>(configs), bootstrapServers, groupId));
+            CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() ->
+                leases = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
+            CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() ->
+                cache = initKv(notifier, new HashMap<>(configs), bootstrapServers, groupId));
+            CompletableFuture.allOf(commitsFuture, leasesFuture, timestampsFuture, kvFuture).get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        commits = Caches.concurrentCache(commits);
-        commits.init();
 
-        if (bootstrapServers != null) {
-            String topic = "_keta_timestamps";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            timestamps = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
-        } else {
-            timestamps = new InMemoryCache<>();
-        }
-        timestamps = Caches.concurrentCache(timestamps);
-        timestamps.init();
-
-        if (bootstrapServers != null) {
-            String topic = "_keta_leases";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            leases = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), new KafkaLeaseSerde(), null, new InMemoryCache<>());
-        } else {
-            leases = new InMemoryCache<>();
-        }
-        leases = Caches.concurrentCache(leases);
-        leases.init();
-
-        if (bootstrapServers != null) {
-            String topic = "_keta_kv";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            Comparator<byte[]> cmp = VersionedCache.BYTES_COMPARATOR;
-            cache = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.ByteArray(), new KafkaValueSerde(), notifier, topic, cmp);
-        } else {
-            cache = new InMemoryCache<>();
-        }
-        cache.init();
         txCache = new TxVersionedCache(new VersionedCache("keta", cache));
-
         CommitTable commitTable = new KetaCommitTable(commits);
         TimestampStorage timestampStorage = new KetaTimestampStorage(timestamps);
         transactionManager = KetaTransactionManager.newInstance(commitTable, timestampStorage);
@@ -166,16 +130,90 @@ public class KetaEngine implements Configurable, Closeable {
         }
     }
 
+    private Cache<Long, Long> initCommits(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<Long, Long> commits;
+        if (bootstrapServers != null) {
+            String topic = "_keta_commits";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            commits = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
+        } else {
+            commits = new InMemoryCache<>();
+        }
+        commits = Caches.concurrentCache(commits);
+        commits.init();
+        return commits;
+    }
+
+    private Cache<Long, Long> initTimestamps(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<Long, Long> timestamps;
+        if (bootstrapServers != null) {
+            String topic = "_keta_timestamps";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            timestamps = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
+        } else {
+            timestamps = new InMemoryCache<>();
+        }
+        timestamps = Caches.concurrentCache(timestamps);
+        timestamps.init();
+        return timestamps;
+    }
+
+    private Cache<Long, Lease> initLeases(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<Long, Lease> leases;
+        if (bootstrapServers != null) {
+            String topic = "_keta_leases";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            leases = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), new KafkaLeaseSerde(), null, new InMemoryCache<>());
+        } else {
+            leases = new InMemoryCache<>();
+        }
+        leases = Caches.concurrentCache(leases);
+        leases.init();
+        return leases;
+    }
+
+    private Cache<byte[], VersionedValues> initKv(
+        Notifier notifier, Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<byte[], VersionedValues> cache;
+        if (bootstrapServers != null) {
+            String topic = "_keta_kv";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            Comparator<byte[]> cmp = VersionedCache.BYTES_COMPARATOR;
+            cache = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.ByteArray(), new KafkaValueSerde(), notifier, topic, cmp);
+        } else {
+            cache = new InMemoryCache<>();
+        }
+        cache.init();
+        return cache;
+    }
+
     public boolean isInitialized() {
         return initialized.get();
     }
 
     public void sync() {
-        commits.sync();
-        timestamps.sync();
-        leases.sync();
-        cache.sync();
-        transactionManager.init();
+        try {
+            CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
+            CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+                timestamps.sync()).thenRun(() -> transactionManager.init());
+            CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
+            CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
+            CompletableFuture.allOf(commitsFuture, leasesFuture, timestampsFuture, kvFuture).get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isLeader() {
