@@ -103,19 +103,15 @@ public class KetaEngine implements Configurable, Closeable {
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
 
-        try {
-            CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() ->
-                commits = initCommits(new HashMap<>(configs), bootstrapServers, groupId));
-            CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
-                timestamps = initTimestamps(new HashMap<>(configs), bootstrapServers, groupId));
-            CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() ->
-                leases = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
-            CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() ->
-                cache = initKv(notifier, new HashMap<>(configs), bootstrapServers, groupId));
-            CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() ->
+            commits = initCommits(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+            timestamps = initTimestamps(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() ->
+            leases = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() ->
+            cache = initKv(notifier, new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).join();
 
         txCache = new TxVersionedCache(new VersionedCache("keta", cache));
         CommitTable commitTable = new KetaCommitTable(commits);
@@ -204,16 +200,12 @@ public class KetaEngine implements Configurable, Closeable {
     }
 
     public void sync() {
-        try {
-            CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
-            CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
-                timestamps.sync()).thenRun(() -> transactionManager.init());
-            CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
-            CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
-            CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
+        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+            timestamps.sync()).thenRun(() -> transactionManager.init());
+        CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
+        CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
+        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).join();
     }
 
     public boolean isLeader() {
