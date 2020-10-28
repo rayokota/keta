@@ -83,7 +83,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     private final KetaCoordinator coordinator;
     private final List<URI> listeners;
     private final KetaIdentity myIdentity;
-    private final AtomicReference<KetaIdentity> leader = new AtomicReference<>();
+    private KetaIdentity leader;
     private final Map<KetaIdentity, Integer> members = new HashMap<>();
     private int generationId;
 
@@ -339,22 +339,21 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
         return listeners;
     }
 
-    public boolean isLeader() {
-        KetaIdentity leader = this.leader.get();
+    public synchronized boolean isLeader() {
         return myIdentity.equals(leader);
     }
 
-    public int getLeaderId() {
-        return members.getOrDefault(this.leader.get(), 0);
+    public synchronized int getLeaderId() {
+        return leader != null ? members.getOrDefault(leader, 0) : 0;
     }
 
-    private void setLeader(KetaIdentity leader) {
+    private synchronized void setLeader(KetaIdentity leader) {
         if (!isLeader() && myIdentity.equals(leader)) {
             LOG.info("Syncing caches...");
             engine.sync();
         }
 
-        this.leader.set(leader);
+        this.leader = leader;
         proxy.setTarget(leader == null || myIdentity.equals(leader) ? null : leader.getHost() + ":" + leader.getPort());
     }
 
