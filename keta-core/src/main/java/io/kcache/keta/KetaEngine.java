@@ -112,7 +112,7 @@ public class KetaEngine implements Configurable, Closeable {
                 leases = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
             CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() ->
                 cache = initKv(notifier, new HashMap<>(configs), bootstrapServers, groupId));
-            CompletableFuture.allOf(commitsFuture, leasesFuture, timestampsFuture, kvFuture).get();
+            CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -210,7 +210,7 @@ public class KetaEngine implements Configurable, Closeable {
                 timestamps.sync()).thenRun(() -> transactionManager.init());
             CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
             CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
-            CompletableFuture.allOf(commitsFuture, leasesFuture, timestampsFuture, kvFuture).get();
+            CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
