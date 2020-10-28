@@ -24,9 +24,6 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.util.Map;
 
 public class KafkaLeaseSerde implements Serde<Lease> {
-    protected static final byte MAGIC_BYTE = 0x0;
-
-    final static GenericData GENERIC = new GenericData();
 
     private final Serde<Lease> inner;
 

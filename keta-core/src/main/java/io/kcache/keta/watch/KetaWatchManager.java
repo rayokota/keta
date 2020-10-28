@@ -52,7 +52,7 @@ public class KetaWatchManager {
         this.watchers = new HashMap<>();
     }
 
-    public Watch add(Watch watch) {
+    public synchronized Watch add(Watch watch) {
         long id = watch.getId();
         Bytes key = Bytes.wrap(watch.getKey());
         while (id == 0) {
@@ -85,7 +85,7 @@ public class KetaWatchManager {
         notifier.watch(watch.getId(), handler);
     }
 
-    public Set<Watch> getWatches(byte[] key) {
+    public synchronized Set<Watch> getWatches(byte[] key) {
         Bytes k = Bytes.wrap(key);
         Set<Watch> keys = keyWatchers.getOrDefault(k, Collections.emptySet());
         Iterator<IntervalTree.Node<Bytes, Set<Watch>>> iter = ranges.overlappers(Range.closed(k, k));
@@ -109,7 +109,7 @@ public class KetaWatchManager {
         return union;
     }
 
-    public boolean delete(long id) {
+    public synchronized boolean delete(long id) {
         Watch watch = watchers.remove(id);
         if (watch == null) {
             return false;

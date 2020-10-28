@@ -53,10 +53,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -84,7 +84,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     private final List<URI> listeners;
     private final KetaIdentity myIdentity;
     private KetaIdentity leader;
-    private final Map<KetaIdentity, Integer> members = new HashMap<>();
+    private final Map<KetaIdentity, Integer> members = new ConcurrentHashMap<>();
     private int generationId;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
