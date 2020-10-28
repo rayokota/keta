@@ -348,12 +348,14 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
     }
 
     private synchronized void setLeader(KetaIdentity leader) {
-        if (!isLeader() && myIdentity.equals(leader)) {
-            LOG.info("Syncing caches...");
-            engine.sync();
-        }
+        synchronized (this) {
+            if (!isLeader() && myIdentity.equals(leader)) {
+                LOG.info("Syncing caches...");
+                engine.sync();
+            }
 
-        this.leader = leader;
+            this.leader = leader;
+        }
         proxy.setTarget(leader == null || myIdentity.equals(leader) ? null : leader.getHost() + ":" + leader.getPort());
     }
 
