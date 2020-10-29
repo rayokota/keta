@@ -65,10 +65,12 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     public synchronized void setTarget(String target) {
         if (!Objects.equals(this.target, target)) {
             if (channel != null) {
+                LOG.info("Shutting down channel");
                 channel.shutdown();
                 channel = null;
             }
             if (target != null) {
+                LOG.info("Setting up proxy to {}", target);
                 channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
                     .build();
@@ -225,6 +227,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
             if (proxy == null || proxy.getTarget() == null) {
                 return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
             } else {
+                LOG.info("Proxying {} to {}", methodName, proxy.getTarget());
                 MethodDescriptor<byte[], byte[]> methodDescriptor
                     = MethodDescriptor.newBuilder(byteMarshaller, byteMarshaller)
                     .setFullMethodName(methodName)
