@@ -198,7 +198,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
             try {
                 return ByteStreams.toByteArray(stream);
             } catch (IOException ex) {
-                throw new RuntimeException();
+                throw new RuntimeException(ex);
             }
         }
 
