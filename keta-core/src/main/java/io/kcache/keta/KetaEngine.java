@@ -202,7 +202,7 @@ public class KetaEngine implements Configurable, Closeable {
     public void sync() {
         CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
         CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
-            timestamps.sync()).thenRun(() -> transactionManager.init());
+            timestamps.sync()).thenRunAsync(() -> transactionManager.init());
         CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
         CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
         CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).join();
