@@ -225,6 +225,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
         @Override
         public ServerMethodDefinition<?, ?> lookupMethod(String methodName, String authority) {
             if (proxy == null || proxy.getTarget() == null) {
+                LOG.info("Serving {}", methodName);
                 return ProxyServerCallHandler.proxyMethod(methods.get(methodName));
             } else {
                 LOG.info("Proxying {} to {}", methodName, proxy.getTarget());
