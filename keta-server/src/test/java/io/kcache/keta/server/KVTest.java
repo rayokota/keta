@@ -102,12 +102,11 @@ public class KVTest extends RemoteClusterTestHarness {
     }
 
     @Test
-    @Disabled
     public void testPutWithNotExistLease() throws ExecutionException, InterruptedException {
         PutOption option = PutOption.newBuilder().withLeaseId(99999).build();
         CompletableFuture<PutResponse> future = kvClient.put(SAMPLE_KEY, SAMPLE_VALUE, option);
         assertThatExceptionOfType(ExecutionException.class)
-            .isThrownBy(future::get).withMessageEndingWith("etcdserver: requested lease not found");
+            .isThrownBy(future::get).withMessageEndingWith("ketaserver: requested lease not found");
     }
 
     @Test

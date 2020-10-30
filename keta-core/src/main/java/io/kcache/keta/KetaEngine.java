@@ -230,11 +230,21 @@ public class KetaEngine implements Configurable, Closeable {
 
     @Override
     public void close() throws IOException {
-        transactionManager.close();
-        cache.close();
-        leases.close();
-        timestamps.close();
-        commits.close();
+        if (transactionManager != null) {
+            transactionManager.close();
+        }
+        if (cache != null) {
+            cache.close();
+        }
+        if (leases != null) {
+            leases.close();
+        }
+        if (timestamps != null) {
+            timestamps.close();
+        }
+        if (commits != null) {
+            commits.close();
+        }
     }
 
     @SuppressWarnings("unchecked")

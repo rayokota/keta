@@ -90,7 +90,6 @@ public class LeaseTest extends RemoteClusterTestHarness {
     }
 
     @Test
-    @Disabled
     public void testGrantWithTimeout() throws Exception {
         long leaseID = leaseClient.grant(5, 10, TimeUnit.SECONDS).get().getID();
         kvClient.put(KEY, VALUE, PutOption.newBuilder().withLeaseId(leaseID).build()).get();

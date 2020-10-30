@@ -11,6 +11,7 @@ import io.kcache.keta.server.grpc.LeaseService;
 import io.kcache.keta.server.grpc.MaintenanceService;
 import io.kcache.keta.server.grpc.WatchService;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
+import io.kcache.keta.server.grpc.utils.JwtServerInterceptor;
 import io.kcache.keta.server.grpc.utils.SslFactory;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.netty.channel.ChannelOption;
@@ -68,7 +69,8 @@ public class KetaMain extends AbstractVerticle {
             .addService(new ClusterService(elector))
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
-            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
+            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services))
+            .intercept(new JwtServerInterceptor(null)) ;
 
         if (isTls()) {
             nettyBuilder.sslContext(new SslFactory(config).sslContext());
