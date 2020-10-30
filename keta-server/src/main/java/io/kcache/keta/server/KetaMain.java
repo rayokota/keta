@@ -12,6 +12,7 @@ import io.kcache.keta.server.grpc.MaintenanceService;
 import io.kcache.keta.server.grpc.WatchService;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.server.leader.KetaLeaderElector;
+import io.kcache.keta.server.utils.SslFactory;
 import io.netty.channel.ChannelOption;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -31,11 +32,14 @@ public class KetaMain extends AbstractVerticle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaMain.class);
 
+    private final KetaConfig config;
     private final GrpcProxy<byte[], byte[]> proxy;
     private final KetaLeaderElector elector;
     private final URI listener;
 
-    public KetaMain(GrpcProxy<byte[], byte[]> proxy, KetaLeaderElector elector) throws URISyntaxException {
+    public KetaMain(KetaConfig config, GrpcProxy<byte[], byte[]> proxy, KetaLeaderElector elector)
+        throws URISyntaxException {
+        this.config = config;
         this.proxy = proxy;
         this.elector = elector;
         this.listener = elector.getListeners().isEmpty()
@@ -66,6 +70,10 @@ public class KetaMain extends AbstractVerticle {
             .addService(new WatchService(elector))  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
 
+        if (isTls()) {
+            nettyBuilder.sslContext(new SslFactory(config).sslContext());
+        }
+
         VertxServer server = serverBuilder.build();
 
         server.start(ar -> {
@@ -80,6 +88,10 @@ public class KetaMain extends AbstractVerticle {
                 System.exit(1);
             }
         });
+    }
+
+    private boolean isTls() {
+        return listener.getScheme().equalsIgnoreCase("https");
     }
 
     public static void main(String[] args) {
@@ -99,7 +111,7 @@ public class KetaMain extends AbstractVerticle {
             elector.init();
             boolean isLeader = elector.isLeader();
             LOG.info("Leader: {}, starting server...", isLeader);
-            vertx.deployVerticle(new KetaMain(proxy, elector));
+            vertx.deployVerticle(new KetaMain(config, proxy, elector));
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);

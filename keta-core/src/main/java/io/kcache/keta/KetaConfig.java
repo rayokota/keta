@@ -17,10 +17,13 @@
 package io.kcache.keta;
 
 import io.kcache.KafkaCacheConfig;
+import io.vertx.core.http.ClientAuth;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class KetaConfig extends KafkaCacheConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(KetaConfig.class);
 
     public static final String HOST_NAME_CONFIG = "host.name";
     public static final String HOST_NAME_DOC =
@@ -70,7 +74,14 @@ public class KetaConfig extends KafkaCacheConfig {
     public static final String SSL_KEYSTORE_TYPE_CONFIG = "ssl.keystore.type";
     public static final String SSL_KEYSTORE_TYPE_DOC =
         "The type of keystore file.";
-    public static final String SSL_KEYSTORE_TYPE_DEFAULT = "JKS";
+
+    public static final String SSL_STORE_TYPE_JKS = "JKS";
+    public static final String SSL_STORE_TYPE_PKCS12 = "PKCS12";
+    public static final ConfigDef.ValidString SSL_STORE_TYPE_VALIDATOR =
+        ConfigDef.ValidString.in(
+            SSL_STORE_TYPE_JKS,
+            SSL_STORE_TYPE_PKCS12
+        );
 
     public static final String SSL_KEYMANAGER_ALGORITHM_CONFIG = "ssl.keymanager.algorithm";
     public static final String SSL_KEYMANAGER_ALGORITHM_DOC =
@@ -216,7 +227,8 @@ public class KetaConfig extends KafkaCacheConfig {
             ).define(
                 SSL_KEYSTORE_TYPE_CONFIG,
                 Type.STRING,
-                SSL_KEYSTORE_TYPE_DEFAULT,
+                SSL_STORE_TYPE_JKS,
+                SSL_STORE_TYPE_VALIDATOR,
                 Importance.MEDIUM,
                 SSL_KEYSTORE_TYPE_DOC
             ).define(

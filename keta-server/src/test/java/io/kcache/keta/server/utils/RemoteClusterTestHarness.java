@@ -49,12 +49,11 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     public static final String ENDPOINTS = "http://127.0.0.1:2379";
 
-
+    protected Properties props;
     private GrpcProxy<byte[], byte[]> proxy;
     private KetaLeaderElector elector;
 
     protected File tempDir;
-    protected Properties props;
     protected Integer serverPort;
 
     public RemoteClusterTestHarness() {
@@ -66,11 +65,12 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     }
 
     public KetaMain createKeta() throws Exception {
+        props = new Properties();
         proxy = mock(GrpcProxy.class);
         elector = mock(KetaLeaderElector.class);
         when(elector.isLeader()).thenReturn(true);
         when(elector.getListeners()).thenReturn(Collections.emptyList());
-        return new KetaMain(proxy, elector);
+        return new KetaMain(new KetaConfig(props), proxy, elector);
     }
 
     @BeforeEach
@@ -79,7 +79,6 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
         if (tempDir == null) {
             tempDir = Files.createTempDir();
         }
-        props = new Properties();
         setUpServer(vertx);
     }
 
