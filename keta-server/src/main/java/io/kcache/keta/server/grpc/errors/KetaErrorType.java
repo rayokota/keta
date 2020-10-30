@@ -98,8 +98,8 @@ public enum KetaErrorType {
     // Added
     Starting                   (UNAVAILABLE, "ketaserver: server starting");
 
-    private Status.Code code;
-    private String description;
+    private final Status.Code code;
+    private final String description;
 
     KetaErrorType(Status.Code code, String description) {
         this.code = code;

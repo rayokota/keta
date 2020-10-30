@@ -72,7 +72,7 @@ public class KetaNotifier implements Notifier {
             if (message.body() instanceof byte[]) {
                 try {
                     Event event = Event.newBuilder()
-                        .mergeFrom((byte[]) message.body())
+                        .mergeFrom((message.body())
                         .build();
                     handler.handle(event);
                 } catch (InvalidProtocolBufferException e) {

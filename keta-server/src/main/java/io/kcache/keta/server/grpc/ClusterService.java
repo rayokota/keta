@@ -27,7 +27,6 @@ import io.etcd.jetcd.api.MemberRemoveRequest;
 import io.etcd.jetcd.api.MemberRemoveResponse;
 import io.etcd.jetcd.api.MemberUpdateRequest;
 import io.etcd.jetcd.api.MemberUpdateResponse;
-import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
@@ -37,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 
 public class ClusterService extends ClusterGrpc.ClusterImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(ClusterService.class);

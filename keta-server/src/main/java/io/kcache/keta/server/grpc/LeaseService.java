@@ -27,7 +27,6 @@ import io.etcd.jetcd.api.LeaseRevokeRequest;
 import io.etcd.jetcd.api.LeaseRevokeResponse;
 import io.etcd.jetcd.api.LeaseTimeToLiveRequest;
 import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
-import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;

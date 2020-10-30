@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.server.utils;
+package io.kcache.keta.server.grpc.utils;
 
 import io.grpc.netty.GrpcSslContexts;
 import io.kcache.keta.KetaConfig;
@@ -37,12 +37,12 @@ import static io.kcache.keta.KetaConfig.SSL_CLIENT_AUTHENTICATION_REQUIRED;
 
 public class SslFactory {
 
-    private String kmfAlgorithm;
-    private String tmfAlgorithm;
+    private final String kmfAlgorithm;
+    private final String tmfAlgorithm;
     private SecurityStore keystore = null;
     private Password keyPassword;
     private SecurityStore truststore;
-    private ClientAuth clientAuth;
+    private final ClientAuth clientAuth;
     private SslContext sslContext;
 
     public SslFactory(KetaConfig config) {

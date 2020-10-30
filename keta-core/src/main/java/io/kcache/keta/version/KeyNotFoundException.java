@@ -19,7 +19,7 @@ package io.kcache.keta.version;
 
 public class KeyNotFoundException extends RuntimeException {
 
-    private byte[] key;
+    private final byte[] key;
 
     public KeyNotFoundException(byte[] key) {
         this.key = key;

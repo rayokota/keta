@@ -19,7 +19,7 @@ package io.kcache.keta.lease;
 
 public class LeaseExistsException extends RuntimeException {
 
-    private long id;
+    private final long id;
 
     public LeaseExistsException(long id) {
         this.id = id;

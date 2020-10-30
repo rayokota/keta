@@ -18,7 +18,6 @@
 package io.kcache.keta.server.grpc;
 
 import io.etcd.jetcd.api.Event;
-import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.WatchCancelRequest;
 import io.etcd.jetcd.api.WatchCreateRequest;
 import io.etcd.jetcd.api.WatchGrpc;

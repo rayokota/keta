@@ -19,7 +19,7 @@ package io.kcache.keta.server.grpc.errors;
 
 public class KetaException extends RuntimeException {
 
-    private KetaErrorType type;
+    private final KetaErrorType type;
 
     public KetaException(KetaErrorType type) {
         super(type.getDescription());

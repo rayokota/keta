@@ -19,7 +19,7 @@ package io.kcache.keta.lease;
 
 public class LeaseNotFoundException extends RuntimeException {
 
-    private long id;
+    private final long id;
 
     public LeaseNotFoundException(long id) {
         this.id = id;
