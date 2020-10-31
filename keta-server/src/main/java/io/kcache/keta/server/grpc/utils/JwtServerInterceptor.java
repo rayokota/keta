@@ -28,9 +28,13 @@ import io.grpc.Status;
 
 import java.util.Map;
 
+import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
+
 public class JwtServerInterceptor implements ServerInterceptor {
     private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {
     };
+
+    private static final Metadata.Key<String> TOKEN = Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER);
 
     private final String secret;
     private final JWTVerifier verifier;
@@ -42,6 +46,8 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
+        String jwt = metadata.get(TOKEN);
+        System.out.println("*** got token " + jwt);
       /*
     String jwt = metadata.get(Constant.JWT_METADATA_KEY);
     if (jwt == null) {

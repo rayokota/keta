@@ -51,6 +51,7 @@ import io.etcd.jetcd.api.AuthUserRevokeRoleResponse;
 import io.etcd.jetcd.api.AuthenticateRequest;
 import io.etcd.jetcd.api.AuthenticateResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,17 @@ public class AuthService extends AuthGrpc.AuthImplBase {
 
     @Override
     public void authenticate(AuthenticateRequest request, StreamObserver<AuthenticateResponse> responseObserver) {
-        super.authenticate(request, responseObserver);
+        String user = request.getName();
+        System.out.println("*** got user " + user);
+        try {
+            responseObserver.onNext(AuthenticateResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .setToken("token1")
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
