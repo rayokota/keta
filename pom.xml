@@ -225,6 +225,11 @@
                 <artifactId>vertx-grpc</artifactId>
                 <version>${vertx.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.66</version>
+            </dependency>
             <!-- TESTING -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>

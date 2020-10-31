@@ -4,6 +4,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.JwtTokenProvider;
 import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.server.grpc.AuthService;
 import io.kcache.keta.server.grpc.ClusterService;
@@ -73,7 +74,7 @@ public class KetaMain extends AbstractVerticle {
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services))
-            .intercept(new JwtServerInterceptor(null)) ;
+            .intercept(new JwtServerInterceptor(new JwtTokenProvider(config))) ;
 
         if (isTls()) {
             nettyBuilder.sslContext(new SslFactory(config).sslContext());

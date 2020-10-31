@@ -152,30 +152,26 @@ public class KetaConfig extends KafkaCacheConfig {
             + "server certificate.";
     public static final String SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DEFAULT = null;
 
-    public static final String AUTHENTICATION_METHOD_CONFIG = "authentication.method";
-    public static final String AUTHENTICATION_METHOD_NONE = "NONE";
-    public static final String AUTHENTICATION_METHOD_BASIC = "BASIC";
-    public static final String AUTHENTICATION_METHOD_DIGEST = "DIGEST";
-    public static final String AUTHENTICATION_METHOD_DOC =
-        "Method of authentication. Must be BASIC or DIGEST to enable authentication. "
-            + "For BASIC or DIGEST, you must supply a valid JAAS config file for the "
-            + "'java.security.auth.login.config' system property for the appropriate authentication "
-            + "provider.";
-    public static final ConfigDef.ValidString AUTHENTICATION_METHOD_VALIDATOR =
-        ConfigDef.ValidString.in(
-            AUTHENTICATION_METHOD_NONE,
-            AUTHENTICATION_METHOD_BASIC,
-            AUTHENTICATION_METHOD_DIGEST
-        );
+    public static final String TOKEN_PUBLIC_KEY_PATH_CONFIG = "token.public.key.path";
+    public static final String TOKEN_PUBLIC_KEY_PATH_DOC =
+        "Location of a PEM encoded public key for verifying tokens.";
 
-    public static final String AUTHENTICATION_REALM_CONFIG = "authentication.realm";
-    public static final String AUTHENTICATION_REALM_DOC =
-        "Security realm to be used in authentication.";
+    public static final String TOKEN_PRIVATE_KEY_PATH_CONFIG = "token.private.key.path";
+    public static final String TOKEN_PRIVATE_KEY_PATH_DOC =
+        "Location of a PEM encoded private key for signing tokens.";
 
-    public static final String AUTHENTICATION_ROLES_CONFIG = "authentication.roles";
-    public static final String AUTHENTICATION_ROLES_DOC = "Valid roles to authenticate against.";
-    public static final List<String> AUTHENTICATION_ROLES_DEFAULT =
-        Collections.unmodifiableList(Arrays.asList("*"));
+    public static final String TOKEN_SIGNATURE_ALGORITHM_CONFIG = "token.signature.algorithm";
+    public static final String TOKEN_SIGNATURE_ALGORITHM_DEFAULT = "RS256";
+    public static final ConfigDef.ValidString TOKEN_SIGNATURE_ALGORITHM_VALIDATOR =
+        ConfigDef.ValidString.in("RS256");
+    public static final String TOKEN_SIGNATURE_ALGORITHM_DOC =
+        "Signature scheme to be used when signing/verifying tokens"
+            + " as defined in https://tools.ietf.org/html/rfc7518#section-3.1."
+            + " Currently only RS256 is supported.";
+
+    public static final String TOKEN_TTL_SECS_CONFIG = "token.ttl.secs";
+    public static final int TOKEN_TTL_SECS_DEFAULT = 300;
+    public static final String TOKEN_TTL_SECS_DOC = "Time-to-live for tokens.";
 
     private static final ConfigDef config;
 
@@ -298,24 +294,28 @@ public class KetaConfig extends KafkaCacheConfig {
                 Importance.LOW,
                 SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DOC
             ).define(
-                AUTHENTICATION_METHOD_CONFIG,
-                Type.STRING,
-                AUTHENTICATION_METHOD_NONE,
-                AUTHENTICATION_METHOD_VALIDATOR,
-                Importance.LOW,
-                AUTHENTICATION_METHOD_DOC
+                TOKEN_PUBLIC_KEY_PATH_CONFIG,
+                ConfigDef.Type.STRING,
+                ConfigDef.Importance.HIGH,
+                TOKEN_PUBLIC_KEY_PATH_DOC
             ).define(
-                AUTHENTICATION_REALM_CONFIG,
-                Type.STRING,
-                "",
-                Importance.LOW,
-                AUTHENTICATION_REALM_DOC
+                TOKEN_PRIVATE_KEY_PATH_CONFIG,
+                ConfigDef.Type.STRING,
+                ConfigDef.Importance.HIGH,
+                TOKEN_PRIVATE_KEY_PATH_DOC
             ).define(
-                AUTHENTICATION_ROLES_CONFIG,
-                Type.LIST,
-                AUTHENTICATION_ROLES_DEFAULT,
-                Importance.LOW,
-                AUTHENTICATION_ROLES_DOC
+                TOKEN_SIGNATURE_ALGORITHM_CONFIG,
+                ConfigDef.Type.STRING,
+                TOKEN_SIGNATURE_ALGORITHM_DEFAULT,
+                TOKEN_SIGNATURE_ALGORITHM_VALIDATOR,
+                ConfigDef.Importance.LOW,
+                TOKEN_SIGNATURE_ALGORITHM_DOC
+            ).define(
+                TOKEN_TTL_SECS_CONFIG,
+                ConfigDef.Type.INT,
+                TOKEN_TTL_SECS_DEFAULT,
+                ConfigDef.Importance.LOW,
+                TOKEN_TTL_SECS_DOC
             );
     }
 

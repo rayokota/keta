@@ -18,6 +18,8 @@ package io.kcache.keta.server.grpc.utils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
@@ -25,51 +27,48 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+import io.kcache.keta.KetaConfig;
+import io.kcache.keta.auth.JwtTokenProvider;
 
-import java.util.Map;
-
-import static io.grpc.Metadata.ASCII_STRING_MARSHALLER;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
 public class JwtServerInterceptor implements ServerInterceptor {
     private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {
     };
 
-    private static final Metadata.Key<String> TOKEN = Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER);
+    public static final Metadata.Key<String> TOKEN = Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER);
+    public static final Context.Key<String> TOKEN_CTX_KEY = Context.key("token");
+    public static final Context.Key<String> USER_CTX_KEY = Context.key("username");
 
-    private final String secret;
-    private final JWTVerifier verifier;
+    private final JwtTokenProvider provider;
 
-    public JwtServerInterceptor(String secret) {
-        this.secret = secret;
-        this.verifier = null;//JWT.create().with
+    public JwtServerInterceptor(JwtTokenProvider provider) {
+        this.provider = provider;
     }
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
         String jwt = metadata.get(TOKEN);
         System.out.println("*** got token " + jwt);
-      /*
-    String jwt = metadata.get(Constant.JWT_METADATA_KEY);
-    if (jwt == null) {
-      serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
-      return NOOP_LISTENER;
-    }
+        if (jwt == null) {
+            serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
+            return NOOP_LISTENER;
+        }
 
-    Context ctx;
-    try {
-      Map<String, Object> verified = verifier.verify(jwt);
-      ctx = Context.current().withValue(Constant.USER_ID_CTX_KEY, verified.getOrDefault("sub", "anonymous").toString())
-          .withValue(Constant.JWT_CTX_KEY, jwt);
-    } catch (Exception e) {
-      System.out.println("Verification failed - Unauthenticated!");
-      serverCall.close(Status.UNAUTHENTICATED.withDescription(e.getMessage()).withCause(e), metadata);
-      return NOOP_LISTENER;
-    }
+        Context ctx;
+        try {
+            String user = provider.getUser(jwt);
+            ctx = Context.current()
+                .withValue(USER_CTX_KEY, user)
+                .withValue(TOKEN_CTX_KEY, jwt);
+        } catch (Exception e) {
+            System.out.println("Verification failed - Unauthenticated!");
+            serverCall.close(Status.UNAUTHENTICATED.withDescription(e.getMessage()).withCause(e), metadata);
+            return NOOP_LISTENER;
+        }
 
-       */
-        Context ctx = Context.current();
         System.out.println("*** intercepted " + serverCall);
         return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
-
     }
 }
