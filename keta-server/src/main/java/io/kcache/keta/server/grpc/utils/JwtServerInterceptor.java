@@ -16,10 +16,6 @@
 
 package io.kcache.keta.server.grpc.utils;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
@@ -27,11 +23,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.kcache.keta.KetaConfig;
-import io.kcache.keta.auth.JwtTokenProvider;
-
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
+import io.kcache.keta.auth.TokenProvider;
 
 public class JwtServerInterceptor implements ServerInterceptor {
     private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {
@@ -41,10 +33,10 @@ public class JwtServerInterceptor implements ServerInterceptor {
     public static final Context.Key<String> TOKEN_CTX_KEY = Context.key("token");
     public static final Context.Key<String> USER_CTX_KEY = Context.key("username");
 
-    private final JwtTokenProvider provider;
+    private final TokenProvider tokenProvider;
 
-    public JwtServerInterceptor(JwtTokenProvider provider) {
-        this.provider = provider;
+    public JwtServerInterceptor(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
@@ -58,7 +50,7 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
         Context ctx;
         try {
-            String user = provider.getUser(jwt);
+            String user = tokenProvider.getUser(jwt);
             ctx = Context.current()
                 .withValue(USER_CTX_KEY, user)
                 .withValue(TOKEN_CTX_KEY, jwt);

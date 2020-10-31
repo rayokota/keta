@@ -51,6 +51,7 @@ import io.etcd.jetcd.api.AuthUserRevokeRoleResponse;
 import io.etcd.jetcd.api.AuthenticateRequest;
 import io.etcd.jetcd.api.AuthenticateResponse;
 import io.grpc.stub.StreamObserver;
+import io.kcache.keta.auth.TokenProvider;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
@@ -60,9 +61,11 @@ public class AuthService extends AuthGrpc.AuthImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(AuthService.class);
 
     private final KetaLeaderElector elector;
+    private final TokenProvider tokenProvider;
 
-    public AuthService(KetaLeaderElector elector) {
+    public AuthService(KetaLeaderElector elector, TokenProvider tokenProvider) {
         this.elector = elector;
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
@@ -82,7 +85,7 @@ public class AuthService extends AuthGrpc.AuthImplBase {
         try {
             responseObserver.onNext(AuthenticateResponse.newBuilder()
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
-                .setToken("token1")
+                .setToken(tokenProvider.assignToken(user))
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
