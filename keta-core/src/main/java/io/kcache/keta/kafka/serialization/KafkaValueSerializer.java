@@ -50,11 +50,9 @@ public class KafkaValueSerializer implements Serializer<VersionedValues> {
             byte[] bytes = out.toByteArray();
             out.close();
             return bytes;
-        } catch (IOException | RuntimeException e) {
-            // avro serialization can throw AvroRuntimeException, NullPointerException,
-            // ClassCastException, etc
-            LOG.error("Error serializing Avro value " + e.getMessage());
-            throw new SerializationException("Error serializing Avro value", e);
+        } catch (Exception e) {
+            LOG.error("Error serializing value " + e.getMessage());
+            throw new SerializationException("Error serializing value", e);
         }
     }
 

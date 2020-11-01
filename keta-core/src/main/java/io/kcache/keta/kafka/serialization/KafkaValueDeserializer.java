@@ -49,9 +49,8 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
             VersionedValueList list = VersionedValueList.parseFrom(ByteString.copyFrom(payload, 1, payload.length - 1));
             return new VersionedValues(list);
         } catch (IOException | RuntimeException e) {
-            // avro deserialization may throw AvroRuntimeException, NullPointerException, etc
-            LOG.error("Error deserializing Avro value " + e.getMessage());
-            throw new SerializationException("Error deserializing Avro value", e);
+            LOG.error("Error deserializing value " + e.getMessage());
+            throw new SerializationException("Error deserializing value", e);
         }
     }
 
