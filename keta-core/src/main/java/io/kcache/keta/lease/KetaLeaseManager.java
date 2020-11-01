@@ -56,18 +56,17 @@ public class KetaLeaseManager {
 
     public LeaseKeys grant(Lease lease) {
         long id = lease.getID();
-        while (id == 0) {
+        if (id == 0) {
             long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
-            if (!cache.containsKey(newId)) {
-                lease = Lease.newBuilder()
-                    .setID(newId)
-                    .setTTL(lease.getTTL())
-                    .setExpiry(lease.getExpiry())
-                    .build();
-                id = newId;
+            while (cache.containsKey(newId)) {
+                newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
             }
-        }
-        if (cache.containsKey(id)) {
+            lease = Lease.newBuilder()
+                .setID(newId)
+                .setTTL(lease.getTTL())
+                .setExpiry(lease.getExpiry())
+                .build();
+        } else if (cache.containsKey(id)) {
             throw new LeaseExistsException(id);
         }
         cache.put(lease.getID(), lease);

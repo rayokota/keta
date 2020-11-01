@@ -34,7 +34,6 @@ import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.ResponseOp;
 import io.etcd.jetcd.api.TxnRequest;
 import io.etcd.jetcd.api.TxnResponse;
-import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;

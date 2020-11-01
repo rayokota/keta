@@ -21,6 +21,7 @@ import com.google.common.collect.Range;
 import io.etcd.jetcd.api.Event;
 import io.kcache.keta.notifier.Notifier;
 import io.kcache.keta.utils.IntervalTree;
+import io.kcache.keta.watch.exceptions.WatchExistsException;
 import io.vertx.core.Handler;
 import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.Logger;
@@ -55,12 +56,14 @@ public class KetaWatchManager {
     public synchronized Watch add(Watch watch) {
         long id = watch.getID();
         Bytes key = Bytes.wrap(watch.getKey());
-        while (id == 0) {
+        if (id == 0) {
             long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
-            if (!watchers.containsKey(newId)) {
-                watch = new Watch(newId, watch.getKey(), watch.getEnd());
-                id = newId;
+            while (watchers.containsKey(newId)) {
+                newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
             }
+            watch = new Watch(newId, watch.getKey(), watch.getEnd());
+        } else if (watchers.containsKey(id)) {
+            throw new WatchExistsException(id);
         }
         if (watch.getEnd() != null && watch.getEnd().length > 0) {
             Bytes end = Bytes.wrap(watch.getEnd());

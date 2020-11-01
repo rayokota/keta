@@ -17,18 +17,9 @@
 
 package io.kcache.keta.auth;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import io.kcache.keta.KetaConfig;
-import io.kcache.keta.utils.PemUtils;
 import org.apache.kafka.common.config.ConfigException;
 
-import java.io.IOException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SimpleTokenProvider implements TokenProvider {
 
-    private Map<String, String> tokens = new ConcurrentHashMap<>();
+    private final Map<String, String> tokens = new ConcurrentHashMap<>();
 
     public SimpleTokenProvider(KetaConfig config) throws ConfigException {
     }

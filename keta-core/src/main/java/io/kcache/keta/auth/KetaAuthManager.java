@@ -22,10 +22,7 @@ import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.Permission;
 import io.etcd.jetcd.api.Role;
 import io.etcd.jetcd.api.User;
-import io.grpc.Context;
 import io.kcache.Cache;
-import io.kcache.KafkaCache;
-import io.kcache.KafkaCacheConfig;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.auth.exceptions.AuthNotEnabledException;
 import io.kcache.keta.auth.exceptions.AuthenticationException;
@@ -39,27 +36,20 @@ import io.kcache.keta.auth.exceptions.RootUserNotFoundException;
 import io.kcache.keta.auth.exceptions.UserAlreadyExistsException;
 import io.kcache.keta.auth.exceptions.UserIsEmptyException;
 import io.kcache.keta.auth.exceptions.UserNotFoundException;
-import io.kcache.keta.kafka.serialization.KafkaProtobufSerde;
 import io.kcache.keta.utils.IntervalTree;
-import io.kcache.utils.Caches;
-import io.kcache.utils.InMemoryCache;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class KetaAuthManager {
 
@@ -68,12 +58,12 @@ public class KetaAuthManager {
     public static final String ROOT_USER = "root";
     public static final String ROOT_ROLE = "root";
 
-    private KetaConfig config;
-    private TokenProvider tokenProvider;
-    private Cache<String, String> auth;
-    private Cache<String, User> authUsers;
-    private Cache<String, Role> authRoles;
-    private Map<String, UnifiedRangePerms> rangePerms;
+    private final KetaConfig config;
+    private final TokenProvider tokenProvider;
+    private final Cache<String, String> auth;
+    private final Cache<String, User> authUsers;
+    private final Cache<String, Role> authRoles;
+    private final Map<String, UnifiedRangePerms> rangePerms;
 
     public KetaAuthManager(KetaConfig config, Cache<String, String> auth,
                            Cache<String, User> authUsers, Cache<String, Role> authRoles) {
@@ -86,11 +76,13 @@ public class KetaAuthManager {
     }
 
     public boolean isAuthEnabled() {
-        boolean authEnabled = Boolean.parseBoolean(auth.getOrDefault("authEnabled", "false"));
-        return authEnabled;
+        return Boolean.parseBoolean(auth.getOrDefault("authEnabled", "false"));
     }
 
     public void enableAuth() {
+        if (isAuthEnabled()) {
+            return;
+        }
         User u = authUsers.get(ROOT_USER);
         if (u == null) {
             throw new RootUserNotFoundException(ROOT_USER);
@@ -98,7 +90,8 @@ public class KetaAuthManager {
         if (!hasRootRole(u)) {
             throw new RootRoleNotFoundException(ROOT_ROLE);
         }
-        auth.put("authEnabled", "true");
+        auth.put("authEnabled", Boolean.TRUE.toString());
+        LOG.info("enabled authentication");
     }
 
     private boolean hasRootRole(User u) {
@@ -111,7 +104,11 @@ public class KetaAuthManager {
     }
 
     public void disableAuth() {
-        auth.put("authEnabled", "false");
+        if (!isAuthEnabled()) {
+            return;
+        }
+        auth.put("authEnabled", Boolean.FALSE.toString());
+        LOG.info("disabled authentication");
     }
 
     public String authenticate(String user, String password) {
@@ -146,6 +143,7 @@ public class KetaAuthManager {
             .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
             .setPassword(ByteString.copyFrom(pw, StandardCharsets.UTF_8))
             .build());
+        LOG.info("added user {}", user);
     }
 
     public User getUser(String user) {
@@ -170,6 +168,7 @@ public class KetaAuthManager {
             throw new UserNotFoundException(user);
         }
         rangePerms.remove(user);
+        LOG.info("deleted a user {}", user);
     }
 
     public void changePassword(String user, String password) {
@@ -186,6 +185,7 @@ public class KetaAuthManager {
             .setPassword(ByteString.copyFrom(pw, StandardCharsets.UTF_8))
             .build());
         rangePerms.remove(user);
+        LOG.info("changed password of user {}", user);
     }
 
     public void grantRole(String user, String role) {
@@ -193,10 +193,20 @@ public class KetaAuthManager {
         if (u == null) {
             throw new UserNotFoundException(user);
         }
-        authUsers.put(user, User.newBuilder(u)
-            .addRoles(role)
-            .build());
-        rangePerms.remove(user);
+        if (!ROOT_ROLE.equals(role)) {
+            Role r = authRoles.get(role);
+            if (r == null) {
+                throw new RoleNotFoundException(role);
+            }
+        }
+        List<String> roles = u.getRolesList();
+        if (!roles.contains(role)) {
+            authUsers.put(user, User.newBuilder(u)
+                .addRoles(role)
+                .build());
+            rangePerms.remove(user);
+        }
+        LOG.info("granted role to user {}", user);
     }
 
     public void revokeRole(String user, String role) {
@@ -208,13 +218,15 @@ public class KetaAuthManager {
         if (u == null) {
             throw new UserNotFoundException(user);
         }
-        Set<String> roles = new HashSet<>(u.getRolesList());
-        roles.remove(role);
-        authUsers.put(user, User.newBuilder(u)
-            .clearRoles()
-            .addAllRoles(roles)
-            .build());
-        rangePerms.remove(user);
+        Set<String> roles = new LinkedHashSet<>(u.getRolesList());
+        if (roles.remove(role)) {
+            authUsers.put(user, User.newBuilder(u)
+                .clearRoles()
+                .addAllRoles(roles)
+                .build());
+            rangePerms.remove(user);
+        }
+        LOG.info("revoked role from user {}", user);
     }
 
     public void addRole(String role) {
@@ -228,6 +240,7 @@ public class KetaAuthManager {
         authRoles.put(role, Role.newBuilder()
             .setName(ByteString.copyFrom(role, StandardCharsets.UTF_8))
             .build());
+        LOG.info("created role {}", role);
     }
 
     public Role getRole(String role) {
@@ -253,7 +266,7 @@ public class KetaAuthManager {
         }
         for (String user : authUsers.keySet()) {
             User u = authUsers.get(user);
-            Set<String> roles = new HashSet<>(u.getRolesList());
+            Set<String> roles = new LinkedHashSet<>(u.getRolesList());
             if (roles.remove(role)) {
                 User newUser = User.newBuilder(u)
                     .clearRoles()
@@ -263,6 +276,7 @@ public class KetaAuthManager {
                 rangePerms.remove(user);
             }
         }
+        LOG.info("deleted role {}", role);
     }
 
     public void grantPermission(String role, Permission permission) {
@@ -270,10 +284,20 @@ public class KetaAuthManager {
         if (r == null) {
             throw new RoleNotFoundException(role);
         }
+        List<Permission> perms = new ArrayList<>();
+        for (Permission p : r.getKeyPermissionList()) {
+            if (Objects.equals(p.getKey(), permission.getKey()) && Objects.equals(p.getRangeEnd(), permission.getRangeEnd())) {
+                perms.add(permission);
+            } else {
+                perms.add(p);
+            }
+        }
         authRoles.put(role, Role.newBuilder(r)
-            .addKeyPermission(permission)
+            .clearKeyPermission()
+            .addAllKeyPermission(perms)
             .build());
         rangePerms.clear();
+        LOG.info("granted permission to role {}", role);
     }
 
     public void revokePermission(String role, ByteString key, ByteString rangeEnd) {
@@ -281,7 +305,7 @@ public class KetaAuthManager {
         if (r == null) {
             throw new RoleNotFoundException(role);
         }
-        Set<Permission> perms = new HashSet<>();
+        List<Permission> perms = new ArrayList<>();
         for (Permission perm : r.getKeyPermissionList()) {
             if (!Objects.equals(perm.getKey(), key) || !Objects.equals(perm.getRangeEnd(), rangeEnd)) {
                 perms.add(perm);
@@ -292,6 +316,7 @@ public class KetaAuthManager {
             .addAllKeyPermission(perms)
             .build());
         rangePerms.clear();
+        LOG.info("revoked permission for role {}", role);
     }
 
     public void checkOpPermitted(String user, ByteString key, ByteString rangeEnd, Permission.Type type) {
@@ -392,8 +417,8 @@ public class KetaAuthManager {
     }
 
     static class UnifiedRangePerms {
-        private IntervalTree<Bytes, Void> readPerms;
-        private IntervalTree<Bytes, Void> writePerms;
+        private final IntervalTree<Bytes, Void> readPerms;
+        private final IntervalTree<Bytes, Void> writePerms;
 
         public UnifiedRangePerms() {
             this.readPerms = new IntervalTree<>();
