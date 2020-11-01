@@ -17,23 +17,32 @@
 package io.kcache.keta.kafka.serialization;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.kcache.keta.pb.Lease;
+import com.google.protobuf.Message;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import static io.kcache.keta.kafka.serialization.KafkaValueSerde.MAGIC_BYTE;
 
-public class KafkaLeaseDeserializer implements Deserializer<Lease> {
-    private final static Logger LOG = LoggerFactory.getLogger(KafkaLeaseDeserializer.class);
+public class KafkaProtobufDeserializer<T extends Message> implements Deserializer<T> {
+    private final static Logger LOG = LoggerFactory.getLogger(KafkaProtobufDeserializer.class);
 
-    public KafkaLeaseDeserializer() {
+    private final Class<T> type;
+    private final Method parseMethod;
+
+    public KafkaProtobufDeserializer(Class<T> type) {
+        try {
+            this.type = type;
+            this.parseMethod = type.getDeclaredMethod("parseFrom", ByteString.class);
+        } catch (Exception e) {
+            throw new ConfigException("Class " + type.getCanonicalName()
+                + " is not a valid protobuf message class", e);
+        }
     }
 
     @Override
@@ -41,14 +50,15 @@ public class KafkaLeaseDeserializer implements Deserializer<Lease> {
     }
 
     @Override
-    public Lease deserialize(String topic, byte[] payload) throws SerializationException {
+    @SuppressWarnings("unchecked")
+    public T deserialize(String topic, byte[] payload) throws SerializationException {
         try {
             if (payload == null) {
                 return null;
             }
             readMagicByte(payload);
-            return Lease.parseFrom(ByteString.copyFrom(payload, 1, payload.length - 1));
-        } catch (InvalidProtocolBufferException e) {
+            return (T) parseMethod.invoke(null, ByteString.copyFrom(payload, 1, payload.length - 1));
+        } catch (Exception e) {
             throw new SerializationException(e);
         }
     }

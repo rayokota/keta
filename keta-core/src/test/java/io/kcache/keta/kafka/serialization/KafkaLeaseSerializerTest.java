@@ -25,7 +25,7 @@ public class KafkaLeaseSerializerTest {
 
     @Test
     public void testSerializer() throws Exception {
-        KafkaLeaseSerde serde = new KafkaLeaseSerde();
+        KafkaProtobufSerde<Lease> serde = new KafkaProtobufSerde<>(Lease.class);
         Lease lease = Lease.newBuilder()
             .setID(1)
             .setTTL(1000)

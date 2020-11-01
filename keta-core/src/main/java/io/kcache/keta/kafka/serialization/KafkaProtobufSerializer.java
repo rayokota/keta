@@ -16,23 +16,24 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.pb.Lease;
+import com.google.protobuf.Message;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import static io.kcache.keta.kafka.serialization.KafkaValueSerde.MAGIC_BYTE;
 
-public class KafkaLeaseSerializer implements Serializer<Lease> {
-    private final static Logger LOG = LoggerFactory.getLogger(KafkaLeaseSerializer.class);
+public class KafkaProtobufSerializer<T extends Message> implements Serializer<T> {
+    private final static Logger LOG = LoggerFactory.getLogger(KafkaProtobufSerializer.class);
 
-    public KafkaLeaseSerializer() {
+    private final Class<T> type;
+
+    public KafkaProtobufSerializer(Class<T> type) {
+        this.type = type;
     }
 
     @Override
@@ -40,18 +41,18 @@ public class KafkaLeaseSerializer implements Serializer<Lease> {
     }
 
     @Override
-    public byte[] serialize(String topic, Lease lease) {
-        if (lease == null) {
+    public byte[] serialize(String topic, T message) {
+        if (message == null) {
             return null;
         }
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             out.write(MAGIC_BYTE);
-            out.write(lease.toByteArray());
+            out.write(message.toByteArray());
             byte[] bytes = out.toByteArray();
             out.close();
             return bytes;
-        } catch (IOException | RuntimeException e) {
+        } catch (Exception e) {
             LOG.error("Error serializing lease " + e.getMessage());
             throw new SerializationException("Error serializing lease", e);
         }

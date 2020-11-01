@@ -20,7 +20,7 @@ import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.keta.auth.KetaAuthManager;
-import io.kcache.keta.kafka.serialization.KafkaLeaseSerde;
+import io.kcache.keta.kafka.serialization.KafkaProtobufSerde;
 import io.kcache.keta.kafka.serialization.KafkaValueSerde;
 import io.kcache.keta.leader.LeaderElector;
 import io.kcache.keta.lease.KetaLeaseManager;
@@ -190,7 +190,7 @@ public class KetaEngine implements Configurable, Closeable {
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
             configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             leases = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), new KafkaLeaseSerde(), null, new InMemoryCache<>());
+                new KafkaCacheConfig(configs), Serdes.Long(), new KafkaProtobufSerde<>(Lease.class), null, new InMemoryCache<>());
         } else {
             leases = new InMemoryCache<>();
         }

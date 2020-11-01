@@ -14,7 +14,7 @@
 
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.pb.Lease;
+import com.google.protobuf.Message;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -22,21 +22,21 @@ import org.apache.kafka.common.serialization.Serializer;
 
 import java.util.Map;
 
-public class KafkaLeaseSerde implements Serde<Lease> {
+public class KafkaProtobufSerde<T extends Message> implements Serde<T> {
 
-    private final Serde<Lease> inner;
+    private final Serde<T> inner;
 
-    public KafkaLeaseSerde() {
-        inner = Serdes.serdeFrom(new KafkaLeaseSerializer(), new KafkaLeaseDeserializer());
+    public KafkaProtobufSerde(Class<T> type) {
+        inner = Serdes.serdeFrom(new KafkaProtobufSerializer<>(type), new KafkaProtobufDeserializer<>(type));
     }
 
     @Override
-    public Serializer<Lease> serializer() {
+    public Serializer<T> serializer() {
         return inner.serializer();
     }
 
     @Override
-    public Deserializer<Lease> deserializer() {
+    public Deserializer<T> deserializer() {
         return inner.deserializer();
     }
 
