@@ -20,6 +20,7 @@ package io.kcache.keta.server.grpc.utils;
 import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.kcache.keta.auth.AuthenticationException;
 import io.kcache.keta.lease.LeaseExistsException;
 import io.kcache.keta.lease.LeaseNotFoundException;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
@@ -42,7 +43,9 @@ public class GrpcUtils {
     }
 
     public static StatusRuntimeException toStatusException(Exception ex) {
-        if (ex instanceof KeyNotFoundException) {
+        if (ex instanceof AuthenticationException) {
+            return KetaErrorType.AuthFailed.toException();
+        } else if (ex instanceof KeyNotFoundException) {
             return KetaErrorType.KeyNotFound.toException();
         } else if (ex instanceof LeaseExistsException) {
             return KetaErrorType.LeaseExist.toException();

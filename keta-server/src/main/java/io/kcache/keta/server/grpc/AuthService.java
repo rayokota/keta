@@ -51,7 +51,8 @@ import io.etcd.jetcd.api.AuthUserRevokeRoleResponse;
 import io.etcd.jetcd.api.AuthenticateRequest;
 import io.etcd.jetcd.api.AuthenticateResponse;
 import io.grpc.stub.StreamObserver;
-import io.kcache.keta.auth.TokenProvider;
+import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
@@ -61,30 +62,47 @@ public class AuthService extends AuthGrpc.AuthImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(AuthService.class);
 
     private final KetaLeaderElector elector;
-    private final TokenProvider tokenProvider;
 
-    public AuthService(KetaLeaderElector elector, TokenProvider tokenProvider) {
+    public AuthService(KetaLeaderElector elector) {
         this.elector = elector;
-        this.tokenProvider = tokenProvider;
     }
 
     @Override
     public void authEnable(AuthEnableRequest request, StreamObserver<AuthEnableResponse> responseObserver) {
-        super.authEnable(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.enableAuth();
+            responseObserver.onNext(AuthEnableResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void authDisable(AuthDisableRequest request, StreamObserver<AuthDisableResponse> responseObserver) {
-        super.authDisable(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.disableAuth();
+            responseObserver.onNext(AuthDisableResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void authenticate(AuthenticateRequest request, StreamObserver<AuthenticateResponse> responseObserver) {
-        String user = request.getName();
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         try {
+            String token = authMgr.authenticate(request.getName(), request.getPassword());
             responseObserver.onNext(AuthenticateResponse.newBuilder()
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
-                .setToken(tokenProvider.assignToken(user))
+                .setToken(token)
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {

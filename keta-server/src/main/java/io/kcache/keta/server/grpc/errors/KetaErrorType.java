@@ -60,6 +60,7 @@ public enum KetaErrorType {
     RequestTooLarge        (INVALID_ARGUMENT, "ketaserver: request is too large"),
     RequestTooManyRequests (RESOURCE_EXHAUSTED, "ketaserver: too many requests"),
 
+    // TODO
     RootUserNotExist     (FAILED_PRECONDITION, "ketaserver: root user does not exist"),
     RootRoleNotExist     (FAILED_PRECONDITION, "ketaserver: root user does not have root role"),
     UserAlreadyExist     (FAILED_PRECONDITION, "ketaserver: user name already exists"),

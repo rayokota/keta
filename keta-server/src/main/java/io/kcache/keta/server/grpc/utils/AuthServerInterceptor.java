@@ -25,7 +25,6 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.auth.KetaAuthManager;
-import io.kcache.keta.auth.TokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,18 +38,15 @@ public class AuthServerInterceptor implements ServerInterceptor {
     public static final Context.Key<String> TOKEN_CTX_KEY = Context.key("token");
     public static final Context.Key<String> USER_CTX_KEY = Context.key("username");
 
-    private final TokenProvider tokenProvider;
-
-    public AuthServerInterceptor(TokenProvider tokenProvider) {
-        this.tokenProvider = tokenProvider;
+    public AuthServerInterceptor() {
     }
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
-        KetaAuthManager authManager = KetaEngine.getInstance().getAuthManager();
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         String methodName = serverCall.getMethodDescriptor().getFullMethodName();
         Context ctx = Context.current();
-        if (authManager.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
+        if (authMgr.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
             String jwt = metadata.get(TOKEN);
             if (jwt == null) {
                 serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
@@ -58,7 +54,7 @@ public class AuthServerInterceptor implements ServerInterceptor {
             }
 
             try {
-                String user = tokenProvider.getUser(jwt);
+                String user = authMgr.getUserFromToken(jwt);
                 ctx = ctx.withValue(USER_CTX_KEY, user).withValue(TOKEN_CTX_KEY, jwt);
             } catch (Exception e) {
                 LOG.error("Verification failed - Unauthenticated!");

@@ -40,6 +40,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <assertj.version>3.15.0</assertj.version>
+        <jbcrypt.version>0.4</jbcrypt.version>
         <grpc.version>1.25.0</grpc.version>
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
@@ -118,6 +119,11 @@
                 <groupId>net.jodah</groupId>
                 <artifactId>expiringmap</artifactId>
                 <version>0.5.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mindrot</groupId>
+                <artifactId>jbcrypt</artifactId>
+                <version>${jbcrypt.version}</version>
             </dependency>
             <dependency> <!-- necessary for Java 9+ -->
                 <groupId>org.apache.tomcat</groupId>

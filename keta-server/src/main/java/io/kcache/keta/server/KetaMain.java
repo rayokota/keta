@@ -4,7 +4,6 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
-import io.kcache.keta.auth.TokenProvider;
 import io.kcache.keta.notifier.KetaNotifier;
 import io.kcache.keta.server.grpc.AuthService;
 import io.kcache.keta.server.grpc.ClusterService;
@@ -62,8 +61,6 @@ public class KetaMain extends AbstractVerticle {
             new LeaseService(elector).bindService()
         );
 
-        TokenProvider tokenProvider = config.getTokenProvider();
-
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
             .permitKeepAliveTime(5, TimeUnit.SECONDS)
@@ -71,12 +68,12 @@ public class KetaMain extends AbstractVerticle {
             // see https://issues.apache.org/jira/browse/RATIS-606
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .withChildOption(ChannelOption.TCP_NODELAY, true)
-            .addService(new AuthService(elector, tokenProvider))
+            .addService(new AuthService(elector))
             .addService(new ClusterService(elector))
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
             .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services))
-            .intercept(new AuthServerInterceptor(tokenProvider));
+            .intercept(new AuthServerInterceptor());
 
         if (isTls()) {
             nettyBuilder.sslContext(new SslFactory(config).sslContext());

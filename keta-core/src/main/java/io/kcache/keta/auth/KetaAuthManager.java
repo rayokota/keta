@@ -17,6 +17,8 @@
  */
 package io.kcache.keta.auth;
 
+import com.google.protobuf.ByteString;
+import io.etcd.jetcd.api.Permission;
 import io.etcd.jetcd.api.Role;
 import io.etcd.jetcd.api.User;
 import io.kcache.Cache;
@@ -27,13 +29,19 @@ import io.kcache.keta.kafka.serialization.KafkaProtobufSerde;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
 import org.apache.kafka.common.serialization.Serdes;
+import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +50,7 @@ public class KetaAuthManager implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(KetaAuthManager.class);
 
     private KetaConfig config;
+    private TokenProvider tokenProvider;
     private Cache<String, String> auth;
     private Cache<String, User> authUsers;
     private Cache<String, Role> authRoles;
@@ -49,6 +58,7 @@ public class KetaAuthManager implements Closeable {
 
     public KetaAuthManager(KetaConfig config, Cache<String, String> auth) {
         this.config = config;
+        this.tokenProvider = config.getTokenProvider();
         this.auth = auth;
     }
 
@@ -139,6 +149,104 @@ public class KetaAuthManager implements Closeable {
 
     public void disableAuth() {
         auth.put("authEnabled", "false");
+    }
+
+    public String authenticate(String user, String password) {
+        User u = authUsers.get(user);
+        boolean matches = BCrypt.checkpw(password, u.getPassword().toStringUtf8());
+        if (!matches) {
+            throw new AuthenticationException(user);
+        }
+        return tokenProvider.assignToken(user);
+    }
+
+    public String getUserFromToken(String token) {
+        return tokenProvider.getUser(token);
+    }
+
+    public void addUser(String user, String password) {
+        String pw = BCrypt.hashpw(password, BCrypt.gensalt());
+        authUsers.put(user, User.newBuilder()
+            .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
+            .setPassword(ByteString.copyFrom(pw, StandardCharsets.UTF_8))
+            .build());
+    }
+
+    public User getUser(String user) {
+        return authUsers.get(user);
+    }
+
+    public Set<String> listUsers() {
+        return authUsers.keySet();
+    }
+
+    public void deleteUser(String user) {
+        authUsers.remove(user);
+    }
+
+    public void changePassword(String user, String password) {
+        String pw = BCrypt.hashpw(password, BCrypt.gensalt());
+        authUsers.put(user, User.newBuilder()
+            .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
+            .setPassword(ByteString.copyFrom(pw, StandardCharsets.UTF_8))
+            .build());
+    }
+
+    public void grantRole(String user, String role) {
+        User u = authUsers.get(user);
+        authUsers.put(user, User.newBuilder(u)
+            .addRoles(role)
+            .build());
+    }
+
+    public void revokeRole(String user, String role) {
+        User u = authUsers.get(user);
+        Set<String> roles = new HashSet<>(u.getRolesList());
+        roles.remove(role);
+        authUsers.put(user, User.newBuilder(u)
+            .clearRoles()
+            .addAllRoles(roles)
+            .build());
+    }
+
+    public void addRole(String role) {
+        authRoles.put(role, Role.newBuilder()
+            .setName(ByteString.copyFrom(role, StandardCharsets.UTF_8))
+            .build());
+    }
+
+    public Role getRole(String role) {
+        return authRoles.get(role);
+    }
+
+    public Set<String> listRoles() {
+        return authRoles.keySet();
+    }
+
+    public void deleteRole(String role) {
+        authRoles.remove(role);
+    }
+
+    public void grantPermission(String role, Permission permission) {
+        Role r = authRoles.get(role);
+        authRoles.put(role, Role.newBuilder(r)
+            .addKeyPermission(permission)
+            .build());
+    }
+
+    public void revokePermission(String role, String key, String rangeEnd) {
+        Role r = authRoles.get(role);
+        Set<Permission> perms = new HashSet<>();
+        for (Permission perm : r.getKeyPermissionList()) {
+            if (!Objects.equals(perm.getKey().toStringUtf8(), key)
+                || !Objects.equals(perm.getRangeEnd().toStringUtf8(), rangeEnd)) {
+                perms.add(perm);
+            }
+        }
+        authRoles.put(role, Role.newBuilder(r)
+            .clearKeyPermission()
+            .addAllKeyPermission(perms)
+            .build());
     }
 
     @Override
