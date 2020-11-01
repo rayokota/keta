@@ -296,11 +296,13 @@ public class KetaConfig extends KafkaCacheConfig {
             ).define(
                 TOKEN_PUBLIC_KEY_PATH_CONFIG,
                 ConfigDef.Type.STRING,
+                null,
                 ConfigDef.Importance.HIGH,
                 TOKEN_PUBLIC_KEY_PATH_DOC
             ).define(
                 TOKEN_PRIVATE_KEY_PATH_CONFIG,
                 ConfigDef.Type.STRING,
+                null,
                 ConfigDef.Importance.HIGH,
                 TOKEN_PRIVATE_KEY_PATH_DOC
             ).define(

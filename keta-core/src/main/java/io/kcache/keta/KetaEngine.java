@@ -19,6 +19,7 @@ package io.kcache.keta;
 import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.kafka.serialization.KafkaLeaseSerde;
 import io.kcache.keta.kafka.serialization.KafkaValueSerde;
 import io.kcache.keta.leader.LeaderElector;
@@ -58,9 +59,11 @@ public class KetaEngine implements Configurable, Closeable {
     private Cache<Long, Long> commits;
     private Cache<Long, Long> timestamps;
     private Cache<Long, Lease> leases;
+    private Cache<String, Boolean> auth;
     private Cache<byte[], VersionedValues> cache;
     private TxVersionedCache txCache;
     private KetaTransactionManager transactionManager;
+    private KetaAuthManager authManager;
     private KetaLeaseManager leaseManager;
     private KetaWatchManager watchManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
@@ -125,6 +128,25 @@ public class KetaEngine implements Configurable, Closeable {
                 + "was already initialized");
         }
     }
+
+
+    /*
+    private void initAuth() {
+        Map<String, Object> configs = config.originals();
+        String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
+        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "keta-1");
+
+        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() ->
+            auth = initCommits(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+            authUsers = initTimestamps(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() ->
+            authRoles = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, kvFuture).join();
+
+    }
+
+     */
 
     private Cache<Long, Long> initCommits(Map<String, Object> configs, String bootstrapServers, String groupId) {
         Cache<Long, Long> commits;
@@ -218,6 +240,10 @@ public class KetaEngine implements Configurable, Closeable {
 
     public KetaTransactionManager getTxManager() {
         return transactionManager;
+    }
+
+    public KetaAuthManager getAuthManager() {
+        return authManager;
     }
 
     public KetaLeaseManager getLeaseManager() {

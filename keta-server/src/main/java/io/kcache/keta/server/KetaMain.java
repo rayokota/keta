@@ -62,7 +62,8 @@ public class KetaMain extends AbstractVerticle {
             new LeaseService(elector).bindService()
         );
 
-        JwtTokenProvider tokenProvider = new JwtTokenProvider(config);
+        // TODO
+        //JwtTokenProvider tokenProvider = new JwtTokenProvider(config);
 
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
@@ -71,12 +72,13 @@ public class KetaMain extends AbstractVerticle {
             // see https://issues.apache.org/jira/browse/RATIS-606
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .withChildOption(ChannelOption.TCP_NODELAY, true)
-            .addService(new AuthService(elector, tokenProvider))
+            //.addService(new AuthService(elector, tokenProvider))
             .addService(new ClusterService(elector))
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
-            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services))
-            .intercept(new JwtServerInterceptor(tokenProvider));
+            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
+        // TODO
+            //.intercept(new JwtServerInterceptor(tokenProvider));
 
         if (isTls()) {
             nettyBuilder.sslContext(new SslFactory(config).sslContext());
