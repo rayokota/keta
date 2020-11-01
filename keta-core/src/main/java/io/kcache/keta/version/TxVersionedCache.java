@@ -23,6 +23,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.Striped;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.transaction.client.KetaCellId;
 import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.transaction.client.SnapshotFilter;
@@ -115,7 +116,7 @@ public class TxVersionedCache implements Closeable {
                     throw new KeyNotFoundException(key);
                 }
                 if (ignoreValue) {
-                    value = versioned.getValue();
+                    value = versioned.getValue().toByteArray();
                 }
                 if (ignoreLease) {
                     lease = versioned.getLease();
@@ -148,7 +149,7 @@ public class TxVersionedCache implements Closeable {
             // Ensure the value hasn't changed
             List<VersionedValue> oldValues = getVersions(oldKey);
             VersionedValue oldVersioned = oldValues.size() > 0 ? oldValues.get(0) : null;
-            byte[] oldVersionedValue = oldVersioned != null ? oldVersioned.getValue() : null;
+            byte[] oldVersionedValue = oldVersioned != null ? oldVersioned.getValue().toByteArray() : null;
             if (!(oldValue == null && oldVersionedValue == null) && !Arrays.equals(oldValue, oldVersionedValue)) {
                 throw new IllegalStateException("Previous value has changed");
             }
@@ -219,7 +220,7 @@ public class TxVersionedCache implements Closeable {
     private static List<VersionedValue> filterDeleted(List<VersionedValue> values) {
         List<VersionedValue> filtered = new ArrayList<>(values.size());
         for (VersionedValue value : values) {
-            if (value.isDeleted()) {
+            if (value.getDeleted()) {
                 break;
             }
             filtered.add(value);

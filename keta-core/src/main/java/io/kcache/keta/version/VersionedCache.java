@@ -18,9 +18,11 @@
 package io.kcache.keta.version;
 
 import com.google.common.primitives.SignedBytes;
+import com.google.protobuf.ByteString;
 import io.kcache.Cache;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
 import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.Streams;
@@ -48,8 +50,6 @@ public class VersionedCache implements Closeable {
 
     public static final Comparator<byte[]> BYTES_COMPARATOR = SignedBytes.lexicographicalComparator();
     public static final long NO_LEASE = 0L;
-
-    private static final byte[] EMPTY_VALUE = new byte[0];
 
     private final String name;
     private final Cache<byte[], VersionedValues> cache;
@@ -95,7 +95,16 @@ public class VersionedCache implements Closeable {
 
     public void put(int generationId, byte[] key, long version, long create, long sequence, byte[] value, long lease) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, create, sequence, false, value, lease));
+        rowData.getValues().put(version,
+            VersionedValue.newBuilder()
+                .setVersion(version)
+                .setCommit(PENDING_TX)
+                .setCreate(create)
+                .setSequence(sequence)
+                .setDeleted(false)
+                .setValue(ByteString.copyFrom(value))
+                .setLease(lease)
+                .build());
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }
@@ -111,8 +120,15 @@ public class VersionedCache implements Closeable {
         } else {
             long create = value.getCreate() > 0 ? value.getCreate() : commit;
             rowData.getValues().put(version,
-                new VersionedValue(version, commit, create, value.getSequence(),
-                    value.isDeleted(), value.getValue(), value.getLease()));
+                VersionedValue.newBuilder()
+                    .setVersion(version)
+                    .setCommit(commit)
+                    .setCreate(create)
+                    .setSequence(value.getSequence())
+                    .setDeleted(value.getDeleted())
+                    .setValue(value.getValue())
+                    .setLease(value.getLease())
+                    .build());
         }
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
@@ -121,7 +137,16 @@ public class VersionedCache implements Closeable {
 
     public void remove(int generationId, byte[] key, long version) {
         VersionedValues rowData = cache.getOrDefault(key, new VersionedValues(generationId));
-        rowData.getValues().put(version, new VersionedValue(version, PENDING_TX, PENDING_TX, 0, true, EMPTY_VALUE, NO_LEASE));
+        rowData.getValues().put(version,
+            VersionedValue.newBuilder()
+                .setVersion(version)
+                .setCommit(PENDING_TX)
+                .setCreate(PENDING_TX)
+                .setSequence(0)
+                .setDeleted(true)
+                .setValue(ByteString.EMPTY)
+                .setLease(NO_LEASE)
+                .build());
         garbageCollect(rowData.getValues());
         cache.put(key, rowData);
     }

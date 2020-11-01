@@ -17,13 +17,29 @@
 
 package io.kcache.keta.version;
 
+import io.kcache.keta.pb.VersionedValue;
+import io.kcache.keta.pb.VersionedValueList;
+
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 
 public class VersionedValues {
     private final int generationId;
     private final NavigableMap<Long, VersionedValue> values;
+
+    public VersionedValues(VersionedValueList valueList) {
+        this.generationId = valueList.getGeneration();
+        this.values = valueList.getValuesList().stream()
+            .collect(Collectors.toMap(
+                VersionedValue::getVersion,
+                v -> v,
+                (v1, v2) -> {
+                    throw new RuntimeException(String.format("Duplicate key for values %s and %s", v1, v2));
+                },
+                ConcurrentSkipListMap::new));
+    }
 
     public VersionedValues(int generationId) {
         this.generationId = generationId;
@@ -41,6 +57,13 @@ public class VersionedValues {
 
     public NavigableMap<Long, VersionedValue> getValues() {
         return values;
+    }
+
+    public VersionedValueList toList() {
+        return VersionedValueList.newBuilder()
+            .setGeneration(generationId)
+            .addAllValues(values.values())
+            .build();
     }
 
     @Override

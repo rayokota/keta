@@ -19,7 +19,7 @@ package io.kcache.keta.utils;
 
 import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.KeyValue;
-import io.kcache.keta.version.VersionedValue;
+import io.kcache.keta.pb.VersionedValue;
 
 public class ProtoUtils {
 
@@ -31,13 +31,13 @@ public class ProtoUtils {
         KeyValue.Builder builder = KeyValue.newBuilder()
             .setKey(ByteString.copyFrom(key));
         if (value != null) {
-            if (value.isDeleted()) {
+            if (value.getDeleted()) {
                 builder.setCreateRevision(0)
                     .setModRevision(value.getCommit())
                     .setVersion(0);
             } else {
                 if (!keysOnly) {
-                    builder.setValue(ByteString.copyFrom(value.getValue()));
+                    builder.setValue(value.getValue());
                 }
                 builder.setCreateRevision(value.getCreate())
                     .setModRevision(value.getCommit())

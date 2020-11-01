@@ -17,9 +17,9 @@
  */
 package io.kcache.keta.transaction.client;
 
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.transaction.AbstractTransaction.VisibilityLevel;
 import org.apache.omid.transaction.Transaction;
@@ -75,40 +75,40 @@ public class CheckpointTest {
         versionedCache.put(rowId1, dataValue1);
 
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         versionedCache.replace(rowId1, dataValue1, dataValue2);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue2, v1.getValue());
+        assertArrayEquals(dataValue2, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         versionedCache.replace(rowId1, dataValue2, dataValue3);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue2, v1.getValue());
+        assertArrayEquals(dataValue2, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue3, v1.getValue());
+        assertArrayEquals(dataValue3, v1.getValue().toByteArray());
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
         List<VersionedValue> values = versionedCache.getVersions(rowId1);
         assertEquals(3, values.size(), "Expected 3 results and found " + values.size());
 
-        assertArrayEquals(dataValue3, values.get(0).getValue());
-        assertArrayEquals(dataValue2, values.get(1).getValue());
-        assertArrayEquals(dataValue1, values.get(2).getValue());
+        assertArrayEquals(dataValue3, values.get(0).getValue().toByteArray());
+        assertArrayEquals(dataValue2, values.get(1).getValue().toByteArray());
+        assertArrayEquals(dataValue1, values.get(2).getValue().toByteArray());
     }
 
     @Test
@@ -125,24 +125,24 @@ public class CheckpointTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue0, v1.getValue());
+        assertArrayEquals(dataValue0, v1.getValue().toByteArray());
 
         versionedCache.replace(rowId1, dataValue0, dataValue1);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         versionedCache.replace(rowId1, dataValue1, dataValue2);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue2, v1.getValue());
+        assertArrayEquals(dataValue2, v1.getValue().toByteArray());
     }
 
     @Test
@@ -159,28 +159,28 @@ public class CheckpointTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue0, v1.getValue());
+        assertArrayEquals(dataValue0, v1.getValue().toByteArray());
 
         versionedCache.replace(rowId1, dataValue0, dataValue1);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         versionedCache.replace(rowId1, dataValue1, dataValue2);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
         List<VersionedValue> values = versionedCache.getVersions(rowId1);
         assertEquals(3, values.size(), "Expected 3 results and found " + values.size());
 
-        assertArrayEquals(dataValue2, values.get(0).getValue());
-        assertArrayEquals(dataValue1, values.get(1).getValue());
-        assertArrayEquals(dataValue0, values.get(2).getValue());
+        assertArrayEquals(dataValue2, values.get(0).getValue().toByteArray());
+        assertArrayEquals(dataValue1, values.get(1).getValue().toByteArray());
+        assertArrayEquals(dataValue0, values.get(2).getValue().toByteArray());
     }
 
     @Test
@@ -192,19 +192,19 @@ public class CheckpointTest {
         versionedCache.put(rowId1, dataValue1);
 
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.checkpoint();
 
         versionedCache.replace(rowId1, dataValue1, dataValue2);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_EXCLUDE_CURRENT);
 
         v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
     }
 
     @Test

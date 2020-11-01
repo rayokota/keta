@@ -46,19 +46,17 @@ public class KafkaLeaseDeserializer implements Deserializer<Lease> {
             if (payload == null) {
                 return null;
             }
-            getByteBuffer(payload);
+            readMagicByte(payload);
             return Lease.parseFrom(ByteString.copyFrom(payload, 1, payload.length - 1));
         } catch (InvalidProtocolBufferException e) {
             throw new SerializationException(e);
         }
     }
 
-    private ByteBuffer getByteBuffer(byte[] payload) {
-        ByteBuffer buffer = ByteBuffer.wrap(payload);
-        if (buffer.get() != MAGIC_BYTE) {
+    private void readMagicByte(byte[] payload) {
+        if (payload.length == 0 || payload[0] != MAGIC_BYTE) {
             throw new SerializationException("Unknown magic byte!");
         }
-        return buffer;
     }
 
     @Override

@@ -17,9 +17,9 @@
  */
 package io.kcache.keta.transaction.client;
 
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
 import org.junit.jupiter.api.AfterEach;
@@ -95,7 +95,7 @@ public class ReadPathTest {
         t = tm.begin();
 
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         tm.commit(t);
 

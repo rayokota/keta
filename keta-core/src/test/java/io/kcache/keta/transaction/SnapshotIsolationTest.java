@@ -18,10 +18,10 @@
 package io.kcache.keta.transaction;
 
 import com.google.common.base.Preconditions;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
@@ -64,7 +64,7 @@ public class SnapshotIsolationTest {
             Transaction tx2 = tm.begin();
             LOG.info("Concurrent Transaction {} STARTED", tx2);
             VersionedValue tx2GetResult = versionedCache.get(rowId);
-            assertArrayEquals(tx2GetResult.getValue(), initialData,
+            assertArrayEquals(tx2GetResult.getValue().toByteArray(), initialData,
                 "As Tx1 is not yet committed, Tx2 should read the value set by Tx0 not the value written by Tx1");
 
             // Transaction Tx1 tries to commit and as there're no conflicting changes, persists the new value in HBase
@@ -76,11 +76,11 @@ public class SnapshotIsolationTest {
             // ...so it must read the initial value written by Tx0
             LOG.info(
                 "Concurrent Transaction {} should read again base value in its Snapshot | Value read = {}",
-                tx2, Arrays.toString(tx2GetResult.getValue()));
-            assertArrayEquals(tx2GetResult.getValue(), initialData, "Tx2 must read the initial value written by Tx0");
+                tx2, Arrays.toString(tx2GetResult.getValue().toByteArray()));
+            assertArrayEquals(tx2GetResult.getValue().toByteArray(), initialData, "Tx2 must read the initial value written by Tx0");
 
             // Tx2 tries to write the column written by the committed concurrent transaction Tx1...
-            versionedCache.replace(rowId, tx2GetResult.getValue(), dataValue2);
+            versionedCache.replace(rowId, tx2GetResult.getValue().toByteArray(), dataValue2);
 
             // ... and when committing, Tx2 has to abort due to concurrent conflicts with committed transaction Tx1
             try {

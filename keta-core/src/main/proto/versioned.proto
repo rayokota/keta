@@ -14,7 +14,7 @@ message VersionedValue {
     int64 lease = 7;
 }
 
-message VersionedValues {
-    int64 generation = 1;
+message VersionedValueList {
+    int32 generation = 1;
     repeated VersionedValue values = 2;
 }

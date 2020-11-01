@@ -116,7 +116,7 @@ public class TransactionConflictTest {
 
         Transaction t3 = tm.begin();
         KetaTransaction.setCurrentTransaction((KetaTransaction) t3);
-        assertArrayEquals(dataValue2, versionedCache2.get(rowId1).getValue());
+        assertArrayEquals(dataValue2, versionedCache2.get(rowId1).getValue().toByteArray());
     }
 
     @Test
@@ -146,7 +146,7 @@ public class TransactionConflictTest {
 
         Transaction t3 = tm.begin();
         KetaTransaction.setCurrentTransaction((KetaTransaction) t3);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
     }
 
     @Test

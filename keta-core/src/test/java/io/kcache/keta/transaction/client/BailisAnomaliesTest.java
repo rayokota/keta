@@ -182,11 +182,11 @@ public class BailisAnomaliesTest {
 
         // 1) select * from test where id = 1; -- T1
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 2) select * from test where id = 1; -- T2
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx2);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 3) update test set value = 11 where id = 1; -- T1
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
@@ -228,15 +228,15 @@ public class BailisAnomaliesTest {
 
         // 1) select * from test where id = 1; -- T1. Shows 1 => 10
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 2) select * from test where id = 1; -- T2
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx2);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 3) select * from test where id = 2; -- T2
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx2);
-        assertArrayEquals(dataValue2, versionedCache.get(rowId2).getValue());
+        assertArrayEquals(dataValue2, versionedCache.get(rowId2).getValue().toByteArray());
 
         // 4) update test set value = 12 where id = 1; -- T2
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx2);
@@ -251,7 +251,7 @@ public class BailisAnomaliesTest {
 
         // 7) select * from test where id = 2; -- T1. Shows 2 => 20
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
-        assertArrayEquals(dataValue2, versionedCache.get(rowId2).getValue());
+        assertArrayEquals(dataValue2, versionedCache.get(rowId2).getValue().toByteArray());
 
         // 8) commit -- T1
         tm.commit(tx1);
@@ -366,11 +366,11 @@ public class BailisAnomaliesTest {
 
         // 1) select * from test where value % 3 = 0; -- T1
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 2) select * from test where value % 3 = 0; -- T2
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx2);
-        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue());
+        assertArrayEquals(dataValue1, versionedCache.get(rowId1).getValue().toByteArray());
 
         // 3) insert into test (id, value) values(3, 30); -- T1
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx1);

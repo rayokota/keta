@@ -16,14 +16,9 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.version.VersionedValue;
+import com.google.protobuf.ByteString;
+import io.kcache.keta.pb.VersionedValueList;
 import io.kcache.keta.version.VersionedValues;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericArray;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.DecoderFactory;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
@@ -32,20 +27,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
 
-import static io.kcache.keta.kafka.serialization.KafkaValueSerde.GENERIC;
 import static io.kcache.keta.kafka.serialization.KafkaValueSerde.MAGIC_BYTE;
 
 public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
     private final static Logger LOG = LoggerFactory.getLogger(KafkaValueDeserializer.class);
 
-    private final DecoderFactory decoderFactory = DecoderFactory.get();
-    private final DatumReader<GenericRecord> reader;
-
-    public KafkaValueDeserializer(Schema avroSchema) {
-        this.reader = new GenericDatumReader<>(avroSchema, avroSchema, GENERIC);
+    public KafkaValueDeserializer() {
     }
 
     @Override
@@ -58,12 +46,9 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
             return null;
         }
         try {
-            ByteBuffer buffer = getByteBuffer(payload);
-            int length = buffer.limit() - 1;
-            int start = buffer.position() + buffer.arrayOffset();
-            GenericRecord record = reader.read(
-                null, decoderFactory.binaryDecoder(buffer.array(), start, length, null));
-            return toValue(record);
+            readMagicByte(payload);
+            VersionedValueList list = VersionedValueList.parseFrom(ByteString.copyFrom(payload, 1, payload.length - 1));
+            return new VersionedValues(list);
         } catch (IOException | RuntimeException e) {
             // avro deserialization may throw AvroRuntimeException, NullPointerException, etc
             LOG.error("Error deserializing Avro value " + e.getMessage());
@@ -71,30 +56,10 @@ public class KafkaValueDeserializer implements Deserializer<VersionedValues> {
         }
     }
 
-    private ByteBuffer getByteBuffer(byte[] payload) {
-        ByteBuffer buffer = ByteBuffer.wrap(payload);
-        if (buffer.get() != MAGIC_BYTE) {
+    private void readMagicByte(byte[] payload) {
+        if (payload.length == 0 || payload[0] != MAGIC_BYTE) {
             throw new SerializationException("Unknown magic byte!");
         }
-        return buffer;
-    }
-
-    @SuppressWarnings("unchecked")
-    private VersionedValues toValue(GenericRecord genericRecord) {
-        NavigableMap<Long, VersionedValue> map = new TreeMap<>();
-        Integer generationId = (Integer) genericRecord.get(0);
-        GenericArray<GenericRecord> array = (GenericArray<GenericRecord>) genericRecord.get(1);
-        for (GenericRecord record : array) {
-            Long version = (Long) record.get(0);
-            Long commit = (Long) record.get(1);
-            Long create = (Long) record.get(2);
-            Long sequence = (Long) record.get(3);
-            boolean deleted = (Boolean) record.get(4);
-            Long lease = (Long) record.get(5);
-            ByteBuffer bytes = (ByteBuffer) record.get(6);
-            map.put(version, new VersionedValue(version, commit, create, sequence, deleted, bytes.array(), lease));
-        }
-        return new VersionedValues(generationId, map);
     }
 
     @Override

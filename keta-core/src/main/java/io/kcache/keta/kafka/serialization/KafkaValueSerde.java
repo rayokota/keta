@@ -15,9 +15,6 @@
 package io.kcache.keta.kafka.serialization;
 
 import io.kcache.keta.version.VersionedValues;
-import org.apache.avro.Schema;
-import org.apache.avro.SchemaBuilder;
-import org.apache.avro.generic.GenericData;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -28,13 +25,10 @@ import java.util.Map;
 public class KafkaValueSerde implements Serde<VersionedValues> {
     protected static final byte MAGIC_BYTE = 0x0;
 
-    final static GenericData GENERIC = new GenericData();
-
     private final Serde<VersionedValues> inner;
 
     public KafkaValueSerde() {
-        Schema avroSchema = getValueSchema();
-        inner = Serdes.serdeFrom(new KafkaValueSerializer(avroSchema), new KafkaValueDeserializer(avroSchema));
+        inner = Serdes.serdeFrom(new KafkaValueSerializer(), new KafkaValueDeserializer());
     }
 
     @Override
@@ -57,25 +51,5 @@ public class KafkaValueSerde implements Serde<VersionedValues> {
     public void close() {
         inner.serializer().close();
         inner.deserializer().close();
-    }
-
-    private static org.apache.avro.Schema getValueSchema() {
-        SchemaBuilder.FieldAssembler<org.apache.avro.Schema> valueSchemaBuilder =
-            SchemaBuilder.record("versioned_value").fields();
-        valueSchemaBuilder = valueSchemaBuilder
-            .name("_version").type().longType().noDefault()
-            .name("_commit").type().longType().noDefault()
-            .name("_create").type().longType().noDefault()
-            .name("_sequence").type().longType().noDefault()
-            .name("_deleted").type().booleanType().noDefault()
-            .name("_lease").type().longType().noDefault()
-            .name("_value").type().bytesType().noDefault();
-        org.apache.avro.Schema valueSchema = SchemaBuilder.array().items(valueSchemaBuilder.endRecord());
-        SchemaBuilder.FieldAssembler<org.apache.avro.Schema> valuesSchemaBuilder =
-            SchemaBuilder.record("versioned_values").fields();
-        valuesSchemaBuilder
-            .name("_generation_id").type().intType().noDefault()
-            .name("_values").type(valueSchema).noDefault();
-        return valuesSchemaBuilder.endRecord();
     }
 }

@@ -18,9 +18,9 @@
 package io.kcache.keta.transaction.client;
 
 import io.kcache.KeyValue;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionManager;
@@ -81,8 +81,8 @@ public class BasicTransactionTest {
         VersionedValue v1 = versionedCache.get(rowId1);
         VersionedValue v2 = versionedCache.get(rowId2);
 
-        assertArrayEquals(dataValue1, v1.getValue());
-        assertArrayEquals(dataValue2, v2.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
+        assertArrayEquals(dataValue2, v2.getValue().toByteArray());
 
         assertEquals(v1.getCommit(), v2.getCommit());
     }
@@ -108,7 +108,7 @@ public class BasicTransactionTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tread);
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
     }
 
     @Test
@@ -132,7 +132,7 @@ public class BasicTransactionTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tread);
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
     }
 
     @Test
@@ -155,7 +155,7 @@ public class BasicTransactionTest {
 
         KetaTransaction.setCurrentTransaction((KetaTransaction) tread);
         VersionedValue v1 = versionedCache.get(rowId1);
-        assertArrayEquals(dataValue1, v1.getValue());
+        assertArrayEquals(dataValue1, v1.getValue().toByteArray());
 
         try {
             tm.commit(t2);
@@ -200,7 +200,7 @@ public class BasicTransactionTest {
         Iterator<KeyValue<byte[], VersionedValue>> iter = versionedCache.range(startRow, true, stopRow, true);
         while (iter.hasNext()) {
             KeyValue<byte[], VersionedValue> kv = iter.next();
-            assertArrayEquals(dataValue1, kv.value.getValue());
+            assertArrayEquals(dataValue1, kv.value.getValue().toByteArray());
         }
 
         // Commit the Tx2 and then check that under a new transactional context, the scanner gets the right snapshot,
@@ -213,7 +213,7 @@ public class BasicTransactionTest {
         Iterator<KeyValue<byte[], VersionedValue>> newIter = versionedCache.range(startRow, true, stopRow, true);
         while (newIter.hasNext()) {
             KeyValue<byte[], VersionedValue> kv = newIter.next();
-            if (Arrays.equals(dataValue2, kv.value.getValue())) {
+            if (Arrays.equals(dataValue2, kv.value.getValue().toByteArray())) {
                 modifiedRows++;
             }
         }
@@ -257,7 +257,7 @@ public class BasicTransactionTest {
         Iterator<KeyValue<byte[], VersionedValue>> newIter = versionedCache.range(startRow, true, stopRow, true);
         while (newIter.hasNext()) {
             KeyValue<byte[], VersionedValue> kv = newIter.next();
-            if (Arrays.equals(dataValue2, kv.value.getValue())) {
+            if (Arrays.equals(dataValue2, kv.value.getValue().toByteArray())) {
                 modifiedRows++;
             }
         }
@@ -273,7 +273,7 @@ public class BasicTransactionTest {
         Iterator<KeyValue<byte[], VersionedValue>> iter = versionedCache.range(startRow, true, stopRow, true);
         while (iter.hasNext()) {
             KeyValue<byte[], VersionedValue> kv = iter.next();
-            assertArrayEquals(dataValue1, kv.value.getValue());
+            assertArrayEquals(dataValue1, kv.value.getValue().toByteArray());
         }
 
         // Finally, check that the Scanner Iterator does not implement the remove method

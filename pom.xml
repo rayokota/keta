@@ -40,7 +40,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <assertj.version>3.15.0</assertj.version>
-        <avro.version>1.10.0</avro.version>
         <grpc.version>1.25.0</grpc.version>
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
@@ -140,11 +139,6 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>${avro.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.omid</groupId>

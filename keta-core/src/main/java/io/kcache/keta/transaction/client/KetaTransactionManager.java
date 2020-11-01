@@ -18,12 +18,12 @@
 package io.kcache.keta.transaction.client;
 
 import com.google.common.base.Optional;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.transaction.InMemoryCommitTable;
 import io.kcache.keta.transaction.InMemoryTimestampStorage;
 import io.kcache.keta.transaction.KetaTimestampClient;
 import io.kcache.keta.transaction.KetaTimestampOracle;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.metrics.MetricsRegistry;
 import org.apache.omid.metrics.NullMetricsProvider;

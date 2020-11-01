@@ -18,10 +18,9 @@
 package io.kcache.keta.transaction.client;
 
 import io.kcache.KeyValueIterator;
-import io.kcache.keta.version.VersionedValue;
+import io.kcache.keta.pb.VersionedValue;
 
 import java.util.List;
-
 
 public interface SnapshotFilter {
 

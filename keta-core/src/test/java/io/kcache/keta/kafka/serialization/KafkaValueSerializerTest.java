@@ -16,10 +16,12 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.version.VersionedValue;
+import com.google.protobuf.ByteString;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.version.VersionedValues;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -31,8 +33,18 @@ public class KafkaValueSerializerTest {
     public void testSerializer() throws Exception {
         KafkaValueSerde serde = new KafkaValueSerde();
         NavigableMap<Long, VersionedValue> map = new TreeMap<>();
-        map.put(2L, new VersionedValue(2, 1, 0, "hi".getBytes()));
-        map.put(4L, new VersionedValue(4, 2, 1, "bye".getBytes()));
+        map.put(2L, VersionedValue.newBuilder()
+            .setVersion(2)
+            .setCreate(1)
+            .setSequence(0)
+            .setValue(ByteString.copyFrom("hi", StandardCharsets.UTF_8))
+            .build());
+        map.put(4L, VersionedValue.newBuilder()
+            .setVersion(4)
+            .setCreate(2)
+            .setSequence(1)
+            .setValue(ByteString.copyFrom("bye", StandardCharsets.UTF_8))
+            .build());
         VersionedValues values = new VersionedValues(1, map);
         byte[] bytes = serde.serializer().serialize(null, values);
         VersionedValues values2 = serde.deserializer().deserialize(null, bytes);

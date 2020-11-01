@@ -52,8 +52,10 @@ public class MultiplePutTest {
 
         tx = tm.begin();
         KetaTransaction.setCurrentTransaction((KetaTransaction) tx);
-        assertArrayEquals(("testData" + 0).getBytes(), versionedCache.get(new byte[]{0}).getValue());
-        assertArrayEquals(("testData" + NUM_ROWS_TO_ADD).getBytes(), versionedCache.get(new byte[]{NUM_ROWS_TO_ADD}).getValue());
+        assertArrayEquals(("testData" + 0).getBytes(),
+            versionedCache.get(new byte[]{0}).getValue().toByteArray());
+        assertArrayEquals(("testData" + NUM_ROWS_TO_ADD).getBytes(),
+            versionedCache.get(new byte[]{NUM_ROWS_TO_ADD}).getValue().toByteArray());
     }
 
     @Test

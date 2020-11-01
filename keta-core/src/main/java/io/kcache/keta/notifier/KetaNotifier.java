@@ -20,8 +20,8 @@ package io.kcache.keta.notifier;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.etcd.jetcd.api.Event;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.utils.ProtoUtils;
-import io.kcache.keta.version.VersionedValue;
 import io.kcache.keta.version.VersionedValues;
 import io.kcache.keta.watch.KetaWatchManager;
 import io.kcache.keta.watch.Watch;
@@ -132,14 +132,14 @@ public class KetaNotifier implements Notifier {
             }
         }
         Event.Builder builder = Event.newBuilder();
-        if (currValue.isDeleted()) {
+        if (currValue.getDeleted()) {
             builder.setType(Event.EventType.DELETE)
                 .setKv(ProtoUtils.toKeyValue(key, currValue));
         } else {
             builder.setType(Event.EventType.PUT)
                 .setKv(ProtoUtils.toKeyValue(key, currValue));
         }
-        if (prevValue != null && !prevValue.isDeleted()) {
+        if (prevValue != null && !prevValue.getDeleted()) {
             builder.setPrevKv(ProtoUtils.toKeyValue(key, prevValue));
         }
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();

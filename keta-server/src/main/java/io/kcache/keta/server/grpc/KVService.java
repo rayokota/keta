@@ -38,6 +38,7 @@ import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.errors.KetaException;
@@ -46,7 +47,6 @@ import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import io.kcache.keta.version.VersionedValue;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
@@ -399,7 +399,9 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private boolean doCompareValue(Compare compare, VersionedValue versioned) {
         byte[] value = compare.getValue().toByteArray();
-        Integer cmp = versioned != null ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue(), value) : null;
+        Integer cmp = versioned != null
+            ? VersionedCache.BYTES_COMPARATOR.compare(versioned.getValue().toByteArray(), value)
+            : null;
         switch (compare.getResult()) {
             case EQUAL:
                 return cmp != null ? cmp == 0 : value == null || value.length == 0;
