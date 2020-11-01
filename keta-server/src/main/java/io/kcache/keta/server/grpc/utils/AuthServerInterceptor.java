@@ -25,6 +25,7 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.auth.KetaAuthManager;
+import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public class AuthServerInterceptor implements ServerInterceptor {
         if (authMgr.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
             String jwt = metadata.get(TOKEN);
             if (jwt == null) {
-                serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
+                serverCall.close(KetaErrorType.UserEmpty.toStatus(), metadata);
                 return NOOP_LISTENER;
             }
 
@@ -58,7 +59,7 @@ public class AuthServerInterceptor implements ServerInterceptor {
                 ctx = ctx.withValue(USER_CTX_KEY, user).withValue(TOKEN_CTX_KEY, jwt);
             } catch (Exception e) {
                 LOG.error("Verification failed - Unauthenticated!");
-                serverCall.close(Status.UNAUTHENTICATED.withDescription(e.getMessage()).withCause(e), metadata);
+                serverCall.close(KetaErrorType.AuthFailed.toStatus(), metadata);
                 return NOOP_LISTENER;
             }
         }

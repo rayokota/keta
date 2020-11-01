@@ -62,6 +62,8 @@ public class KetaEngine implements Configurable, Closeable {
     private Cache<Long, Long> timestamps;
     private Cache<Long, Lease> leases;
     private Cache<String, String> auth;
+    private Cache<String, User> authUsers;
+    private Cache<String, Role> authRoles;
     private Cache<byte[], VersionedValues> cache;
     private TxVersionedCache txCache;
     private KetaTransactionManager transactionManager;
@@ -116,17 +118,21 @@ public class KetaEngine implements Configurable, Closeable {
             leases = initLeases(new HashMap<>(configs), bootstrapServers, groupId));
         CompletableFuture<Void> authFuture = CompletableFuture.runAsync(() ->
             auth = initAuth(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> authUsersFuture = CompletableFuture.runAsync(() ->
+            authUsers = initAuthUsers(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> authRolesFuture = CompletableFuture.runAsync(() ->
+            authRoles = initAuthRoles(new HashMap<>(configs), bootstrapServers, groupId));
         CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() ->
             cache = initKv(notifier, new HashMap<>(configs), bootstrapServers, groupId));
-        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, authFuture, kvFuture).join();
+        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture,
+            authFuture, authUsersFuture, authRolesFuture, kvFuture).join();
 
         txCache = new TxVersionedCache(new VersionedCache("keta", cache));
         CommitTable commitTable = new KetaCommitTable(commits);
         TimestampStorage timestampStorage = new KetaTimestampStorage(timestamps);
         transactionManager = KetaTransactionManager.newInstance(commitTable, timestampStorage);
         leaseManager = new KetaLeaseManager(txCache, leases);
-        authManager = new KetaAuthManager(config, auth);
-        authManager.init();
+        authManager = new KetaAuthManager(config, auth, authUsers, authRoles);
 
         boolean isInitialized = initialized.compareAndSet(false, true);
         if (!isInitialized) {
@@ -203,6 +209,40 @@ public class KetaEngine implements Configurable, Closeable {
         return auth;
     }
 
+    private Cache<String, User> initAuthUsers(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<String, User> authUsers;
+        if (bootstrapServers != null) {
+            String topic = "_keta_auth_users";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            authUsers = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.String(), new KafkaProtobufSerde<>(User.class), null, new InMemoryCache<>());
+        } else {
+            authUsers = new InMemoryCache<>();
+        }
+        authUsers = Caches.concurrentCache(authUsers);
+        authUsers.init();
+        return authUsers;
+    }
+
+    private Cache<String, Role> initAuthRoles(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<String, Role> authRoles;
+        if (bootstrapServers != null) {
+            String topic = "_keta_auth_roles";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            authRoles = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.String(), new KafkaProtobufSerde<>(Role.class), null, new InMemoryCache<>());
+        } else {
+            authRoles = new InMemoryCache<>();
+        }
+        authRoles = Caches.concurrentCache(authRoles);
+        authRoles.init();
+        return authRoles;
+    }
+
     private Cache<byte[], VersionedValues> initKv(
         Notifier notifier, Map<String, Object> configs, String bootstrapServers, String groupId) {
         Cache<byte[], VersionedValues> cache;
@@ -231,9 +271,11 @@ public class KetaEngine implements Configurable, Closeable {
             timestamps.sync()).thenRunAsync(() -> transactionManager.init());
         CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
         CompletableFuture<Void> authFuture = CompletableFuture.runAsync(() -> auth.sync());
+        CompletableFuture<Void> authUsersFuture = CompletableFuture.runAsync(() -> authUsers.sync());
+        CompletableFuture<Void> authRolesFuture = CompletableFuture.runAsync(() -> authRoles.sync());
         CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
-        CompletableFuture<Void> authManagerFuture = CompletableFuture.runAsync(() -> authManager.sync());
-        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture, authFuture, kvFuture, authManagerFuture).join();
+        CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture,
+            authFuture, authUsersFuture, authRolesFuture, kvFuture).join();
     }
 
     public boolean isLeader() {
@@ -262,14 +304,17 @@ public class KetaEngine implements Configurable, Closeable {
 
     @Override
     public void close() throws IOException {
-        if (authManager != null) {
-            authManager.close();
-        }
         if (transactionManager != null) {
             transactionManager.close();
         }
         if (cache != null) {
             cache.close();
+        }
+        if (authRoles != null) {
+            authRoles.close();
+        }
+        if (authUsers != null) {
+            authUsers.close();
         }
         if (auth != null) {
             auth.close();

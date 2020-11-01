@@ -115,7 +115,11 @@ public enum KetaErrorType {
         return description;
     }
 
+    public Status toStatus() {
+        return code.toStatus().withDescription(description);
+    }
+
     public StatusRuntimeException toException() {
-        return code.toStatus().withDescription(description).asRuntimeException();
+        return toStatus().asRuntimeException();
     }
 }
