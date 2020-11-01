@@ -30,7 +30,7 @@ public class LeaseExistsException extends RuntimeException {
         this.id = id;
     }
 
-    public long getId() {
+    public long getID() {
         return id;
     }
 }

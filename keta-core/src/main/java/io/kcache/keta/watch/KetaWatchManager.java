@@ -53,7 +53,7 @@ public class KetaWatchManager {
     }
 
     public synchronized Watch add(Watch watch) {
-        long id = watch.getId();
+        long id = watch.getID();
         Bytes key = Bytes.wrap(watch.getKey());
         while (id == 0) {
             long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
@@ -77,12 +77,12 @@ public class KetaWatchManager {
             Set<Watch> watches = keyWatchers.computeIfAbsent(key, k -> new HashSet<>());
             watches.add(watch);
         }
-        watchers.put(watch.getId(), watch);
+        watchers.put(watch.getID(), watch);
         return watch;
     }
 
     public void watch(Watch watch, Handler<Event> handler) {
-        notifier.watch(watch.getId(), handler);
+        notifier.watch(watch.getID(), handler);
     }
 
     public synchronized Set<Watch> getWatches(byte[] key) {

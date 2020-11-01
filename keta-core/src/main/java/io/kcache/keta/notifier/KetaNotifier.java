@@ -145,7 +145,7 @@ public class KetaNotifier implements Notifier {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         Set<Watch> watches = watchMgr.getWatches(key);
         for (Watch watch : watches) {
-            publish(watch.getId(), builder.build());
+            publish(watch.getID(), builder.build());
         }
     }
 }

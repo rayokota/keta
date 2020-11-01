@@ -16,7 +16,7 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.lease.Lease;
+import io.kcache.keta.pb.Lease;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
 import org.slf4j.Logger;
@@ -47,11 +47,7 @@ public class KafkaLeaseSerializer implements Serializer<Lease> {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             out.write(MAGIC_BYTE);
-            ByteBuffer buf = ByteBuffer.wrap(new byte[24]);
-            buf.putLong(lease.getId());
-            buf.putLong(lease.getTtl());
-            buf.putLong(lease.getExpiry());
-            out.write(buf.array());
+            out.write(lease.toByteArray());
             byte[] bytes = out.toByteArray();
             out.close();
             return bytes;

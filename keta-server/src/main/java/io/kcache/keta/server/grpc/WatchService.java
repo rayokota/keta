@@ -89,7 +89,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);
-        long watchId = watch.getId();
+        long watchId = watch.getID();
         List<WatchCreateRequest.FilterType> filters = createRequest.getFiltersList();
         boolean prevKv = createRequest.getPrevKv();
         watchMgr.watch(watch, event -> {

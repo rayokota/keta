@@ -16,13 +16,16 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.lease.Lease;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import io.kcache.keta.pb.Lease;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 
 import static io.kcache.keta.kafka.serialization.KafkaValueSerde.MAGIC_BYTE;
@@ -39,14 +42,15 @@ public class KafkaLeaseDeserializer implements Deserializer<Lease> {
 
     @Override
     public Lease deserialize(String topic, byte[] payload) throws SerializationException {
-        if (payload == null) {
-            return null;
+        try {
+            if (payload == null) {
+                return null;
+            }
+            getByteBuffer(payload);
+            return Lease.parseFrom(ByteString.copyFrom(payload, 1, payload.length - 1));
+        } catch (InvalidProtocolBufferException e) {
+            throw new SerializationException(e);
         }
-        ByteBuffer buffer = getByteBuffer(payload);
-        long id = buffer.getLong();
-        long ttl = buffer.getLong();
-        long expiry = buffer.getLong();
-        return new Lease(id, ttl, expiry);
     }
 
     private ByteBuffer getByteBuffer(byte[] payload) {

@@ -1,0 +1,20 @@
+syntax = "proto3";
+package versionedpb;
+
+option java_multiple_files = true;
+option java_package = "io.kcache.keta.pb";
+
+message VersionedValue {
+    int64 version = 1;
+    int64 commit = 2;
+    int64 create = 3;
+    int64 sequence = 4;
+    bool deleted = 5;
+    bytes value = 6;
+    int64 lease = 7;
+}
+
+message VersionedValues {
+    int64 generation = 1;
+    repeated VersionedValue values = 2;
+}

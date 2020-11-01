@@ -30,8 +30,8 @@ import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.lease.KetaLeaseManager;
-import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseKeys;
+import io.kcache.keta.pb.Lease;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaLeaderElector;
@@ -57,14 +57,18 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         }
         long id = request.getID();
         LOG.info("Lease grant request: {}", id);
-        Lease lease = new Lease(id, request.getTTL(), System.currentTimeMillis() + request.getTTL() * 1000);
+        Lease lease = Lease.newBuilder()
+            .setID(id)
+            .setTTL(request.getTTL())
+            .setExpiry(System.currentTimeMillis() + request.getTTL() * 1000)
+            .build();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         try {
             LeaseKeys lk = leaseMgr.grant(lease);
             responseObserver.onNext(LeaseGrantResponse.newBuilder()
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
-                .setID(lk.getLease().getId())
-                .setTTL(lk.getLease().getTtl())
+                .setID(lk.getLease().getID())
+                .setTTL(lk.getLease().getTTL())
                 .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -112,7 +116,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                     LeaseKeys lease = leaseMgr.renew(id);
                     responseObserver.onNext(LeaseKeepAliveResponse.newBuilder()
                         .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
-                        .setID(id).setTTL(lease.getTtl()).build());
+                        .setID(id).setTTL(lease.getTTL()).build());
                 } catch (Exception e) {
                     responseObserver.onError(GrpcUtils.toStatusException(e));
                 }
@@ -145,7 +149,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                 .setID(id)
                 .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
-                .setGrantedTTL(lease.getTtl());
+                .setGrantedTTL(lease.getTTL());
             if (request.getKeys()) {
                 builder.addAllKeys(lease.getKeys().stream()
                     .map(k -> ByteString.copyFrom(k.get()))

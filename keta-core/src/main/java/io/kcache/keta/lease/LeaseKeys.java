@@ -18,6 +18,7 @@
 package io.kcache.keta.lease;
 
 import org.apache.kafka.common.utils.Bytes;
+import io.kcache.keta.pb.Lease;
 
 import java.util.Objects;
 import java.util.Set;
@@ -40,12 +41,12 @@ public class LeaseKeys {
         return lease;
     }
 
-    public long getId() {
-        return lease.getId();
+    public long getID() {
+        return lease.getID();
     }
 
-    public long getTtl() {
-        return lease.getTtl();
+    public long getTTL() {
+        return lease.getTTL();
     }
 
     public long getExpiry() {

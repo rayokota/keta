@@ -19,6 +19,7 @@ package io.kcache.keta.lease;
 
 import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.pb.Lease;
 import io.kcache.keta.version.TxVersionedCache;
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
@@ -52,22 +53,26 @@ public class KetaLeaseManager {
     }
 
     public LeaseKeys grant(Lease lease) {
-        long id = lease.getId();
+        long id = lease.getID();
         while (id == 0) {
             long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
             if (!cache.containsKey(newId)) {
-                lease = new Lease(newId, lease.getTtl(), lease.getExpiry());
+                lease = Lease.newBuilder()
+                    .setID(newId)
+                    .setTTL(lease.getTTL())
+                    .setExpiry(lease.getExpiry())
+                    .build();
                 id = newId;
             }
         }
         if (cache.containsKey(id)) {
             throw new LeaseExistsException(id);
         }
-        cache.put(lease.getId(), lease);
+        cache.put(lease.getID(), lease);
         LeaseKeys lk = new LeaseKeys(lease);
         long duration = lease.getExpiry() - System.currentTimeMillis();
         if (duration > 0) {
-            expiringMap.put(lease.getId(), lk, duration, TimeUnit.MILLISECONDS);
+            expiringMap.put(lease.getID(), lk, duration, TimeUnit.MILLISECONDS);
         }
         return lk;
     }
@@ -101,7 +106,7 @@ public class KetaLeaseManager {
                 txVersionedCache.remove(key.get());
             }
             txMgr.commit(tx);
-            cache.remove(lk.getId());
+            cache.remove(lk.getID());
         } catch (TransactionException | RollbackException e) {
             if (tx != null) {
                 try {
@@ -120,7 +125,12 @@ public class KetaLeaseManager {
             throw new LeaseNotFoundException(id);
         }
         Lease oldLease = lk.getLease();
-        Lease newLease = new Lease(id, oldLease.getTtl(), System.currentTimeMillis() + oldLease.getTtl() * 1000);
+        Lease newLease = Lease.newBuilder()
+            .setID(id)
+            .setTTL(oldLease.getTTL())
+            .setExpiry(System.currentTimeMillis() + oldLease.getTTL() * 1000)
+            .build();
+
         cache.put(id, newLease);
         LeaseKeys newlk = new LeaseKeys(newLease, lk.getKeys());
         long duration = newLease.getExpiry() - System.currentTimeMillis();

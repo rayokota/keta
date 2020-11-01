@@ -19,7 +19,6 @@ package io.kcache.keta.auth;
 
 import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
-import io.kcache.keta.lease.Lease;
 import io.kcache.keta.lease.LeaseExistsException;
 import io.kcache.keta.lease.LeaseKeys;
 import io.kcache.keta.lease.LeaseNotFoundException;

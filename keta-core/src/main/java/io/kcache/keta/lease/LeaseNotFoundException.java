@@ -30,7 +30,7 @@ public class LeaseNotFoundException extends RuntimeException {
         this.id = id;
     }
 
-    public long getId() {
+    public long getID() {
         return id;
     }
 }

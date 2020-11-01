@@ -14,7 +14,7 @@
 
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.lease.Lease;
+import io.kcache.keta.pb.Lease;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;

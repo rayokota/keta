@@ -31,7 +31,7 @@ public class Watch {
         this.end = end;
     }
 
-    public long getId() {
+    public long getID() {
         return id;
     }
 

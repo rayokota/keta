@@ -16,7 +16,7 @@
  */
 package io.kcache.keta.kafka.serialization;
 
-import io.kcache.keta.lease.Lease;
+import io.kcache.keta.pb.Lease;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,7 +26,11 @@ public class KafkaLeaseSerializerTest {
     @Test
     public void testSerializer() throws Exception {
         KafkaLeaseSerde serde = new KafkaLeaseSerde();
-        Lease lease = new Lease(1, 1000, System.currentTimeMillis());
+        Lease lease = Lease.newBuilder()
+            .setID(1)
+            .setTTL(1000)
+            .setExpiry(System.currentTimeMillis())
+            .build();
         byte[] bytes = serde.serializer().serialize(null, lease);
         Lease lease2 = serde.deserializer().deserialize(null, bytes);
         assertEquals(lease, lease2);
