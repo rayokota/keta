@@ -234,12 +234,11 @@ public class KetaAuthManager implements Closeable {
             .build());
     }
 
-    public void revokePermission(String role, String key, String rangeEnd) {
+    public void revokePermission(String role, ByteString key, ByteString rangeEnd) {
         Role r = authRoles.get(role);
         Set<Permission> perms = new HashSet<>();
         for (Permission perm : r.getKeyPermissionList()) {
-            if (!Objects.equals(perm.getKey().toStringUtf8(), key)
-                || !Objects.equals(perm.getRangeEnd().toStringUtf8(), rangeEnd)) {
+            if (!Objects.equals(perm.getKey(), key) || !Objects.equals(perm.getRangeEnd(), rangeEnd)) {
                 perms.add(perm);
             }
         }
