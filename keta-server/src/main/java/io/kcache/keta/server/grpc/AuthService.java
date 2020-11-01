@@ -81,7 +81,6 @@ public class AuthService extends AuthGrpc.AuthImplBase {
     @Override
     public void authenticate(AuthenticateRequest request, StreamObserver<AuthenticateResponse> responseObserver) {
         String user = request.getName();
-        System.out.println("*** got user " + user);
         try {
             responseObserver.onNext(AuthenticateResponse.newBuilder()
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))

@@ -46,31 +46,31 @@ public class PemUtils {
         return content;
     }
 
-    private static PublicKey getPublicKey(byte[] keyBytes, String algorithm) {
+    private static PublicKey getPublicKey(byte[] keyBytes, String algorithm) throws IOException {
         PublicKey publicKey = null;
         try {
             KeyFactory kf = KeyFactory.getInstance(algorithm);
             EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
             publicKey = kf.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Could not reconstruct the public key, the given algorithm could not be found.");
+            throw new IOException("Could not reconstruct the public key, the given algorithm could not be found.", e);
         } catch (InvalidKeySpecException e) {
-            System.out.println("Could not reconstruct the public key");
+            throw new IOException("Could not reconstruct the public key", e);
         }
 
         return publicKey;
     }
 
-    private static PrivateKey getPrivateKey(byte[] keyBytes, String algorithm) {
+    private static PrivateKey getPrivateKey(byte[] keyBytes, String algorithm) throws IOException {
         PrivateKey privateKey = null;
         try {
             KeyFactory kf = KeyFactory.getInstance(algorithm);
             EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
             privateKey = kf.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Could not reconstruct the private key, the given algorithm could not be found.");
+            throw new IOException("Could not reconstruct the private key, the given algorithm could not be found.", e);
         } catch (InvalidKeySpecException e) {
-            System.out.println("Could not reconstruct the private key");
+            throw new IOException("Could not reconstruct the private key", e);
         }
 
         return privateKey;

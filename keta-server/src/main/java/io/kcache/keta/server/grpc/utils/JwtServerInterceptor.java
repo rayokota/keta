@@ -24,8 +24,12 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.kcache.keta.auth.TokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JwtServerInterceptor implements ServerInterceptor {
+    private static final Logger LOG = LoggerFactory.getLogger(JwtServerInterceptor.class);
+
     private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {
     };
 
@@ -41,26 +45,24 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
-        String jwt = metadata.get(TOKEN);
-        System.out.println("*** got token " + jwt);
-        if (jwt == null) {
-            serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
-            return NOOP_LISTENER;
-        }
+        String methodName = serverCall.getMethodDescriptor().getFullMethodName();
+        Context ctx = Context.current();
+        if (!methodName.equals("etcdserverpb.Auth/Authenticate")) {
+            String jwt = metadata.get(TOKEN);
+            if (jwt == null) {
+                serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);
+                return NOOP_LISTENER;
+            }
 
-        Context ctx;
-        try {
-            String user = tokenProvider.getUser(jwt);
-            ctx = Context.current()
-                .withValue(USER_CTX_KEY, user)
-                .withValue(TOKEN_CTX_KEY, jwt);
-        } catch (Exception e) {
-            System.out.println("Verification failed - Unauthenticated!");
-            serverCall.close(Status.UNAUTHENTICATED.withDescription(e.getMessage()).withCause(e), metadata);
-            return NOOP_LISTENER;
+            try {
+                String user = tokenProvider.getUser(jwt);
+                ctx = ctx.withValue(USER_CTX_KEY, user).withValue(TOKEN_CTX_KEY, jwt);
+            } catch (Exception e) {
+                LOG.error("Verification failed - Unauthenticated!");
+                serverCall.close(Status.UNAUTHENTICATED.withDescription(e.getMessage()).withCause(e), metadata);
+                return NOOP_LISTENER;
+            }
         }
-
-        System.out.println("*** intercepted " + serverCall);
         return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
     }
 }

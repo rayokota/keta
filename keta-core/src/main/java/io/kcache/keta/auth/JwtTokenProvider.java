@@ -51,13 +51,11 @@ public class JwtTokenProvider implements TokenProvider {
     }
 
     public String getUser(String token) {
-        System.out.println("*** get token " + token);
         DecodedJWT verified = verifier.verify(token);
         return verified.getClaim("username").asString();
     }
 
     public String assignToken(String user) {
-        System.out.println("*** assign user " + user);
         return JWT.create()
             .withClaim("username", user)
             .withExpiresAt(new Date(System.currentTimeMillis() + ttl * 1000))
