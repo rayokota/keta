@@ -20,12 +20,21 @@ package io.kcache.keta.server.grpc.utils;
 import io.etcd.jetcd.api.ResponseHeader;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.kcache.keta.auth.AuthenticationException;
-import io.kcache.keta.lease.LeaseExistsException;
-import io.kcache.keta.lease.LeaseNotFoundException;
+import io.kcache.keta.auth.exceptions.AuthNotEnabledException;
+import io.kcache.keta.auth.exceptions.AuthenticationException;
+import io.kcache.keta.auth.exceptions.InvalidAuthMgmtException;
+import io.kcache.keta.auth.exceptions.InvalidAuthTokenException;
+import io.kcache.keta.auth.exceptions.RoleAlreadyExistsException;
+import io.kcache.keta.auth.exceptions.RoleIsEmptyException;
+import io.kcache.keta.auth.exceptions.RoleNotFoundException;
+import io.kcache.keta.auth.exceptions.UserAlreadyExistsException;
+import io.kcache.keta.auth.exceptions.UserIsEmptyException;
+import io.kcache.keta.auth.exceptions.UserNotFoundException;
+import io.kcache.keta.lease.exceptions.LeaseExistsException;
+import io.kcache.keta.lease.exceptions.LeaseNotFoundException;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.errors.KetaException;
-import io.kcache.keta.version.KeyNotFoundException;
+import io.kcache.keta.version.exceptions.KeyNotFoundException;
 
 public class GrpcUtils {
 
@@ -45,6 +54,24 @@ public class GrpcUtils {
     public static StatusRuntimeException toStatusException(Exception ex) {
         if (ex instanceof AuthenticationException) {
             return KetaErrorType.AuthFailed.toException();
+        } else if (ex instanceof AuthNotEnabledException) {
+            return KetaErrorType.AuthNotEnabled.toException();
+        } else if (ex instanceof InvalidAuthTokenException) {
+            return KetaErrorType.InvalidAuthToken.toException();
+        } else if (ex instanceof InvalidAuthMgmtException) {
+            return KetaErrorType.InvalidAuthMgmt.toException();
+        } else if (ex instanceof RoleAlreadyExistsException) {
+            return KetaErrorType.RoleAlreadyExist.toException();
+        } else if (ex instanceof RoleIsEmptyException) {
+            return KetaErrorType.RoleEmpty.toException();
+        } else if (ex instanceof RoleNotFoundException) {
+            return KetaErrorType.RoleNotFound.toException();
+        } else if (ex instanceof UserAlreadyExistsException) {
+            return KetaErrorType.UserAlreadyExist.toException();
+        } else if (ex instanceof UserIsEmptyException) {
+            return KetaErrorType.UserEmpty.toException();
+        } else if (ex instanceof UserNotFoundException) {
+            return KetaErrorType.UserNotFound.toException();
         } else if (ex instanceof KeyNotFoundException) {
             return KetaErrorType.KeyNotFound.toException();
         } else if (ex instanceof LeaseExistsException) {

@@ -19,6 +19,8 @@ package io.kcache.keta.lease;
 
 import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.lease.exceptions.LeaseExistsException;
+import io.kcache.keta.lease.exceptions.LeaseNotFoundException;
 import io.kcache.keta.pb.Lease;
 import io.kcache.keta.version.TxVersionedCache;
 import net.jodah.expiringmap.ExpirationPolicy;

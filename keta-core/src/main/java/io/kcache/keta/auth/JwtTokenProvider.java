@@ -20,8 +20,10 @@ package io.kcache.keta.auth;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.kcache.keta.KetaConfig;
+import io.kcache.keta.auth.exceptions.InvalidAuthTokenException;
 import io.kcache.keta.utils.PemUtils;
 import org.apache.kafka.common.config.ConfigException;
 
@@ -51,8 +53,12 @@ public class JwtTokenProvider implements TokenProvider {
     }
 
     public String getUser(String token) {
-        DecodedJWT verified = verifier.verify(token);
-        return verified.getClaim("username").asString();
+        try {
+            DecodedJWT verified = verifier.verify(token);
+            return verified.getClaim("username").asString();
+        } catch (JWTVerificationException e) {
+            throw new InvalidAuthTokenException();
+        }
     }
 
     public String assignToken(String user) {

@@ -15,22 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.version;
+package io.kcache.keta.auth.exceptions;
 
-public class KeyNotFoundException extends RuntimeException {
+public class RootUserNotFoundException extends RuntimeException {
 
-    private final byte[] key;
+    private final String user;
 
-    public KeyNotFoundException(byte[] key) {
-        this.key = key;
+    public RootUserNotFoundException(String user) {
+        this.user = user;
     }
 
-    public KeyNotFoundException(byte[] key, Throwable cause) {
+    public RootUserNotFoundException(String user, Throwable cause) {
         super(cause);
-        this.key = key;
+        this.user = user;
     }
 
-    public byte[] getKey() {
-        return key;
+    public String getUser() {
+        return user;
     }
 }

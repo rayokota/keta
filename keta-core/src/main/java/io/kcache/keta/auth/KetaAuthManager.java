@@ -25,6 +25,17 @@ import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.keta.KetaConfig;
+import io.kcache.keta.auth.exceptions.AuthNotEnabledException;
+import io.kcache.keta.auth.exceptions.AuthenticationException;
+import io.kcache.keta.auth.exceptions.InvalidAuthMgmtException;
+import io.kcache.keta.auth.exceptions.RoleAlreadyExistsException;
+import io.kcache.keta.auth.exceptions.RoleIsEmptyException;
+import io.kcache.keta.auth.exceptions.RoleNotFoundException;
+import io.kcache.keta.auth.exceptions.RootRoleNotFoundException;
+import io.kcache.keta.auth.exceptions.RootUserNotFoundException;
+import io.kcache.keta.auth.exceptions.UserAlreadyExistsException;
+import io.kcache.keta.auth.exceptions.UserIsEmptyException;
+import io.kcache.keta.auth.exceptions.UserNotFoundException;
 import io.kcache.keta.kafka.serialization.KafkaProtobufSerde;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
@@ -38,7 +49,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -48,6 +58,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class KetaAuthManager implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaAuthManager.class);
+
+    public static final String ROOT_USER = "root";
+    public static final String ROOT_ROLE = "root";
 
     private KetaConfig config;
     private TokenProvider tokenProvider;
@@ -141,10 +154,26 @@ public class KetaAuthManager implements Closeable {
     }
 
     public void enableAuth() {
+        User u = authUsers.get(ROOT_USER);
+        if (u == null) {
+            throw new RootUserNotFoundException(ROOT_USER);
+        }
+        if (!hasRootRole(u)) {
+            throw new RootRoleNotFoundException(ROOT_ROLE);
+        }
         auth.put("authEnabled", "true");
         if (!isInitialized()) {
             initAuthStores();
         }
+    }
+
+    private boolean hasRootRole(User u) {
+        for (String r : u.getRolesList()) {
+            if (ROOT_ROLE.equals(r)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void disableAuth() {
@@ -152,7 +181,13 @@ public class KetaAuthManager implements Closeable {
     }
 
     public String authenticate(String user, String password) {
+        if (!isAuthEnabled()) {
+            throw new AuthNotEnabledException(user);
+        }
         User u = authUsers.get(user);
+        if (u == null) {
+            throw new AuthenticationException(user);
+        }
         boolean matches = BCrypt.checkpw(password, u.getPassword().toStringUtf8());
         if (!matches) {
             throw new AuthenticationException(user);
@@ -165,6 +200,13 @@ public class KetaAuthManager implements Closeable {
     }
 
     public void addUser(String user, String password) {
+        if (user.isEmpty()) {
+            throw new UserIsEmptyException(user);
+        }
+        User u = authUsers.get(user);
+        if (u != null) {
+            throw new UserAlreadyExistsException(user);
+        }
         String pw = BCrypt.hashpw(password, BCrypt.gensalt());
         authUsers.put(user, User.newBuilder()
             .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
@@ -173,7 +215,11 @@ public class KetaAuthManager implements Closeable {
     }
 
     public User getUser(String user) {
-        return authUsers.get(user);
+        User u = authUsers.get(user);
+        if (u == null) {
+            throw new UserNotFoundException(user);
+        }
+        return u;
     }
 
     public Set<String> listUsers() {
@@ -181,10 +227,24 @@ public class KetaAuthManager implements Closeable {
     }
 
     public void deleteUser(String user) {
-        authUsers.remove(user);
+        if (isAuthEnabled() && ROOT_USER.equals(user)) {
+            LOG.error("cannot delete 'root' user");
+            throw new InvalidAuthMgmtException();
+        }
+        User u = authUsers.remove(user);
+        if (u == null) {
+            throw new UserNotFoundException(user);
+        }
     }
 
     public void changePassword(String user, String password) {
+        if (user.isEmpty()) {
+            throw new UserIsEmptyException(user);
+        }
+        User u = authUsers.get(user);
+        if (u == null) {
+            throw new UserNotFoundException(user);
+        }
         String pw = BCrypt.hashpw(password, BCrypt.gensalt());
         authUsers.put(user, User.newBuilder()
             .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
@@ -194,13 +254,23 @@ public class KetaAuthManager implements Closeable {
 
     public void grantRole(String user, String role) {
         User u = authUsers.get(user);
+        if (u == null) {
+            throw new UserNotFoundException(user);
+        }
         authUsers.put(user, User.newBuilder(u)
             .addRoles(role)
             .build());
     }
 
     public void revokeRole(String user, String role) {
+        if (isAuthEnabled() && ROOT_USER.equals(user) && ROOT_ROLE.equals(role)) {
+            LOG.error("'root' user cannot revoke 'root' role");
+            throw new InvalidAuthMgmtException();
+        }
         User u = authUsers.get(user);
+        if (u == null) {
+            throw new UserNotFoundException(user);
+        }
         Set<String> roles = new HashSet<>(u.getRolesList());
         roles.remove(role);
         authUsers.put(user, User.newBuilder(u)
@@ -210,13 +280,24 @@ public class KetaAuthManager implements Closeable {
     }
 
     public void addRole(String role) {
+        if (role.isEmpty()) {
+            throw new RoleIsEmptyException(role);
+        }
+        Role r = authRoles.get(role);
+        if (r != null) {
+            throw new RoleAlreadyExistsException(role);
+        }
         authRoles.put(role, Role.newBuilder()
             .setName(ByteString.copyFrom(role, StandardCharsets.UTF_8))
             .build());
     }
 
     public Role getRole(String role) {
-        return authRoles.get(role);
+        Role r = authRoles.get(role);
+        if (r == null) {
+            throw new RoleNotFoundException(role);
+        }
+        return r;
     }
 
     public Set<String> listRoles() {
@@ -224,11 +305,21 @@ public class KetaAuthManager implements Closeable {
     }
 
     public void deleteRole(String role) {
-        authRoles.remove(role);
+        if (isAuthEnabled() && ROOT_ROLE.equals(role)) {
+            LOG.error("cannot delete 'root' role");
+            throw new InvalidAuthMgmtException();
+        }
+        Role r = authRoles.remove(role);
+        if (r == null) {
+            throw new RoleNotFoundException(role);
+        }
     }
 
     public void grantPermission(String role, Permission permission) {
         Role r = authRoles.get(role);
+        if (r == null) {
+            throw new RoleNotFoundException(role);
+        }
         authRoles.put(role, Role.newBuilder(r)
             .addKeyPermission(permission)
             .build());
@@ -236,6 +327,9 @@ public class KetaAuthManager implements Closeable {
 
     public void revokePermission(String role, ByteString key, ByteString rangeEnd) {
         Role r = authRoles.get(role);
+        if (r == null) {
+            throw new RoleNotFoundException(role);
+        }
         Set<Permission> perms = new HashSet<>();
         for (Permission perm : r.getKeyPermissionList()) {
             if (!Objects.equals(perm.getKey(), key) || !Objects.equals(perm.getRangeEnd(), rangeEnd)) {

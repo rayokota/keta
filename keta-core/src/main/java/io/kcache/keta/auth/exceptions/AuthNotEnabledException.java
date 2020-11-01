@@ -15,22 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.lease;
+package io.kcache.keta.auth.exceptions;
 
-public class LeaseNotFoundException extends RuntimeException {
+public class AuthNotEnabledException extends RuntimeException {
 
-    private final long id;
+    private final String user;
 
-    public LeaseNotFoundException(long id) {
-        this.id = id;
+    public AuthNotEnabledException(String user) {
+        this.user = user;
     }
 
-    public LeaseNotFoundException(long id, Throwable cause) {
+    public AuthNotEnabledException(String user, Throwable cause) {
         super(cause);
-        this.id = id;
+        this.user = user;
     }
 
-    public long getID() {
-        return id;
+    public String getUser() {
+        return user;
     }
 }

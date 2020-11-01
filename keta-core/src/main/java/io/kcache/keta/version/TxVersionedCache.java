@@ -28,6 +28,7 @@ import io.kcache.keta.transaction.client.KetaCellId;
 import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.transaction.client.SnapshotFilter;
 import io.kcache.keta.transaction.client.SnapshotFilterImpl;
+import io.kcache.keta.version.exceptions.KeyNotFoundException;
 import io.kcache.utils.Streams;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.committable.CommitTable;

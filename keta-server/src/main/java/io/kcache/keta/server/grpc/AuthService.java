@@ -50,6 +50,8 @@ import io.etcd.jetcd.api.AuthUserRevokeRoleRequest;
 import io.etcd.jetcd.api.AuthUserRevokeRoleResponse;
 import io.etcd.jetcd.api.AuthenticateRequest;
 import io.etcd.jetcd.api.AuthenticateResponse;
+import io.etcd.jetcd.api.Role;
+import io.etcd.jetcd.api.User;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.auth.KetaAuthManager;
@@ -57,6 +59,9 @@ import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Set;
 
 public class AuthService extends AuthGrpc.AuthImplBase {
     private final static Logger LOG = LoggerFactory.getLogger(AuthService.class);
@@ -112,66 +117,187 @@ public class AuthService extends AuthGrpc.AuthImplBase {
 
     @Override
     public void userAdd(AuthUserAddRequest request, StreamObserver<AuthUserAddResponse> responseObserver) {
-        super.userAdd(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.addUser(request.getName(), request.getPassword());
+            responseObserver.onNext(AuthUserAddResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userGet(AuthUserGetRequest request, StreamObserver<AuthUserGetResponse> responseObserver) {
-        super.userGet(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            User user = authMgr.getUser(request.getName());
+            responseObserver.onNext(AuthUserGetResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .addAllRoles(user.getRolesList())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userList(AuthUserListRequest request, StreamObserver<AuthUserListResponse> responseObserver) {
-        super.userList(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            Set<String> users = authMgr.listUsers();
+            responseObserver.onNext(AuthUserListResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .addAllUsers(users)
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userDelete(AuthUserDeleteRequest request, StreamObserver<AuthUserDeleteResponse> responseObserver) {
-        super.userDelete(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.deleteUser(request.getName());
+            responseObserver.onNext(AuthUserDeleteResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userChangePassword(AuthUserChangePasswordRequest request, StreamObserver<AuthUserChangePasswordResponse> responseObserver) {
-        super.userChangePassword(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.changePassword(request.getName(), request.getPassword());
+            responseObserver.onNext(AuthUserChangePasswordResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userGrantRole(AuthUserGrantRoleRequest request, StreamObserver<AuthUserGrantRoleResponse> responseObserver) {
-        super.userGrantRole(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.grantRole(request.getUser(), request.getRole());
+            responseObserver.onNext(AuthUserGrantRoleResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void userRevokeRole(AuthUserRevokeRoleRequest request, StreamObserver<AuthUserRevokeRoleResponse> responseObserver) {
-        super.userRevokeRole(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.revokeRole(request.getName(), request.getRole());
+            responseObserver.onNext(AuthUserRevokeRoleResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleAdd(AuthRoleAddRequest request, StreamObserver<AuthRoleAddResponse> responseObserver) {
-        super.roleAdd(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.addRole(request.getName());
+            responseObserver.onNext(AuthRoleAddResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleGet(AuthRoleGetRequest request, StreamObserver<AuthRoleGetResponse> responseObserver) {
-        super.roleGet(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            Role role = authMgr.getRole(request.getRole());
+            responseObserver.onNext(AuthRoleGetResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .addAllPerm(role.getKeyPermissionList())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleList(AuthRoleListRequest request, StreamObserver<AuthRoleListResponse> responseObserver) {
-        super.roleList(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            Set<String> roles = authMgr.listRoles();
+            responseObserver.onNext(AuthRoleListResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .addAllRoles(roles)
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleDelete(AuthRoleDeleteRequest request, StreamObserver<AuthRoleDeleteResponse> responseObserver) {
-        super.roleDelete(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.deleteRole(request.getRole());
+            responseObserver.onNext(AuthRoleDeleteResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleGrantPermission(AuthRoleGrantPermissionRequest request, StreamObserver<AuthRoleGrantPermissionResponse> responseObserver) {
-        super.roleGrantPermission(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.grantPermission(request.getName(), request.getPerm());
+            responseObserver.onNext(AuthRoleGrantPermissionResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 
     @Override
     public void roleRevokePermission(AuthRoleRevokePermissionRequest request, StreamObserver<AuthRoleRevokePermissionResponse> responseObserver) {
-        super.roleRevokePermission(request, responseObserver);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        try {
+            authMgr.revokePermission(request.getRole(), request.getKeyBytes(), request.getRangeEndBytes());
+            responseObserver.onNext(AuthRoleRevokePermissionResponse.newBuilder()
+                .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
     }
 }

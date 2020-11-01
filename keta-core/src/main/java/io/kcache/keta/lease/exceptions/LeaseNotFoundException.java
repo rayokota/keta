@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.lease;
+package io.kcache.keta.lease.exceptions;
 
-public class LeaseExistsException extends RuntimeException {
+public class LeaseNotFoundException extends RuntimeException {
 
     private final long id;
 
-    public LeaseExistsException(long id) {
+    public LeaseNotFoundException(long id) {
         this.id = id;
     }
 
-    public LeaseExistsException(long id, Throwable cause) {
+    public LeaseNotFoundException(long id, Throwable cause) {
         super(cause);
         this.id = id;
     }

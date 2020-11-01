@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kcache.keta.auth;
+package io.kcache.keta.auth.exceptions;
 
-public class AuthenticationException extends RuntimeException {
+public class UserNotFoundException extends RuntimeException {
 
     private final String user;
 
-    public AuthenticationException(String user) {
+    public UserNotFoundException(String user) {
         this.user = user;
     }
 
-    public AuthenticationException(String user, Throwable cause) {
+    public UserNotFoundException(String user, Throwable cause) {
         super(cause);
         this.user = user;
     }
