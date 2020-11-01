@@ -23,12 +23,14 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.auth.TokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JwtServerInterceptor implements ServerInterceptor {
-    private static final Logger LOG = LoggerFactory.getLogger(JwtServerInterceptor.class);
+public class AuthServerInterceptor implements ServerInterceptor {
+    private static final Logger LOG = LoggerFactory.getLogger(AuthServerInterceptor.class);
 
     private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {
     };
@@ -39,15 +41,16 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
     private final TokenProvider tokenProvider;
 
-    public JwtServerInterceptor(TokenProvider tokenProvider) {
+    public AuthServerInterceptor(TokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
     }
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
+        KetaAuthManager authManager = KetaEngine.getInstance().getAuthManager();
         String methodName = serverCall.getMethodDescriptor().getFullMethodName();
         Context ctx = Context.current();
-        if (!methodName.equals("etcdserverpb.Auth/Authenticate")) {
+        if (authManager.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
             String jwt = metadata.get(TOKEN);
             if (jwt == null) {
                 serverCall.close(Status.UNAUTHENTICATED.withDescription("JWT Token is missing from Metadata"), metadata);

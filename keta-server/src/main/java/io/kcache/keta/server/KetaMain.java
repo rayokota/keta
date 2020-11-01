@@ -4,13 +4,16 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.NettyServerBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.TokenProvider;
 import io.kcache.keta.notifier.KetaNotifier;
+import io.kcache.keta.server.grpc.AuthService;
 import io.kcache.keta.server.grpc.ClusterService;
 import io.kcache.keta.server.grpc.KVService;
 import io.kcache.keta.server.grpc.LeaseService;
 import io.kcache.keta.server.grpc.MaintenanceService;
 import io.kcache.keta.server.grpc.WatchService;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
+import io.kcache.keta.server.grpc.utils.AuthServerInterceptor;
 import io.kcache.keta.server.grpc.utils.SslFactory;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.netty.channel.ChannelOption;
@@ -59,8 +62,7 @@ public class KetaMain extends AbstractVerticle {
             new LeaseService(elector).bindService()
         );
 
-        // TODO
-        //JwtTokenProvider tokenProvider = new JwtTokenProvider(config);
+        TokenProvider tokenProvider = config.getTokenProvider();
 
         NettyServerBuilder nettyBuilder = serverBuilder.nettyBuilder()
             .permitKeepAliveWithoutCalls(true)
@@ -69,13 +71,12 @@ public class KetaMain extends AbstractVerticle {
             // see https://issues.apache.org/jira/browse/RATIS-606
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .withChildOption(ChannelOption.TCP_NODELAY, true)
-            //.addService(new AuthService(elector, tokenProvider))
+            .addService(new AuthService(elector, tokenProvider))
             .addService(new ClusterService(elector))
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
-            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services));
-        // TODO
-            //.intercept(new JwtServerInterceptor(tokenProvider));
+            .fallbackHandlerRegistry(new GrpcProxy.Registry(proxy, services))
+            .intercept(new AuthServerInterceptor(tokenProvider));
 
         if (isTls()) {
             nettyBuilder.sslContext(new SslFactory(config).sslContext());

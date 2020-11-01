@@ -17,6 +17,9 @@
 package io.kcache.keta;
 
 import io.kcache.KafkaCacheConfig;
+import io.kcache.keta.auth.JwtTokenProvider;
+import io.kcache.keta.auth.SimpleTokenProvider;
+import io.kcache.keta.auth.TokenProvider;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
@@ -148,6 +151,17 @@ public class KetaConfig extends KafkaCacheConfig {
         "The endpoint identification algorithm to validate the server hostname using the "
             + "server certificate.";
     public static final String SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DEFAULT = null;
+
+    public static final String TOKEN_TYPE_CONFIG = "token.type";
+    public static final String TOKEN_TYPE_DOC =
+        "The token type, either simple (for single-node cluster testing) or jwt.";
+    public static final String TOKEN_TYPE_SIMPLE = "simple";
+    public static final String TOKEN_TYPE_JWT = "jwt";
+    public static final ConfigDef.ValidString TOKEN_TYPE_VALIDATOR =
+        ConfigDef.ValidString.in(
+            TOKEN_TYPE_SIMPLE,
+            TOKEN_TYPE_JWT
+        );
 
     public static final String TOKEN_PUBLIC_KEY_PATH_CONFIG = "token.public.key.path";
     public static final String TOKEN_PUBLIC_KEY_PATH_DOC =
@@ -291,15 +305,22 @@ public class KetaConfig extends KafkaCacheConfig {
                 Importance.LOW,
                 SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DOC
             ).define(
+                TOKEN_TYPE_CONFIG,
+                ConfigDef.Type.STRING,
+                TOKEN_TYPE_SIMPLE,
+                TOKEN_TYPE_VALIDATOR,
+                ConfigDef.Importance.HIGH,
+                TOKEN_TYPE_DOC
+            ).define(
                 TOKEN_PUBLIC_KEY_PATH_CONFIG,
                 ConfigDef.Type.STRING,
-                null,
+                "",
                 ConfigDef.Importance.HIGH,
                 TOKEN_PUBLIC_KEY_PATH_DOC
             ).define(
                 TOKEN_PRIVATE_KEY_PATH_CONFIG,
                 ConfigDef.Type.STRING,
-                null,
+                "",
                 ConfigDef.Importance.HIGH,
                 TOKEN_PRIVATE_KEY_PATH_DOC
             ).define(
@@ -324,6 +345,18 @@ public class KetaConfig extends KafkaCacheConfig {
 
     public KetaConfig(Map<?, ?> props) {
         super(config, props);
+    }
+
+    public TokenProvider getTokenProvider() {
+        String tokenType = getString(TOKEN_TYPE_CONFIG);
+        switch (tokenType) {
+            case TOKEN_TYPE_SIMPLE:
+                return new SimpleTokenProvider(this);
+            case TOKEN_TYPE_JWT:
+                return new JwtTokenProvider(this);
+            default:
+                throw new ConfigException("Unrecognized token type " + tokenType);
+        }
     }
 
     private static String getDefaultHost() {
