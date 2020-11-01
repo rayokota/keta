@@ -22,7 +22,6 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
-import io.grpc.Status;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;

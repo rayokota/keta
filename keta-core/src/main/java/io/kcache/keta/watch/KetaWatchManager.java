@@ -88,7 +88,7 @@ public class KetaWatchManager {
     public synchronized Set<Watch> getWatches(byte[] key) {
         Bytes k = Bytes.wrap(key);
         Set<Watch> keys = keyWatchers.getOrDefault(k, Collections.emptySet());
-        Iterator<IntervalTree.Node<Bytes, Set<Watch>>> iter = ranges.overlappers(Range.closed(k, k));
+        Iterator<IntervalTree.Node<Bytes, Set<Watch>>> iter = ranges.overlappers(Range.singleton(k));
         List<Set<Watch>> ranges = new ArrayList<>();
         while (iter.hasNext()) {
             ranges.add(iter.next().getValue());

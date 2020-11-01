@@ -17,10 +17,12 @@
  */
 package io.kcache.keta.auth;
 
+import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.Permission;
 import io.etcd.jetcd.api.Role;
 import io.etcd.jetcd.api.User;
+import io.grpc.Context;
 import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
@@ -28,6 +30,7 @@ import io.kcache.keta.KetaConfig;
 import io.kcache.keta.auth.exceptions.AuthNotEnabledException;
 import io.kcache.keta.auth.exceptions.AuthenticationException;
 import io.kcache.keta.auth.exceptions.InvalidAuthMgmtException;
+import io.kcache.keta.auth.exceptions.PermissionDeniedException;
 import io.kcache.keta.auth.exceptions.RoleAlreadyExistsException;
 import io.kcache.keta.auth.exceptions.RoleIsEmptyException;
 import io.kcache.keta.auth.exceptions.RoleNotFoundException;
@@ -37,9 +40,11 @@ import io.kcache.keta.auth.exceptions.UserAlreadyExistsException;
 import io.kcache.keta.auth.exceptions.UserIsEmptyException;
 import io.kcache.keta.auth.exceptions.UserNotFoundException;
 import io.kcache.keta.kafka.serialization.KafkaProtobufSerde;
+import io.kcache.keta.utils.IntervalTree;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class KetaAuthManager {
@@ -67,6 +73,7 @@ public class KetaAuthManager {
     private Cache<String, String> auth;
     private Cache<String, User> authUsers;
     private Cache<String, Role> authRoles;
+    private Map<String, UnifiedRangePerms> rangePerms;
 
     public KetaAuthManager(KetaConfig config, Cache<String, String> auth,
                            Cache<String, User> authUsers, Cache<String, Role> authRoles) {
@@ -75,6 +82,7 @@ public class KetaAuthManager {
         this.auth = auth;
         this.authUsers = authUsers;
         this.authRoles = authRoles;
+        this.rangePerms = new ConcurrentHashMap<>();
     }
 
     public boolean isAuthEnabled() {
@@ -126,7 +134,7 @@ public class KetaAuthManager {
     }
 
     public void addUser(String user, String password) {
-        if (user.isEmpty()) {
+        if (user == null || user.isEmpty()) {
             throw new UserIsEmptyException(user);
         }
         User u = authUsers.get(user);
@@ -161,10 +169,11 @@ public class KetaAuthManager {
         if (u == null) {
             throw new UserNotFoundException(user);
         }
+        rangePerms.remove(user);
     }
 
     public void changePassword(String user, String password) {
-        if (user.isEmpty()) {
+        if (user == null || user.isEmpty()) {
             throw new UserIsEmptyException(user);
         }
         User u = authUsers.get(user);
@@ -176,6 +185,7 @@ public class KetaAuthManager {
             .setName(ByteString.copyFrom(user, StandardCharsets.UTF_8))
             .setPassword(ByteString.copyFrom(pw, StandardCharsets.UTF_8))
             .build());
+        rangePerms.remove(user);
     }
 
     public void grantRole(String user, String role) {
@@ -186,6 +196,7 @@ public class KetaAuthManager {
         authUsers.put(user, User.newBuilder(u)
             .addRoles(role)
             .build());
+        rangePerms.remove(user);
     }
 
     public void revokeRole(String user, String role) {
@@ -203,6 +214,7 @@ public class KetaAuthManager {
             .clearRoles()
             .addAllRoles(roles)
             .build());
+        rangePerms.remove(user);
     }
 
     public void addRole(String role) {
@@ -239,6 +251,18 @@ public class KetaAuthManager {
         if (r == null) {
             throw new RoleNotFoundException(role);
         }
+        for (String user : authUsers.keySet()) {
+            User u = authUsers.get(user);
+            Set<String> roles = new HashSet<>(u.getRolesList());
+            if (roles.remove(role)) {
+                User newUser = User.newBuilder(u)
+                    .clearRoles()
+                    .addAllRoles(roles)
+                    .build();
+                authUsers.put(user, newUser);
+                rangePerms.remove(user);
+            }
+        }
     }
 
     public void grantPermission(String role, Permission permission) {
@@ -249,6 +273,7 @@ public class KetaAuthManager {
         authRoles.put(role, Role.newBuilder(r)
             .addKeyPermission(permission)
             .build());
+        rangePerms.clear();
     }
 
     public void revokePermission(String role, ByteString key, ByteString rangeEnd) {
@@ -266,5 +291,121 @@ public class KetaAuthManager {
             .clearKeyPermission()
             .addAllKeyPermission(perms)
             .build());
+        rangePerms.clear();
+    }
+
+    public void checkOpPermitted(String user, ByteString key, ByteString rangeEnd, Permission.Type type) {
+        if (!isAuthEnabled()) {
+            return;
+        }
+        if (user == null || user.isEmpty()) {
+            throw new UserIsEmptyException(user);
+        }
+        User u = authUsers.get(user);
+        if (u == null) {
+            throw new PermissionDeniedException(user);
+        }
+        if (hasRootRole(u)) {
+            return;
+        }
+        if (!isRangeOpPermitted(u, key, rangeEnd, type)) {
+            throw new PermissionDeniedException(user);
+        }
+    }
+
+    private boolean isRangeOpPermitted(User user, ByteString key, ByteString rangeEnd, Permission.Type type) {
+        UnifiedRangePerms perms = this.rangePerms.computeIfAbsent(user.getName().toStringUtf8(), this::getMergedPerms);
+        if (rangeEnd == null || rangeEnd.size() == 0) {
+            return checkKeyPoint(perms, key, type);
+        } else {
+            return checkKeyInterval(perms, key, rangeEnd, type);
+        }
+    }
+
+    private boolean checkKeyPoint(UnifiedRangePerms perms, ByteString key, Permission.Type type) {
+        Range<Bytes> pt = Range.singleton(Bytes.wrap(key.toByteArray()));
+        switch (type) {
+            case READ:
+                return perms.getReadPerms().overlappers(pt).hasNext();
+            case WRITE:
+                return perms.getWritePerms().overlappers(pt).hasNext();
+            default:
+                throw new IllegalArgumentException("Unknown auth type " + type);
+        }
+    }
+
+    private boolean checkKeyInterval(UnifiedRangePerms perms, ByteString key, ByteString rangeEnd, Permission.Type type) {
+        Bytes k = Bytes.wrap(key.toByteArray());
+        Range<Bytes> interval;
+        if (rangeEnd.size() == 1 && rangeEnd.byteAt(0) == 0) {
+            interval = Range.atLeast(k);
+        } else {
+            interval = Range.closed(k, Bytes.wrap(rangeEnd.toByteArray()));
+        }
+        switch (type) {
+            case READ:
+                return perms.getReadPerms().overlappers(interval).hasNext();
+            case WRITE:
+                return perms.getWritePerms().overlappers(interval).hasNext();
+            default:
+                throw new IllegalArgumentException("Unknown auth type " + type);
+        }
+    }
+
+    private UnifiedRangePerms getMergedPerms(String user) {
+        User u = authUsers.get(user);
+        if (u == null) {
+            throw new PermissionDeniedException(user);
+        }
+        UnifiedRangePerms perms = new UnifiedRangePerms();
+        for (String role : u.getRolesList()) {
+            Role r = authRoles.get(role);
+            if (r == null) {
+                continue;
+            }
+            for (Permission p : r.getKeyPermissionList()) {
+                Bytes key = Bytes.wrap(p.getKey().toByteArray());
+                ByteString end = p.getRangeEnd();
+                Range<Bytes> interval;
+                if (end == null || end.size() == 0) {
+                    interval = Range.singleton(key);
+                } else if (end.size() == 1 && end.byteAt(0) == 0) {
+                    interval = Range.atLeast(key);
+                } else {
+                    interval = Range.closed(key, Bytes.wrap(end.toByteArray()));
+                }
+                switch (p.getPermType()) {
+                    case READWRITE:
+                        perms.getReadPerms().put(interval, null);
+                        perms.getWritePerms().put(interval, null);
+                        break;
+                    case READ:
+                        perms.getReadPerms().put(interval, null);
+                        break;
+                    case WRITE:
+                        perms.getWritePerms().put(interval, null);
+                        break;
+                }
+            }
+        }
+        return perms;
+    }
+
+    static class UnifiedRangePerms {
+        private IntervalTree<Bytes, Void> readPerms;
+        private IntervalTree<Bytes, Void> writePerms;
+
+        public UnifiedRangePerms() {
+            this.readPerms = new IntervalTree<>();
+            this.writePerms = new IntervalTree<>();
+        }
+
+        public IntervalTree<Bytes, Void> getReadPerms() {
+            return readPerms;
+        }
+
+        public IntervalTree<Bytes, Void> getWritePerms() {
+            return writePerms;
+        }
     }
 }

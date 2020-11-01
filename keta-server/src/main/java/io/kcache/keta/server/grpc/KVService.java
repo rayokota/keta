@@ -24,6 +24,7 @@ import io.etcd.jetcd.api.DeleteRangeRequest;
 import io.etcd.jetcd.api.DeleteRangeResponse;
 import io.etcd.jetcd.api.KVGrpc;
 import io.etcd.jetcd.api.KeyValue;
+import io.etcd.jetcd.api.Permission;
 import io.etcd.jetcd.api.PutRequest;
 import io.etcd.jetcd.api.PutResponse;
 import io.etcd.jetcd.api.RangeRequest;
@@ -33,12 +34,15 @@ import io.etcd.jetcd.api.ResponseHeader;
 import io.etcd.jetcd.api.ResponseOp;
 import io.etcd.jetcd.api.TxnRequest;
 import io.etcd.jetcd.api.TxnResponse;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import io.kcache.KeyValueIterator;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
 import io.kcache.keta.pb.VersionedValue;
+import io.kcache.keta.server.grpc.utils.AuthServerInterceptor;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.grpc.errors.KetaException;
@@ -97,6 +101,9 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private RangeResponse doRange(RangeRequest request) {
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+            request.getKey(), request.getRangeEnd(), Permission.Type.READ);
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
         if (from.length == 0) {
@@ -169,6 +176,9 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private PutResponse doPut(PutRequest request) {
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+            request.getKey(), null, Permission.Type.WRITE);
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         byte[] key = request.getKey().toByteArray();
@@ -233,6 +243,9 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private DeleteRangeResponse doDeleteRange(DeleteRangeRequest request) {
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+            request.getKey(), request.getRangeEnd(), Permission.Type.WRITE);
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
         if (from.length == 0) {
