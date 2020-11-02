@@ -37,7 +37,11 @@
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty-shaded</artifactId>
+            <artifactId>grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -52,28 +56,16 @@
             <artifactId>netty-tcnative-boringssl-static</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.omid</groupId>
-            <artifactId>omid-commit-table</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.omid</groupId>
-            <artifactId>omid-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.omid</groupId>
-            <artifactId>omid-timestamp-storage-hbase1.x</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.omid</groupId>
-            <artifactId>omid-transaction-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.omid</groupId>
-            <artifactId>omid-tso-server-hbase2.x</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -82,6 +74,10 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
