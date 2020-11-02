@@ -97,7 +97,7 @@ public class WatchService extends WatchGrpc.WatchImplBase {
             authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
                 createRequest.getKey(), createRequest.getRangeEnd());
         }
-        Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
+        Watch watch = new Watch(0, createRequest.getKey(), createRequest.getRangeEnd());
         watch = watchMgr.add(watch);
         long watchId = watch.getID();
         List<WatchCreateRequest.FilterType> filters = createRequest.getFiltersList();

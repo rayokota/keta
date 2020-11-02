@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.Striped;
+import com.google.protobuf.ByteString;
 import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
 import io.kcache.keta.pb.VersionedValue;
@@ -114,7 +115,7 @@ public class TxVersionedCache implements Closeable {
             if (ignoreValue || ignoreLease) {
                 VersionedValue versioned = get(key);
                 if (versioned == null) {
-                    throw new KeyNotFoundException(key);
+                    throw new KeyNotFoundException(ByteString.copyFrom(key));
                 }
                 if (ignoreValue) {
                     value = versioned.getValue().toByteArray();

@@ -55,7 +55,7 @@ public class KetaWatchManager {
 
     public synchronized Watch add(Watch watch) {
         long id = watch.getID();
-        Bytes key = Bytes.wrap(watch.getKey());
+        Bytes key = Bytes.wrap(watch.getKey().toByteArray());
         if (id == 0) {
             long newId = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
             while (watchers.containsKey(newId)) {
@@ -65,8 +65,8 @@ public class KetaWatchManager {
         } else if (watchers.containsKey(id)) {
             throw new WatchExistsException(id);
         }
-        if (watch.getEnd() != null && watch.getEnd().length > 0) {
-            Bytes end = Bytes.wrap(watch.getEnd());
+        if (watch.getEnd() != null && watch.getEnd().size() > 0) {
+            Bytes end = Bytes.wrap(watch.getEnd().toByteArray());
             Range<Bytes> interval = Range.closed(key, end);
             IntervalTree.Node<Bytes, Set<Watch>> node = ranges.find(interval);
             if (node != null) {
@@ -117,8 +117,8 @@ public class KetaWatchManager {
         if (watch == null) {
             return false;
         }
-        Bytes key = Bytes.wrap(watch.getKey());
-        if (watch.getEnd() == null || watch.getEnd().length == 0) {
+        Bytes key = Bytes.wrap(watch.getKey().toByteArray());
+        if (watch.getEnd() == null || watch.getEnd().size() == 0) {
             Set<Watch> watches = keyWatchers.get(key);
             boolean removed = watches.remove(watch);
             if (watches.isEmpty()) {
@@ -126,7 +126,7 @@ public class KetaWatchManager {
             }
             return removed;
         }
-        Bytes end = Bytes.wrap(watch.getEnd());
+        Bytes end = Bytes.wrap(watch.getEnd().toByteArray());
         Range<Bytes> interval = Range.closed(key, end);
         IntervalTree.Node<Bytes, Set<Watch>> node = ranges.find(interval);
         if (node != null) {

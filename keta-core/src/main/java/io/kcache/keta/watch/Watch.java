@@ -17,15 +17,17 @@
 
 package io.kcache.keta.watch;
 
+import com.google.protobuf.ByteString;
+
 import java.util.Arrays;
 import java.util.Objects;
 
 public class Watch {
     private final long id;
-    private final byte[] key;
-    private final byte[] end;
+    private final ByteString key;
+    private final ByteString end;
 
-    public Watch(long id, byte[] key, byte[] end) {
+    public Watch(long id, ByteString key, ByteString end) {
         this.id = id;
         this.key = key;
         this.end = end;
@@ -35,30 +37,31 @@ public class Watch {
         return id;
     }
 
-    public byte[] getKey() {
+    public ByteString getKey() {
         return key;
     }
 
-    public byte[] getEnd() {
+    public ByteString getEnd() {
         return end;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Watch watch = (Watch) o;
-        return id == watch.id &&
-            Arrays.equals(key, watch.key) &&
-            Arrays.equals(end, watch.end);
+        return id == watch.id
+            && Objects.equals(key, watch.key)
+            && Objects.equals(end, watch.end);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(id);
-        result = 31 * result + Arrays.hashCode(key);
-        result = 31 * result + Arrays.hashCode(end);
-        return result;
+        return Objects.hash(id, key, end);
     }
 }
 

@@ -17,20 +17,22 @@
  */
 package io.kcache.keta.version.exceptions;
 
+import com.google.protobuf.ByteString;
+
 public class KeyNotFoundException extends RuntimeException {
 
-    private final byte[] key;
+    private final ByteString key;
 
-    public KeyNotFoundException(byte[] key) {
+    public KeyNotFoundException(ByteString key) {
         this.key = key;
     }
 
-    public KeyNotFoundException(byte[] key, Throwable cause) {
+    public KeyNotFoundException(ByteString key, Throwable cause) {
         super(cause);
         this.key = key;
     }
 
-    public byte[] getKey() {
+    public ByteString getKey() {
         return key;
     }
 }
