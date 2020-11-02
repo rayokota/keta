@@ -285,12 +285,17 @@ public class KetaAuthManager {
             throw new RoleNotFoundException(role);
         }
         List<Permission> perms = new ArrayList<>();
+        boolean added = false;
         for (Permission p : r.getKeyPermissionList()) {
             if (Objects.equals(p.getKey(), permission.getKey()) && Objects.equals(p.getRangeEnd(), permission.getRangeEnd())) {
                 perms.add(permission);
+                added = true;
             } else {
                 perms.add(p);
             }
+        }
+        if (!added) {
+            perms.add(permission);
         }
         authRoles.put(role, Role.newBuilder(r)
             .clearKeyPermission()

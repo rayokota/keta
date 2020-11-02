@@ -46,7 +46,6 @@ import static io.kcache.keta.version.TxVersionedCache.PENDING_TX;
 public class KetaNotifier implements Notifier {
     private static final Logger LOG = LoggerFactory.getLogger(KetaNotifier.class);
 
-    // TODO switch to Guava?
     private final EventBus eventBus;
 
     private final Map<Long, MessageConsumer<byte[]>> consumers;

@@ -87,6 +87,9 @@ public class WatchService extends WatchGrpc.WatchImplBase {
 
     private void handleCreateRequest(WatchCreateRequest createRequest, StreamObserver<WatchResponse> responseObserver) {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
+        if (watchMgr == null) {
+            return;
+        }
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);
         long watchId = watch.getID();
@@ -133,6 +136,9 @@ public class WatchService extends WatchGrpc.WatchImplBase {
     private void handleCancelRequest(WatchCancelRequest cancelRequest, StreamObserver<WatchResponse> responseObserver) {
         LOG.debug("cancel watch");
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
+        if (watchMgr == null) {
+            return;
+        }
         long watchId = cancelRequest.getWatchId();
         watchMgr.delete(watchId);
         responseObserver.onNext(WatchResponse.newBuilder()

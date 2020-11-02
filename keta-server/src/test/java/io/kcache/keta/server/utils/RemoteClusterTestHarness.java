@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Properties;
 
@@ -47,9 +48,8 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemoteClusterTestHarness.class);
 
-    public static final String ENDPOINTS = "http://127.0.0.1:2379";
-
     protected Properties props;
+    protected String endpoints;
     private GrpcProxy<byte[], byte[]> proxy;
     private KetaLeaderElector elector;
 
@@ -66,10 +66,11 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     public KetaMain createKeta() throws Exception {
         props = new Properties();
+        endpoints = "http://127.0.0.1:" + choosePort();
         proxy = mock(GrpcProxy.class);
         elector = mock(KetaLeaderElector.class);
         when(elector.isLeader()).thenReturn(true);
-        when(elector.getListeners()).thenReturn(Collections.emptyList());
+        when(elector.getListeners()).thenReturn(Collections.singletonList(new URI(endpoints)));
         return new KetaMain(new KetaConfig(props), proxy, elector);
     }
 

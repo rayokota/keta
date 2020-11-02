@@ -24,9 +24,12 @@ import io.kcache.keta.auth.exceptions.AuthNotEnabledException;
 import io.kcache.keta.auth.exceptions.AuthenticationException;
 import io.kcache.keta.auth.exceptions.InvalidAuthMgmtException;
 import io.kcache.keta.auth.exceptions.InvalidAuthTokenException;
+import io.kcache.keta.auth.exceptions.PermissionDeniedException;
 import io.kcache.keta.auth.exceptions.RoleAlreadyExistsException;
 import io.kcache.keta.auth.exceptions.RoleIsEmptyException;
 import io.kcache.keta.auth.exceptions.RoleNotFoundException;
+import io.kcache.keta.auth.exceptions.RootRoleNotFoundException;
+import io.kcache.keta.auth.exceptions.RootUserNotFoundException;
 import io.kcache.keta.auth.exceptions.UserAlreadyExistsException;
 import io.kcache.keta.auth.exceptions.UserIsEmptyException;
 import io.kcache.keta.auth.exceptions.UserNotFoundException;
@@ -56,16 +59,22 @@ public class GrpcUtils {
             return KetaErrorType.AuthFailed.toException();
         } else if (ex instanceof AuthNotEnabledException) {
             return KetaErrorType.AuthNotEnabled.toException();
-        } else if (ex instanceof InvalidAuthTokenException) {
-            return KetaErrorType.InvalidAuthToken.toException();
         } else if (ex instanceof InvalidAuthMgmtException) {
             return KetaErrorType.InvalidAuthMgmt.toException();
+        } else if (ex instanceof InvalidAuthTokenException) {
+            return KetaErrorType.InvalidAuthToken.toException();
+        } else if (ex instanceof PermissionDeniedException) {
+            return KetaErrorType.PermissionDenied.toException();
         } else if (ex instanceof RoleAlreadyExistsException) {
             return KetaErrorType.RoleAlreadyExist.toException();
         } else if (ex instanceof RoleIsEmptyException) {
             return KetaErrorType.RoleEmpty.toException();
         } else if (ex instanceof RoleNotFoundException) {
             return KetaErrorType.RoleNotFound.toException();
+        } else if (ex instanceof RootRoleNotFoundException) {
+            return KetaErrorType.RootRoleNotExist.toException();
+        } else if (ex instanceof RootUserNotFoundException) {
+            return KetaErrorType.RootUserNotExist.toException();
         } else if (ex instanceof UserAlreadyExistsException) {
             return KetaErrorType.UserAlreadyExist.toException();
         } else if (ex instanceof UserIsEmptyException) {

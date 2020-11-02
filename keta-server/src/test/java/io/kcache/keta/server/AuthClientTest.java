@@ -71,7 +71,7 @@ public class AuthClientTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        Client client = Client.builder().endpoints(ENDPOINTS).build();
+        Client client = Client.builder().endpoints(endpoints).build();
 
         authDisabledKVClient = client.getKVClient();
         authDisabledAuthClient = client.getAuthClient();
@@ -106,8 +106,8 @@ public class AuthClientTest extends RemoteClusterTestHarness {
 
         authDisabledAuthClient.authEnable().get();
 
-        final Client userClient = Client.builder().endpoints(ENDPOINTS).user(user).password(userNewPass).build();
-        final Client rootClient = Client.builder().endpoints(ENDPOINTS).user(root).password(rootPass).build();
+        final Client userClient = Client.builder().endpoints(endpoints).user(user).password(userNewPass).build();
+        final Client rootClient = Client.builder().endpoints(endpoints).user(root).password(rootPass).build();
 
         userClient.getKVClient().put(rootRoleKey, rootRoleValue).get();
         userClient.getKVClient().put(userRoleKey, userRoleValue).get();

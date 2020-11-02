@@ -67,7 +67,7 @@ public class KVTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        kvClient = Client.builder().endpoints(ENDPOINTS).build().getKVClient();
+        kvClient = Client.builder().endpoints(endpoints).build().getKVClient();
     }
 
     @BeforeEach

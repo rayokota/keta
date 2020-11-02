@@ -62,7 +62,7 @@ public class WatchTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        client = Client.builder().endpoints(ENDPOINTS).build();
+        client = Client.builder().endpoints(endpoints).build();
     }
 
     @BeforeEach
@@ -79,8 +79,8 @@ public class WatchTest extends RemoteClusterTestHarness {
     public void testNamespacedAndNotNamespacedClient() throws Exception {
         final ByteSequence key = randomByteSequence();
         final ByteSequence nsKey = ByteSequence.from(ByteString.copyFrom(namespace.getBytes()).concat(ByteString.copyFrom(key.getBytes())));
-        final Client client = Client.builder().endpoints(ENDPOINTS).build();
-        final Client nsClient = Client.builder().endpoints(ENDPOINTS).namespace(namespace).build();
+        final Client client = Client.builder().endpoints(endpoints).build();
+        final Client nsClient = Client.builder().endpoints(endpoints).namespace(namespace).build();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ByteSequence value = randomByteSequence();

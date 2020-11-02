@@ -49,7 +49,7 @@ public class WatchErrorTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        client = Client.builder().endpoints(ENDPOINTS).build();
+        client = Client.builder().endpoints(endpoints).build();
     }
 
     @BeforeEach

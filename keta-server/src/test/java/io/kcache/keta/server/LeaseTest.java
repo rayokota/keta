@@ -35,7 +35,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +62,7 @@ public class LeaseTest extends RemoteClusterTestHarness {
     @BeforeAll
     public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Exception {
         vertx.deployVerticle(createKeta(), testContext.completing());
-        client = Client.builder().endpoints(ENDPOINTS).build();
+        client = Client.builder().endpoints(endpoints).build();
         kvClient = client.getKVClient();
         leaseClient = client.getLeaseClient();
     }

@@ -46,7 +46,7 @@ public class AuthServerInterceptor implements ServerInterceptor {
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         String methodName = serverCall.getMethodDescriptor().getFullMethodName();
         Context ctx = Context.current();
-        if (authMgr.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
+        if (authMgr != null && authMgr.isAuthEnabled() && !methodName.equals("etcdserverpb.Auth/Authenticate")) {
             String jwt = metadata.get(TOKEN);
             if (jwt == null) {
                 serverCall.close(KetaErrorType.UserEmpty.toStatus(), metadata);
