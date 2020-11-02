@@ -27,7 +27,6 @@ import io.kcache.keta.pb.Lease;
 import io.kcache.keta.version.TxVersionedCache;
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.transaction.RollbackException;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
@@ -105,8 +104,8 @@ public class KetaLeaseManager {
         Transaction tx = null;
         try {
             tx = txMgr.begin();
-            for (Bytes key : lk.getKeys()) {
-                txVersionedCache.remove(key.get());
+            for (ByteString key : lk.getKeys()) {
+                txVersionedCache.remove(key.toByteArray());
             }
             txMgr.commit(tx);
             cache.remove(lk.getID());

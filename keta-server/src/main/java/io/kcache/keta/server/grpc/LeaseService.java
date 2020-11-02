@@ -37,7 +37,6 @@ import io.kcache.keta.server.grpc.utils.AuthServerInterceptor;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaLeaderElector;
-import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,8 +111,8 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
         LeaseKeys lk = leaseMgr.get(lease);
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         if (lk != null) {
-            for (Bytes key : lk.getKeys()) {
-                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), ByteString.copyFrom(key.get()));
+            for (ByteString key : lk.getKeys()) {
+                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), key);
             }
         }
     }
@@ -169,9 +168,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 .setTTL((lease.getExpiry() - System.currentTimeMillis()) / 1000)
                 .setGrantedTTL(lease.getTTL());
             if (request.getKeys()) {
-                builder.addAllKeys(lease.getKeys().stream()
-                    .map(k -> ByteString.copyFrom(k.get()))
-                    .collect(Collectors.toList()));
+                builder.addAllKeys(lease.getKeys());
             }
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();

@@ -17,7 +17,7 @@
 
 package io.kcache.keta.lease;
 
-import org.apache.kafka.common.utils.Bytes;
+import com.google.protobuf.ByteString;
 import io.kcache.keta.pb.Lease;
 
 import java.util.Objects;
@@ -26,13 +26,13 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 public class LeaseKeys {
     private final Lease lease;
-    private final Set<Bytes> keys;
+    private final Set<ByteString> keys;
 
     public LeaseKeys(Lease lease) {
         this(lease, new ConcurrentSkipListSet<>());
     }
 
-    public LeaseKeys(Lease lease, Set<Bytes> keys) {
+    public LeaseKeys(Lease lease, Set<ByteString> keys) {
         this.lease = lease;
         this.keys = keys;
     }
@@ -53,7 +53,7 @@ public class LeaseKeys {
         return lease.getExpiry();
     }
 
-    public Set<Bytes> getKeys() {
+    public Set<ByteString> getKeys() {
         return keys;
     }
 

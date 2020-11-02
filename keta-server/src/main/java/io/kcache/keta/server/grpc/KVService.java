@@ -51,7 +51,6 @@ import io.kcache.keta.transaction.client.KetaTransaction;
 import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.TxVersionedCache;
 import io.kcache.keta.version.VersionedCache;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.omid.transaction.Transaction;
 import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManager;
@@ -198,11 +197,11 @@ public class KVService extends KVGrpc.KVImplBase {
         long oldLease = versioned != null ? versioned.getLease() : 0;
         if (oldLease > 0) {
             LeaseKeys lk = leaseMgr.get(oldLease);
-            lk.getKeys().remove(Bytes.wrap(key));
+            lk.getKeys().remove(request.getKey());
         }
         if (lease > 0) {
             LeaseKeys lk = leaseMgr.get(lease);
-            lk.getKeys().add(Bytes.wrap(key));
+            lk.getKeys().add(request.getKey());
         }
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
@@ -222,8 +221,8 @@ public class KVService extends KVGrpc.KVImplBase {
         LeaseKeys lk = leaseMgr.get(lease);
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         if (lk != null) {
-            for (Bytes key : lk.getKeys()) {
-                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), ByteString.copyFrom(key.get()));
+            for (ByteString key : lk.getKeys()) {
+                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), key);
             }
         }
     }
