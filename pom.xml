@@ -44,6 +44,7 @@
         <grpc.version>1.25.0</grpc.version>
         <!-- omid does not work with guava 26+ -->
         <guava.version>25.0-jre</guava.version>
+        <jackson.version>2.11.3</jackson.version>
         <jetcd.version>0.5.3</jetcd.version>
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
         <kafka.version>2.6.0</kafka.version>
@@ -209,6 +210,16 @@
                         <artifactId>protobuf-java</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
