@@ -29,12 +29,15 @@ import io.etcd.jetcd.api.LeaseTimeToLiveRequest;
 import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.lease.KetaLeaseManager;
 import io.kcache.keta.lease.LeaseKeys;
 import io.kcache.keta.pb.Lease;
+import io.kcache.keta.server.grpc.utils.AuthServerInterceptor;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
 import io.kcache.keta.server.leader.KetaLeaderElector;
+import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +86,7 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             return;
         }
         long id = request.getID();
+        checkLeasePuts(id);
         LOG.info("Lease revoke request: {}", id);
         if (id == 0) {
             responseObserver.onError(KetaErrorType.LeaseNotFound.toException());
@@ -97,6 +101,20 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
+    }
+
+    private void checkLeasePuts(long lease) {
+        if (lease == 0) {
+            return;
+        }
+        KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
+        LeaseKeys lk = leaseMgr.get(lease);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        if (lk != null) {
+            for (Bytes key : lk.getKeys()) {
+                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), ByteString.copyFrom(key.get()));
+            }
         }
     }
 

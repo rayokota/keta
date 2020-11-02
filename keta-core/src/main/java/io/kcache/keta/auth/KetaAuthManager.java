@@ -324,7 +324,19 @@ public class KetaAuthManager {
         LOG.info("revoked permission for role {}", role);
     }
 
-    public void checkOpPermitted(String user, ByteString key, ByteString rangeEnd, Permission.Type type) {
+    public void checkPutPermitted(String user, ByteString key) {
+        checkOpPermitted(user, key, null, Permission.Type.WRITE);
+    }
+
+    public void checkRangePermitted(String user, ByteString key, ByteString rangeEnd) {
+        checkOpPermitted(user, key, rangeEnd, Permission.Type.READ);
+    }
+
+    public void checkDeletePermitted(String user, ByteString key, ByteString rangeEnd) {
+        checkOpPermitted(user, key, rangeEnd, Permission.Type.WRITE);
+    }
+
+    private void checkOpPermitted(String user, ByteString key, ByteString rangeEnd, Permission.Type type) {
         if (!isAuthEnabled()) {
             return;
         }

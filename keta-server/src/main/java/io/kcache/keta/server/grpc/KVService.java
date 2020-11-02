@@ -17,6 +17,7 @@
  */
 package io.kcache.keta.server.grpc;
 
+import com.google.protobuf.ByteString;
 import io.etcd.jetcd.api.CompactionRequest;
 import io.etcd.jetcd.api.CompactionResponse;
 import io.etcd.jetcd.api.Compare;
@@ -101,8 +102,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private RangeResponse doRange(RangeRequest request) {
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
-        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
-            request.getKey(), request.getRangeEnd(), Permission.Type.READ);
+        authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(), request.getKey(), request.getRangeEnd());
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
         if (from.length == 0) {
@@ -176,8 +176,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private PutResponse doPut(PutRequest request) {
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
-        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
-            request.getKey(), null, Permission.Type.WRITE);
+        authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), request.getKey());
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
         byte[] key = request.getKey().toByteArray();
@@ -186,6 +185,7 @@ public class KVService extends KVGrpc.KVImplBase {
         }
         byte[] value = request.getValue().toByteArray();
         long lease = request.getLease();
+        checkLeasePuts(lease);
         boolean ignoreValue = request.getIgnoreValue();
         boolean ignoreLease = request.getIgnoreLease();
         if (ignoreValue && value.length != 0) {
@@ -207,10 +207,25 @@ public class KVService extends KVGrpc.KVImplBase {
         PutResponse.Builder responseBuilder = PutResponse.newBuilder();
         responseBuilder.setHeader(toResponseHeader());
         if (request.getPrevKv() && versioned != null) {
+            authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(), request.getKey(), null);
             KeyValue kv = ProtoUtils.toKeyValue(key, versioned);
             responseBuilder.setPrevKv(kv);
         }
         return responseBuilder.build();
+    }
+
+    private void checkLeasePuts(long lease) {
+        if (lease == 0) {
+            return;
+        }
+        KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
+        LeaseKeys lk = leaseMgr.get(lease);
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        if (lk != null) {
+            for (Bytes key : lk.getKeys()) {
+                authMgr.checkPutPermitted(AuthServerInterceptor.USER_CTX_KEY.get(), ByteString.copyFrom(key.get()));
+            }
+        }
     }
 
     @Override
@@ -243,8 +258,7 @@ public class KVService extends KVGrpc.KVImplBase {
 
     private DeleteRangeResponse doDeleteRange(DeleteRangeRequest request) {
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
-        authMgr.checkOpPermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
-            request.getKey(), request.getRangeEnd(), Permission.Type.WRITE);
+        authMgr.checkDeletePermitted(AuthServerInterceptor.USER_CTX_KEY.get(), request.getKey(), request.getRangeEnd());
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = request.getKey().toByteArray();
         if (from.length == 0) {
@@ -259,6 +273,8 @@ public class KVService extends KVGrpc.KVImplBase {
             if (versioned != null) {
                 keys.add(from);
                 if (request.getPrevKv()) {
+                    authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+                        request.getKey(), request.getRangeEnd());
                     KeyValue kv = ProtoUtils.toKeyValue(from, versioned);
                     responseBuilder.addPrevKvs(kv);
                 }
@@ -274,6 +290,8 @@ public class KVService extends KVGrpc.KVImplBase {
                     io.kcache.KeyValue<byte[], VersionedValue> entry = iter.next();
                     keys.add(entry.key);
                     if (request.getPrevKv()) {
+                        authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+                            request.getKey(), request.getRangeEnd());
                         KeyValue kv = ProtoUtils.toKeyValue(entry.key, entry.value);
                         responseBuilder.addPrevKvs(kv);
                     }
@@ -315,7 +333,7 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private TxnResponse doTxn(TxnRequest request) {
-        // TODO recursively checkIntervals for duplicate kesy
+        // TODO recursively checkIntervals for duplicate keys, see v3rpc/key.go
         boolean succeeded = doCompares(request.getCompareList());
         List<ResponseOp> responses = doRequests(succeeded ? request.getSuccessList() : request.getFailureList());
         return TxnResponse.newBuilder()
@@ -335,6 +353,8 @@ public class KVService extends KVGrpc.KVImplBase {
     }
 
     private boolean doCompare(Compare compare) {
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(), compare.getKey(), compare.getRangeEnd());
         TxVersionedCache cache = KetaEngine.getInstance().getTxCache();
         byte[] from = compare.getKey().toByteArray();
         if (from.length == 0) {

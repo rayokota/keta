@@ -27,7 +27,9 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.server.grpc.errors.KetaErrorType;
+import io.kcache.keta.server.grpc.utils.AuthServerInterceptor;
 import io.kcache.keta.server.grpc.utils.GrpcUtils;
 import io.kcache.keta.server.leader.KetaLeaderElector;
 import io.kcache.keta.watch.KetaWatchManager;
@@ -89,6 +91,11 @@ public class WatchService extends WatchGrpc.WatchImplBase {
         KetaWatchManager watchMgr = KetaEngine.getInstance().getWatchManager();
         if (watchMgr == null) {
             return;
+        }
+        KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
+        if (authMgr != null) {
+            authMgr.checkRangePermitted(AuthServerInterceptor.USER_CTX_KEY.get(),
+                createRequest.getKey(), createRequest.getRangeEnd());
         }
         Watch watch = new Watch(0, createRequest.getKey().toByteArray(), createRequest.getRangeEnd().toByteArray());
         watch = watchMgr.add(watch);

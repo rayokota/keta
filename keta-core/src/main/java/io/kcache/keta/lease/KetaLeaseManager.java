@@ -17,8 +17,10 @@
  */
 package io.kcache.keta.lease;
 
+import com.google.protobuf.ByteString;
 import io.kcache.Cache;
 import io.kcache.keta.KetaEngine;
+import io.kcache.keta.auth.KetaAuthManager;
 import io.kcache.keta.lease.exceptions.LeaseExistsException;
 import io.kcache.keta.lease.exceptions.LeaseNotFoundException;
 import io.kcache.keta.pb.Lease;
