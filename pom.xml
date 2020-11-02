@@ -39,7 +39,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <assertj.version>3.15.0</assertj.version>
+        <assertj.version>3.18.0</assertj.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <grpc.version>1.25.0</grpc.version>
         <!-- omid does not work with guava 26+ -->
@@ -50,7 +50,7 @@
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kcache.version>3.3.4</kcache.version>
-        <mockito.version>3.3.3</mockito.version>
+        <mockito.version>3.6.0</mockito.version>
         <omid.version>1.0.1</omid.version>
         <protobuf.version>3.11.4</protobuf.version>
         <scala.version>${kafka.scala.version}.3</scala.version>

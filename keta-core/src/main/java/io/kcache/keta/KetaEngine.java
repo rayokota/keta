@@ -334,9 +334,6 @@ public class KetaEngine implements Configurable, Closeable {
     public static <T> T getConfiguredInstance(String className, Map<String, ?> configs) {
         try {
             Class<T> cls = (Class<T>) Class.forName(className);
-            if (cls == null) {
-                return null;
-            }
             Object o = Utils.newInstance(cls);
             if (o instanceof Configurable) {
                 ((Configurable) o).configure(configs);

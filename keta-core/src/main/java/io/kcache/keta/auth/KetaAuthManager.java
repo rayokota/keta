@@ -427,6 +427,8 @@ public class KetaAuthManager {
                     case WRITE:
                         perms.getWritePerms().put(interval, null);
                         break;
+                    default:
+                        throw new IllegalArgumentException("Unrecognized type " + p.getPermType());
                 }
             }
         }
