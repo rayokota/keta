@@ -22,28 +22,28 @@ import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
+import io.grpc.netty.NegotiationType;
+import io.grpc.netty.NettyChannelBuilder;
+import io.kcache.keta.KetaConfig;
+import io.kcache.keta.server.grpc.utils.SslFactory;
+import io.kcache.keta.server.leader.KetaIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A grpc-level proxy.
@@ -51,31 +51,42 @@ import java.util.concurrent.TimeUnit;
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcProxy.class);
 
-    private String target;
+    private KetaConfig config;
+    private KetaIdentity target;
     private ManagedChannel channel;
 
-    public GrpcProxy(String target) {
+    public GrpcProxy(KetaConfig config, KetaIdentity target) {
+        this.config = config;
         setTarget(target);
     }
 
-    public synchronized String getTarget() {
+    public synchronized KetaIdentity getTarget() {
         return target;
     }
 
-    public synchronized void setTarget(String target) {
-        if (!Objects.equals(this.target, target)) {
-            if (channel != null) {
-                LOG.info("Shutting down channel");
-                channel.shutdown();
-                channel = null;
+    public synchronized void setTarget(KetaIdentity target) {
+        try {
+            if (!Objects.equals(this.target, target)) {
+                if (channel != null) {
+                    LOG.info("Shutting down channel");
+                    channel.shutdown();
+                    channel = null;
+                }
+                if (target != null) {
+                    LOG.info("Setting up proxy to {}", target);
+                    NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
+                    if (target.getScheme().equals("https")) {
+                        builder.negotiationType(NegotiationType.TLS)
+                            .sslContext(new SslFactory(config, false).sslContext());
+                    } else {
+                        builder.negotiationType(NegotiationType.PLAINTEXT);
+                    }
+                    channel = builder.build();
+                }
+                this.target = target;
             }
-            if (target != null) {
-                LOG.info("Setting up proxy to {}", target);
-                channel = ManagedChannelBuilder.forTarget(target)
-                    .usePlaintext()
-                    .build();
-            }
-            this.target = target;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -236,38 +247,6 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                     .build();
                 return ServerMethodDefinition.create(methodDescriptor, proxy);
             }
-        }
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-        String target = "localhost:8980";
-        LOG.info("Proxy will connect to " + target);
-        GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(target);
-        ManagedChannel channel = proxy.getChannel();
-        int port = 8981;
-        Server server = ServerBuilder.forPort(port)
-            .fallbackHandlerRegistry(new Registry(proxy, Collections.emptyList()))
-            .build()
-            .start();
-        LOG.info("Proxy started, listening on " + port);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                server.shutdown();
-                try {
-                    server.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
-                if (!server.isTerminated()) {
-                    server.shutdownNow();
-                }
-                channel.shutdownNow();
-            }
-        });
-        server.awaitTermination();
-        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
-            System.out.println("Channel didn't shut down promptly");
         }
     }
 }

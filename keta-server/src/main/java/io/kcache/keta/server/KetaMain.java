@@ -76,7 +76,7 @@ public class KetaMain extends AbstractVerticle {
             .intercept(new AuthServerInterceptor());
 
         if (isTls()) {
-            nettyBuilder.sslContext(new SslFactory(config).sslContext());
+            nettyBuilder.sslContext(new SslFactory(config, true).sslContext());
         }
 
         VertxServer server = serverBuilder.build();
@@ -109,7 +109,7 @@ public class KetaMain extends AbstractVerticle {
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
             Vertx vertx = Vertx.vertx();
-            GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(null);
+            GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(config, null);
             LOG.info("Starting leader election...");
             KetaLeaderElector elector = new KetaLeaderElector(config, engine, proxy);
             engine.init(elector, new KetaNotifier(vertx.eventBus()));

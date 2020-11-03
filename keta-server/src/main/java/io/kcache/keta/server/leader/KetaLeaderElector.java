@@ -356,7 +356,7 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
 
             this.leader = leader;
         }
-        proxy.setTarget(leader == null || myIdentity.equals(leader) ? null : leader.getHost() + ":" + leader.getPort());
+        proxy.setTarget(leader == null || myIdentity.equals(leader) ? null : leader);
     }
 
     public Collection<KetaIdentity> getMembers() {
