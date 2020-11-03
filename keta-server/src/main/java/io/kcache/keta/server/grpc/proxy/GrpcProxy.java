@@ -65,29 +65,25 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     }
 
     public synchronized void setTarget(KetaIdentity target) {
-        try {
-            if (!Objects.equals(this.target, target)) {
-                if (channel != null) {
-                    LOG.info("Shutting down channel");
-                    channel.shutdown();
-                    channel = null;
-                }
-                if (target != null) {
-                    LOG.info("Setting up proxy to {}", target);
-                    NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
-                    if (target.getScheme().equals("https")) {
-                        builder.negotiationType(NegotiationType.TLS)
-                            // Need at least trustManager for client
-                            .sslContext(new SslFactory(config, false).sslContext());
-                    } else {
-                        builder.negotiationType(NegotiationType.PLAINTEXT);
-                    }
-                    channel = builder.build();
-                }
-                this.target = target;
+        if (!Objects.equals(this.target, target)) {
+            if (channel != null) {
+                LOG.info("Shutting down channel");
+                channel.shutdown();
+                channel = null;
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (target != null) {
+                LOG.info("Setting up proxy to {}", target);
+                NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
+                if (target.getScheme().equals("https")) {
+                    builder.negotiationType(NegotiationType.TLS)
+                        // Need at least trustManager for client
+                        .sslContext(new SslFactory(config, false).sslContext());
+                } else {
+                    builder.negotiationType(NegotiationType.PLAINTEXT);
+                }
+                channel = builder.build();
+            }
+            this.target = target;
         }
     }
 
