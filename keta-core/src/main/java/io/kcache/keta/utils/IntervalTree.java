@@ -199,7 +199,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Find the earliest interval in the tree greater than or equal to the specified interval.
      *
      * @param interval The interval.
-     * @return The earliest >= interval, or null if there is none.
+     * @return The earliest &gt;= interval, or null if there is none.
      */
     @SuppressWarnings("null")
     public Node<K, V> min(final Range<K> interval) {
@@ -282,7 +282,7 @@ public class IntervalTree<K extends Comparable<K>, V> implements Iterable<Interv
      * Find the latest interval in the tree less than or equal to the specified interval.
      *
      * @param interval The interval.
-     * @return The latest >= interval, or null if there is none.
+     * @return The latest &gt;= interval, or null if there is none.
      */
     @SuppressWarnings("null")
     public Node<K, V> max(final Range<K> interval) {
