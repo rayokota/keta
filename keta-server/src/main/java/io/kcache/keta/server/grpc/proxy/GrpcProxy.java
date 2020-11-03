@@ -86,8 +86,9 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                         builder.usePlaintext();
                     } else {
                         LOG.info("Not using plaintext");
-                        builder.overrideAuthority("localhost").negotiationType(NegotiationType.TLS);
-                        builder.sslContext(GrpcSslContexts.configure(SslContextBuilder.forClient(), SslProvider.OPENSSL)
+                        builder.useTransportSecurity();
+                        builder.sslContext(
+                            GrpcSslContexts.configure(SslContextBuilder.forClient())
                                         .trustManager(new File("/Users/ryokota/data/certs/ca.pem")).build());
 
                     }
