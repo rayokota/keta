@@ -77,6 +77,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                     NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
                     if (target.getScheme().equals("https")) {
                         builder.negotiationType(NegotiationType.TLS)
+                            // Need at least trustManager for client
                             .sslContext(new SslFactory(config, false).sslContext());
                     } else {
                         builder.negotiationType(NegotiationType.PLAINTEXT);
