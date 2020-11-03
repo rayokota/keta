@@ -22,14 +22,14 @@ import io.kcache.keta.pb.Lease;
 
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LeaseKeys {
     private final Lease lease;
     private final Set<ByteString> keys;
 
     public LeaseKeys(Lease lease) {
-        this(lease, new ConcurrentSkipListSet<>());
+        this(lease, ConcurrentHashMap.newKeySet());
     }
 
     public LeaseKeys(Lease lease, Set<ByteString> keys) {
