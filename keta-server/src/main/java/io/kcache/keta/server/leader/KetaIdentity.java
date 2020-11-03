@@ -184,4 +184,9 @@ public class KetaIdentity {
     public String getUrl() {
         return String.format("%s://%s:%d", scheme, host, port);
     }
+
+    @JsonIgnore
+    public boolean isSecure() {
+        return "https".equalsIgnoreCase(scheme);
+    }
 }

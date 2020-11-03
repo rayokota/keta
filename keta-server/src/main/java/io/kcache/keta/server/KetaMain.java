@@ -57,6 +57,7 @@ public class KetaMain extends AbstractVerticle {
                 this.context.config().getInteger("listen-port", listener.getPort()));
 
         List<ServerServiceDefinition> services = Arrays.asList(
+            new AuthService(elector).bindService(),
             new KVService(elector).bindService(),
             new LeaseService(elector).bindService()
         );
@@ -68,7 +69,6 @@ public class KetaMain extends AbstractVerticle {
             // see https://issues.apache.org/jira/browse/RATIS-606
             .withChildOption(ChannelOption.SO_REUSEADDR, true)
             .withChildOption(ChannelOption.TCP_NODELAY, true)
-            .addService(new AuthService(elector))
             .addService(new ClusterService(elector))
             .addService(new MaintenanceService(elector))
             .addService(new WatchService(elector))  // WatchService can go to any node
