@@ -71,35 +71,29 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     }
 
     public synchronized void setTarget(KetaIdentity target) {
-        try {
-            if (!Objects.equals(this.target, target)) {
-                if (channel != null) {
-                    LOG.info("Shutting down channel");
-                    channel.shutdown();
-                    channel = null;
-                }
-                if (target != null) {
-                    LOG.info("Setting up proxy to {}", target);
-                    NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
-                    if (!target.getScheme().equals("https")) {
-                        LOG.info("Using plaintext");
-                        builder.usePlaintext();
-                    } else {
-                        LOG.info("Not using plaintext");
-                        builder.useTransportSecurity();
-                        builder.sslContext(
-                            GrpcSslContexts.configure(SslContextBuilder.forClient())
-                                        .trustManager(new File("/Users/ryokota/data/certs/ca.pem")).build());
-
-                    }
-                    channel = builder.build();
-                }
-                this.target = target;
+        if (!Objects.equals(this.target, target)) {
+            if (channel != null) {
+                LOG.info("Shutting down channel");
+                channel.shutdown();
+                channel = null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            if (target != null) {
+                LOG.info("Setting up proxy to {}", target);
+                NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
+                if (!target.getScheme().equals("https")) {
+                    LOG.info("Using plaintext");
+                    builder.usePlaintext();
+                } else {
+                    LOG.info("Not using plaintext");
+                    builder.useTransportSecurity();
+                    builder.sslContext(
+                        GrpcSslContexts.configure(SslContextBuilder.forClient())
+                                    .trustManager(new File("/Users/ryokota/data/certs/ca.pem")).build());
 
+                }
+                channel = builder.build();
+            }
+            this.target = target;
         }
     }
 
@@ -109,18 +103,13 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
     @Override
     public ServerCall.Listener<ReqT> startCall(ServerCall<ReqT, RespT> serverCall, Metadata headers) {
-        try {
-            ClientCall<ReqT, RespT> clientCall
-                = getChannel().newCall(serverCall.getMethodDescriptor(), CallOptions.DEFAULT);
-            CallProxy<ReqT, RespT> proxy = new CallProxy<>(serverCall, clientCall);
-            clientCall.start(proxy.clientCallListener, headers);
-            serverCall.request(1);
-            clientCall.request(1);
-            return proxy.serverCallListener;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
+        ClientCall<ReqT, RespT> clientCall
+            = getChannel().newCall(serverCall.getMethodDescriptor(), CallOptions.DEFAULT);
+        CallProxy<ReqT, RespT> proxy = new CallProxy<>(serverCall, clientCall);
+        clientCall.start(proxy.clientCallListener, headers);
+        serverCall.request(1);
+        clientCall.request(1);
+        return proxy.serverCallListener;
     }
 
     private static class CallProxy<ReqT, RespT> {
@@ -153,40 +142,25 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
             @Override
             public void onMessage(ReqT message) {
-                try {
-                    clientCall.sendMessage(message);
-                    synchronized (this) {
-                        if (clientCall.isReady()) {
-                            clientCallListener.serverCall.request(1);
-                        } else {
-                            needToRequest = true;
-                        }
+                clientCall.sendMessage(message);
+                synchronized (this) {
+                    if (clientCall.isReady()) {
+                        clientCallListener.serverCall.request(1);
+                    } else {
+                        needToRequest = true;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
                 }
             }
 
             @Override
             public void onReady() {
-                try {
-                    clientCallListener.onServerReady();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                }
+                clientCallListener.onServerReady();
             }
 
             synchronized void onClientReady() {
-                try {
-                    if (needToRequest) {
-                        clientCallListener.serverCall.request(1);
-                        needToRequest = false;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
+                if (needToRequest) {
+                    clientCallListener.serverCall.request(1);
+                    needToRequest = false;
                 }
             }
         }
@@ -212,40 +186,25 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
             @Override
             public void onMessage(RespT message) {
-                try {
-                    serverCall.sendMessage(message);
-                    synchronized (this) {
-                        if (serverCall.isReady()) {
-                            serverCallListener.clientCall.request(1);
-                        } else {
-                            needToRequest = true;
-                        }
+                serverCall.sendMessage(message);
+                synchronized (this) {
+                    if (serverCall.isReady()) {
+                        serverCallListener.clientCall.request(1);
+                    } else {
+                        needToRequest = true;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
                 }
             }
 
             @Override
             public void onReady() {
-                try {
-                    serverCallListener.onClientReady();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                }
+                serverCallListener.onClientReady();
             }
 
             synchronized void onServerReady() {
-                try {
-                    if (needToRequest) {
-                        serverCallListener.clientCall.request(1);
-                        needToRequest = false;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
+                if (needToRequest) {
+                    serverCallListener.clientCall.request(1);
+                    needToRequest = false;
                 }
             }
         }
@@ -257,7 +216,6 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
             try {
                 return ByteStreams.toByteArray(stream);
             } catch (IOException ex) {
-                ex.printStackTrace();
                 throw new RuntimeException(ex);
             }
         }
