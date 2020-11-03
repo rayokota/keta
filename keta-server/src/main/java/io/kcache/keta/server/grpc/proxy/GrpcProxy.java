@@ -71,29 +71,31 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     }
 
     public synchronized void setTarget(KetaIdentity target) {
-        if (!Objects.equals(this.target, target)) {
-            if (channel != null) {
-                LOG.info("Shutting down channel");
-                channel.shutdown();
-                channel = null;
-            }
-            if (target != null) {
-                LOG.info("Setting up proxy to {}", target);
-                NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
-                if (!target.getScheme().equals("https")) {
-                    LOG.info("Using plaintext");
-                    builder.usePlaintext();
-                } else {
-                    LOG.info("Not using plaintext");
-                    builder.useTransportSecurity();
-                    builder.sslContext(
-                        GrpcSslContexts.configure(SslContextBuilder.forClient())
-                                    .trustManager(new File("/Users/ryokota/data/certs/ca.pem")).build());
-
+        try {
+            if (!Objects.equals(this.target, target)) {
+                if (channel != null) {
+                    LOG.info("Shutting down channel");
+                    channel.shutdown();
+                    channel = null;
                 }
-                channel = builder.build();
+                if (target != null) {
+                    LOG.info("Setting up proxy to {}", target);
+                    NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
+                    if (!target.getScheme().equals("https")) {
+                        builder.usePlaintext();
+                    } else {
+                        builder.useTransportSecurity();
+                        builder.sslContext(
+                            GrpcSslContexts.configure(SslContextBuilder.forClient())
+                                .trustManager(new File("/Users/ryokota/data/certs/ca.pem")).build());
+
+                    }
+                    channel = builder.build();
+                }
+                this.target = target;
             }
-            this.target = target;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
