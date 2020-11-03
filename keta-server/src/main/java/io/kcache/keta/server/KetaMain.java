@@ -76,7 +76,7 @@ public class KetaMain extends AbstractVerticle {
             .intercept(new AuthServerInterceptor());
 
         if (isTls()) {
-            nettyBuilder.sslContext(new SslFactory(config).sslContext());
+            nettyBuilder.sslContext(new SslFactory(config, true).sslContext());
         }
 
         VertxServer server = serverBuilder.build();

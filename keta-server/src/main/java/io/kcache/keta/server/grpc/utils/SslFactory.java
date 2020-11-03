@@ -37,6 +37,7 @@ import static io.kcache.keta.KetaConfig.SSL_CLIENT_AUTHENTICATION_REQUIRED;
 
 public class SslFactory {
 
+    private final boolean isServer;
     private final String kmfAlgorithm;
     private final String tmfAlgorithm;
     private SecurityStore keystore = null;
@@ -45,7 +46,8 @@ public class SslFactory {
     private final ClientAuth clientAuth;
     private SslContext sslContext;
 
-    public SslFactory(KetaConfig config) {
+    public SslFactory(KetaConfig config, boolean isServer) {
+        this.isServer = isServer;
         this.kmfAlgorithm = config.getString(KetaConfig.SSL_KEYMANAGER_ALGORITHM_CONFIG);
         this.tmfAlgorithm = config.getString(KetaConfig.SSL_TRUSTMANAGER_ALGORITHM_CONFIG);
 
@@ -90,7 +92,12 @@ public class SslFactory {
         Password keyPassword = this.keyPassword != null ? this.keyPassword : keystore.password;
         kmf.init(ks, keyPassword.value().toCharArray());
 
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(kmf);
+        SslContextBuilder sslContextBuilder;
+        if (isServer) {
+            sslContextBuilder = SslContextBuilder.forServer(kmf);
+        } else {
+            sslContextBuilder = SslContextBuilder.forClient().keyManager(kmf);
+        }
 
         if (truststore != null) {
             String tmfAlgorithm =
@@ -153,19 +160,19 @@ public class SslFactory {
         }
     }
 
-    public static class SecurityStore {
+    private static class SecurityStore {
 
         private final String type;
         private final String path;
         private final Password password;
 
-        public SecurityStore(String type, String path, Password password) {
+        private SecurityStore(String type, String path, Password password) {
             this.type = type == null ? KeyStore.getDefaultType() : type;
             this.path = path;
             this.password = password;
         }
 
-        public KeyStore load() throws GeneralSecurityException, IOException {
+        private KeyStore load() throws GeneralSecurityException, IOException {
             FileInputStream in = null;
             try {
                 KeyStore ks = KeyStore.getInstance(type);

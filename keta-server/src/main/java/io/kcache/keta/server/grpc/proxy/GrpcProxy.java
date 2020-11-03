@@ -22,43 +22,27 @@ import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
-import io.grpc.netty.GrpcSslContexts;
-import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
 import io.kcache.keta.KetaConfig;
-import io.kcache.keta.server.grpc.utils.SslFactory.SecurityStore;
+import io.kcache.keta.server.grpc.utils.SslFactory;
 import io.kcache.keta.server.leader.KetaIdentity;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslProvider;
-import org.apache.kafka.common.config.types.Password;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A grpc-level proxy.
@@ -94,7 +78,7 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                         builder.usePlaintext();
                     } else {
                         builder.useTransportSecurity()
-                            .sslContext(createSslContext(config));
+                            .sslContext(new SslFactory(config, false).sslContext());
                     }
                     channel = builder.build();
                 }
@@ -103,44 +87,6 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private SslContext createSslContext(KetaConfig config) throws GeneralSecurityException, IOException {
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
-
-        SecurityStore truststore = createTruststore(
-            config.getString(KetaConfig.SSL_TRUSTSTORE_TYPE_CONFIG),
-            config.getString(KetaConfig.SSL_TRUSTSTORE_LOCATION_CONFIG),
-            config.getPassword(KetaConfig.SSL_TRUSTSTORE_PASSWORD_CONFIG)
-        );
-
-        String tmfAlgorithm = config.getString(KetaConfig.SSL_TRUSTMANAGER_ALGORITHM_CONFIG);
-        if (!isNotBlank(tmfAlgorithm)) {
-            tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-
-        }
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-        KeyStore ts = truststore.load();
-        tmf.init(ts);
-
-        sslContextBuilder.trustManager(tmf);
-        sslContextBuilder = GrpcSslContexts.configure(sslContextBuilder);
-        return sslContextBuilder.build();
-    }
-
-    private SecurityStore createTruststore(String type, String path, Password password) {
-        if (path == null && password != null) {
-            throw new RuntimeException(
-                "SSL trust store is not specified, but trust store password is specified.");
-        } else if (isNotBlank(path)) {
-            return new SecurityStore(type, path, password);
-        } else {
-            throw new RuntimeException("Empty trust store path");
-        }
-    }
-
-    private static boolean isNotBlank(String str) {
-        return str != null && !str.trim().isEmpty();
     }
 
     public synchronized ManagedChannel getChannel() {
