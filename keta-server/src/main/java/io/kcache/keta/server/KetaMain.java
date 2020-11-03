@@ -109,7 +109,7 @@ public class KetaMain extends AbstractVerticle {
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
             Vertx vertx = Vertx.vertx();
-            GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(null);
+            GrpcProxy<byte[], byte[]> proxy = new GrpcProxy<>(config, null);
             LOG.info("Starting leader election...");
             KetaLeaderElector elector = new KetaLeaderElector(config, engine, proxy);
             engine.init(elector, new KetaNotifier(vertx.eventBus()));

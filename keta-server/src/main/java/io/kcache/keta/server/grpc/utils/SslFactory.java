@@ -153,19 +153,19 @@ public class SslFactory {
         }
     }
 
-    private static class SecurityStore {
+    public static class SecurityStore {
 
         private final String type;
         private final String path;
         private final Password password;
 
-        private SecurityStore(String type, String path, Password password) {
+        public SecurityStore(String type, String path, Password password) {
             this.type = type == null ? KeyStore.getDefaultType() : type;
             this.path = path;
             this.password = password;
         }
 
-        private KeyStore load() throws GeneralSecurityException, IOException {
+        public KeyStore load() throws GeneralSecurityException, IOException {
             FileInputStream in = null;
             try {
                 KeyStore ks = KeyStore.getInstance(type);
