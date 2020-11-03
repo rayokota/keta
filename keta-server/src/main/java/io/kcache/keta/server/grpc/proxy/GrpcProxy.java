@@ -29,6 +29,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
+import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.server.grpc.utils.SslFactory;
@@ -74,11 +75,11 @@ public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
                 if (target != null) {
                     LOG.info("Setting up proxy to {}", target);
                     NettyChannelBuilder builder = NettyChannelBuilder.forAddress(target.getHost(), target.getPort());
-                    if (!target.getScheme().equals("https")) {
-                        builder.usePlaintext();
-                    } else {
-                        builder.useTransportSecurity()
+                    if (target.getScheme().equals("https")) {
+                        builder.negotiationType(NegotiationType.TLS)
                             .sslContext(new SslFactory(config, false).sslContext());
+                    } else {
+                        builder.negotiationType(NegotiationType.PLAINTEXT);
                     }
                     channel = builder.build();
                 }
