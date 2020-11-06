@@ -34,6 +34,7 @@ import org.apache.omid.transaction.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -140,5 +141,9 @@ public class KetaLeaseManager {
             expiringMap.put(id, newlk, duration, TimeUnit.MILLISECONDS);
         }
         return newlk;
+    }
+
+    public Set<Long> leaseIds() {
+        return cache.keySet();
     }
 }

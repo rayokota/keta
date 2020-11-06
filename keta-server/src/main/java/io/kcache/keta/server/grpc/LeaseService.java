@@ -23,8 +23,11 @@ import io.etcd.jetcd.api.LeaseGrantResponse;
 import io.etcd.jetcd.api.LeaseGrpc;
 import io.etcd.jetcd.api.LeaseKeepAliveRequest;
 import io.etcd.jetcd.api.LeaseKeepAliveResponse;
+import io.etcd.jetcd.api.LeaseLeasesRequest;
+import io.etcd.jetcd.api.LeaseLeasesResponse;
 import io.etcd.jetcd.api.LeaseRevokeRequest;
 import io.etcd.jetcd.api.LeaseRevokeResponse;
+import io.etcd.jetcd.api.LeaseStatus;
 import io.etcd.jetcd.api.LeaseTimeToLiveRequest;
 import io.etcd.jetcd.api.LeaseTimeToLiveResponse;
 import io.grpc.stub.StreamObserver;
@@ -40,6 +43,8 @@ import io.kcache.keta.server.leader.KetaLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class LeaseService extends LeaseGrpc.LeaseImplBase {
@@ -171,6 +176,29 @@ public class LeaseService extends LeaseGrpc.LeaseImplBase {
                 builder.addAllKeys(lease.getKeys());
             }
             responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(GrpcUtils.toStatusException(e));
+        }
+    }
+
+    @Override
+    public void leaseLeases(LeaseLeasesRequest request, StreamObserver<LeaseLeasesResponse> responseObserver) {
+        if (!KetaEngine.getInstance().isLeader()) {
+            responseObserver.onError((KetaErrorType.LeaderChanged.toException()));
+            return;
+        }
+        LOG.info("Lease leases request");
+        KetaLeaseManager leaseMgr = KetaEngine.getInstance().getLeaseManager();
+        try {
+            List<LeaseStatus> leases = leaseMgr.leaseIds().stream()
+                .map(l -> LeaseStatus.newBuilder()
+                    .setID(l)
+                    .build())
+                .collect(Collectors.toList());
+            responseObserver.onNext(LeaseLeasesResponse.newBuilder()
+                .addAllLeases(leases)
+                .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(GrpcUtils.toStatusException(e));
