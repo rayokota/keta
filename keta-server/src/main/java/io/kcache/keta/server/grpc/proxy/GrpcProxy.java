@@ -51,7 +51,7 @@ import java.util.Objects;
 public class GrpcProxy<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcProxy.class);
 
-    private KetaConfig config;
+    private final KetaConfig config;
     private KetaIdentity target;
     private ManagedChannel channel;
 

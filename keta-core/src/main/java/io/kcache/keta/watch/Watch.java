@@ -19,7 +19,6 @@ package io.kcache.keta.watch;
 
 import com.google.protobuf.ByteString;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class Watch {

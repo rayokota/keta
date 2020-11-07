@@ -25,7 +25,6 @@ import io.etcd.jetcd.api.DeleteRangeRequest;
 import io.etcd.jetcd.api.DeleteRangeResponse;
 import io.etcd.jetcd.api.KVGrpc;
 import io.etcd.jetcd.api.KeyValue;
-import io.etcd.jetcd.api.Permission;
 import io.etcd.jetcd.api.PutRequest;
 import io.etcd.jetcd.api.PutResponse;
 import io.etcd.jetcd.api.RangeRequest;
