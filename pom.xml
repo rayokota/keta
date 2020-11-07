@@ -3,7 +3,7 @@
 
     <groupId>io.kcache</groupId>
     <artifactId>keta-parent</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
 
     <name>keta</name>
@@ -27,7 +27,7 @@
         <connection>scm:git:git://github.com:rayokota/keta.git</connection>
         <developerConnection>scm:git:git@github.com:rayokota/keta.git</developerConnection>
         <url>git@github.com:rayokota/keta.git</url>
-        <tag>HEAD</tag>
+        <tag>keta-parent-0.2.0</tag>
     </scm>
 
     <modules>
