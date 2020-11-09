@@ -140,4 +140,4 @@ Keta uses seven topics to hold metadata:
 - `_keta_commits` - A topic that holds the list of committed transactions.
 - `_keta_timestamps` - A topic that stores the maximum timestamp that the transaction manager is allowed to return to clients.
 
-
+For more info on Keta, see this [blog post](https://yokota.blog/2020/11/09/keta-a-metadata-store-backed-by-apache-kafka/).
