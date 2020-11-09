@@ -84,7 +84,7 @@ $ etcdctl put stock1 10
 $ etcdctl put stock2 20
 ```
 
-If multiple Keta servers are configured with the same cluster group ID (see [Configuration](#configuration)), then they will form a cluster and one of them will be elected as leader, while the others will become followers (replicas).  If a follower receives a request, it will be forwarded to the leader.  If the leader fails, one of the followers will be elected as the new leader.
+If multiple Keta servers are configured with the same cluster group ID (see [Basic Configuration](#basic-configuration)), then they will form a cluster and one of them will be elected as leader, while the others will become followers (replicas).  If a follower receives a request, it will be forwarded to the leader.  If the leader fails, one of the followers will be elected as the new leader.
 
 
 
