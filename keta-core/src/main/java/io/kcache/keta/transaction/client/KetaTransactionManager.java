@@ -17,7 +17,6 @@
  */
 package io.kcache.keta.transaction.client;
 
-import com.google.common.base.Optional;
 import io.kcache.keta.pb.VersionedValue;
 import io.kcache.keta.transaction.InMemoryCommitTable;
 import io.kcache.keta.transaction.InMemoryTimestampStorage;
@@ -30,7 +29,6 @@ import org.apache.omid.metrics.NullMetricsProvider;
 import org.apache.omid.timestamp.storage.TimestampStorage;
 import org.apache.omid.transaction.AbstractTransaction;
 import org.apache.omid.transaction.AbstractTransactionManager;
-import org.apache.omid.transaction.AbstractTransactionManagerShim;
 import org.apache.omid.transaction.CommitTimestampLocator;
 import org.apache.omid.transaction.PostCommitActions;
 import org.apache.omid.transaction.TransactionException;
@@ -38,6 +36,7 @@ import org.apache.omid.transaction.TransactionManagerException;
 import org.apache.omid.tso.SystemExitPanicker;
 import org.apache.omid.tso.TimestampOracle;
 import org.apache.omid.tso.client.CellId;
+import org.apache.phoenix.thirdparty.com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-public class KetaTransactionManager extends AbstractTransactionManagerShim {
+public class KetaTransactionManager extends AbstractTransactionManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(KetaTransactionManager.class);
 
@@ -151,7 +150,7 @@ public class KetaTransactionManager extends AbstractTransactionManagerShim {
     }
 
     @Override
-    public void closeResources() throws IOException {
+    protected void closeResources() throws IOException {
     }
 
     @Override
