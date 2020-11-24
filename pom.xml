@@ -52,7 +52,7 @@
         <kcache.version>3.3.6</kcache.version>
         <mockito.version>3.6.0</mockito.version>
         <omid.version>1.0.2</omid.version>
-        <protobuf.version>3.11.4</protobuf.version>
+        <protobuf.version>3.14.0</protobuf.version>
         <scala.version>${kafka.scala.version}.3</scala.version>
         <sl4j.version>1.7.30</sl4j.version>
         <vertx.version>3.9.4</vertx.version>
