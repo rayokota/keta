@@ -50,7 +50,7 @@
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kcache.version>3.3.6</kcache.version>
-        <mockito.version>3.6.0</mockito.version>
+        <mockito.version>3.6.28</mockito.version>
         <omid.version>1.0.2</omid.version>
         <protobuf.version>3.11.4</protobuf.version>
         <scala.version>${kafka.scala.version}.3</scala.version>
