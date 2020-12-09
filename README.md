@@ -1,6 +1,6 @@
 # Keta - A Transactional Metadata Store Backed by Apache Kafka
 
-[![Build Status][travis-shield]][travis-link]
+[![Build Status][github-actions-shield]][github-actions-link]
 [![Maven][maven-shield]][maven-link]
 [![Javadoc][javadoc-shield]][javadoc-link]
 
