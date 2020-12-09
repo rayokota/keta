@@ -4,8 +4,8 @@
 [![Maven][maven-shield]][maven-link]
 [![Javadoc][javadoc-shield]][javadoc-link]
 
-[travis-shield]: https://travis-ci.org/rayokota/keta.svg?branch=master
-[travis-link]: https://travis-ci.org/rayokota/keta
+[github-actions-shield]: https://github.com/rayokota/keta/workflows
+[github-actions-link]: https://github.com/rayokota/keta/workflows/Java%20CI/badge.svg
 [maven-shield]: https://img.shields.io/maven-central/v/io.kcache/keta-core.svg
 [maven-link]: https://search.maven.org/#search%7Cga%7C1%7Cketa-core
 [javadoc-shield]: https://javadoc.io/badge/io.kcache/keta-core.svg?color=blue
