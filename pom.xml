@@ -39,7 +39,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <assertj.version>3.18.0</assertj.version>
+        <assertj.version>3.19.0</assertj.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <grpc.version>1.33.1</grpc.version>
         <guava.version>28.2-jre</guava.version>
