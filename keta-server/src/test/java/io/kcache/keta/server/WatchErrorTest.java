@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import static io.kcache.keta.server.utils.TestUtils.randomByteSequence;
 import static org.assertj.core.api.Assertions.assertThat;
 
+// This test hangs on Linux builds
 @Ignore
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
