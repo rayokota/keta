@@ -57,7 +57,7 @@ public class WatchErrorTest extends RemoteClusterTestHarness {
         super.setUp(vertx);
     }
 
-    @AfterEach
+    //@AfterEach
     public void tearDown() throws Exception {
         super.tearDown();
     }
