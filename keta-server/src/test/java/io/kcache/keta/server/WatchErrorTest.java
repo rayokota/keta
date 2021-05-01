@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import static io.kcache.keta.server.utils.TestUtils.randomByteSequence;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Ignore
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class WatchErrorTest extends RemoteClusterTestHarness {
@@ -63,7 +64,6 @@ public class WatchErrorTest extends RemoteClusterTestHarness {
         super.tearDown();
     }
 
-    @Ignore
     @Test
     public void testWatchOnError() throws Exception {
         final ByteSequence key = randomByteSequence();
