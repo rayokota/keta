@@ -25,6 +25,7 @@ import io.kcache.keta.server.utils.RemoteClusterTestHarness;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,11 +58,12 @@ public class WatchErrorTest extends RemoteClusterTestHarness {
         super.setUp(vertx);
     }
 
-    //@AfterEach
+    @AfterEach
     public void tearDown() throws Exception {
         super.tearDown();
     }
 
+    @Ignore
     @Test
     public void testWatchOnError() throws Exception {
         final ByteSequence key = randomByteSequence();
