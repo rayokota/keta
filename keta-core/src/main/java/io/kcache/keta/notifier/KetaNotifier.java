@@ -91,18 +91,18 @@ public class KetaNotifier implements Notifier {
     }
 
     @Override
-    public boolean validateUpdate(byte[] key, VersionedValues value, TopicPartition tp, long offset, long timestamp) {
+    public ValidationStatus validateUpdate(byte[] key, VersionedValues value, TopicPartition tp, long offset, long timestamp) {
         if (value == null) {
-            return true;
+            return ValidationStatus.SUCCESS;
         }
         int generationId = value.getGenerationId();
         if (generationId < maxGenerationId) {
             LOG.error("Value with generation {}, but max generation {}", generationId, maxGenerationId);
-            return false;
+            return ValidationStatus.ROLLBACK_FAILURE;
         } else if (generationId > maxGenerationId) {
             maxGenerationId = generationId;
         }
-        return true;
+        return ValidationStatus.SUCCESS;
     }
 
     @Override
