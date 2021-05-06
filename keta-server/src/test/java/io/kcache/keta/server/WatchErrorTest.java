@@ -28,6 +28,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,6 +63,7 @@ public class WatchErrorTest extends RemoteClusterTestHarness {
         super.tearDown();
     }
 
+    @Disabled("This test hangs on Linux builds")
     @Test
     public void testWatchOnError() throws Exception {
         final ByteSequence key = randomByteSequence();
