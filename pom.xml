@@ -46,7 +46,7 @@
         <jackson.version>2.12.4</jackson.version>
         <jetcd.version>0.5.10</jetcd.version>
         <junit-jupiter.version>5.8.1</junit-jupiter.version>
-        <kafka.version>2.8.0</kafka.version>
+        <kafka.version>3.0.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kcache.version>3.4.6</kcache.version>
         <mockito.version>3.12.4</mockito.version>
