@@ -153,7 +153,7 @@ public class KetaCoordinatorTest {
     public void testNormalJoinGroupLeader() {
         final String consumerId = LEADER_ID;
 
-        client.prepareResponse(groupCoordinatorResponse(node, Errors.NONE));
+        client.prepareResponse(groupCoordinatorResponse(node, consumerId, Errors.NONE));
         coordinator.ensureCoordinatorReady(time.timer(Long.MAX_VALUE));
 
         // normal join group
@@ -189,7 +189,7 @@ public class KetaCoordinatorTest {
     public void testJoinGroupLeaderNoneEligible() {
         final String consumerId = LEADER_ID;
 
-        client.prepareResponse(groupCoordinatorResponse(node, Errors.NONE));
+        client.prepareResponse(groupCoordinatorResponse(node, consumerId, Errors.NONE));
         coordinator.ensureCoordinatorReady(time.timer(Long.MAX_VALUE));
 
         Map<String, KetaIdentity> memberInfo = Collections.singletonMap(
@@ -229,7 +229,7 @@ public class KetaCoordinatorTest {
     public void testJoinGroupLeaderDuplicateUrls() {
         final String consumerId = LEADER_ID;
 
-        client.prepareResponse(groupCoordinatorResponse(node, Errors.NONE));
+        client.prepareResponse(groupCoordinatorResponse(node, consumerId, Errors.NONE));
         coordinator.ensureCoordinatorReady(time.timer(Long.MAX_VALUE));
 
         Map<String, KetaIdentity> memberInfo = new HashMap<>();
@@ -268,7 +268,7 @@ public class KetaCoordinatorTest {
     public void testNormalJoinGroupFollower() {
         final String consumerId = MEMBER_ID;
 
-        client.prepareResponse(groupCoordinatorResponse(node, Errors.NONE));
+        client.prepareResponse(groupCoordinatorResponse(node, consumerId, Errors.NONE));
         coordinator.ensureCoordinatorReady(time.timer(Long.MAX_VALUE));
 
         // normal join group
@@ -299,8 +299,8 @@ public class KetaCoordinatorTest {
         assertEquals(LEADER_INFO, rebalanceListener.assignments.get(0).leaderIdentity());
     }
 
-    private FindCoordinatorResponse groupCoordinatorResponse(Node node, Errors error) {
-        return FindCoordinatorResponse.prepareResponse(error, node);
+    private FindCoordinatorResponse groupCoordinatorResponse(Node node, String key, Errors error) {
+        return FindCoordinatorResponse.prepareResponse(error, key, node);
     }
 
     private JoinGroupResponse joinGroupLeaderResponse(

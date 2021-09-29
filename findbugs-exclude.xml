@@ -6,16 +6,17 @@
         <Bug pattern="DM_EXIT"/>
     </Match>
     <Match>
-        <Class name="io.kcache.keta.transaction.client.KetaCellId"/>
+        <Class name="io.kcache.keta.utils.PemUtils"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+    <Match>
         <Bug pattern="EI_EXPOSE_REP"/>
     </Match>
     <Match>
-        <Class name="io.kcache.keta.transaction.client.KetaCellId"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
     <Match>
-        <Class name="io.kcache.keta.utils.PemUtils"/>
-        <Bug pattern="DM_DEFAULT_ENCODING"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
     </Match>
     <!-- exclude generated code -->
     <Match>

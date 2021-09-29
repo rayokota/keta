@@ -23,7 +23,6 @@ import io.kcache.keta.leader.LeaderElector;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.transaction.client.KetaTransactionManager;
 import org.apache.kafka.clients.ApiVersions;
-import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.ClientUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.Metadata;
@@ -149,7 +148,6 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
                 clientConfig.getInt(CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG),
                 10000L,
                 127000L,
-                ClientDnsLookup.forConfig(clientConfig.getString(CommonClientConfigs.CLIENT_DNS_LOOKUP_CONFIG)),
                 time,
                 true,
                 new ApiVersions(),
