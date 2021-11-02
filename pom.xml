@@ -52,7 +52,7 @@
         <mockito.version>4.0.0</mockito.version>
         <omid.version>1.0.2</omid.version>
         <protobuf.version>3.19.1</protobuf.version>
-        <scala.version>${kafka.scala.version}.6</scala.version>
+        <scala.version>2.13.7</scala.version>
         <sl4j.version>1.7.32</sl4j.version>
         <tcnative.version>2.0.44.Final</tcnative.version>
         <vertx.version>4.2.0</vertx.version>
