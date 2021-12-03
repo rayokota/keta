@@ -171,6 +171,10 @@
                         <artifactId>servlet-api</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>jdk.tools</groupId>
+                        <artifactId>jdk.tools</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
