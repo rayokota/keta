@@ -51,7 +51,7 @@
         <kcache.version>4.0.1</kcache.version>
         <mockito.version>4.2.0</mockito.version>
         <omid.version>1.0.2</omid.version>
-        <protobuf.version>3.19.1</protobuf.version>
+        <protobuf.version>3.19.2</protobuf.version>
         <scala.version>2.13.8</scala.version>
         <sl4j.version>1.7.32</sl4j.version>
         <tcnative.version>2.0.46.Final</tcnative.version>
