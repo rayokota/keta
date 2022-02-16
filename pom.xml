@@ -48,7 +48,7 @@
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
         <kafka.version>3.1.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
-        <kcache.version>4.0.1</kcache.version>
+        <kcache.version>4.0.2</kcache.version>
         <mockito.version>4.3.1</mockito.version>
         <omid.version>1.0.2</omid.version>
         <protobuf.version>3.19.4</protobuf.version>
