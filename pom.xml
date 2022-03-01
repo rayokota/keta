@@ -42,7 +42,7 @@
         <assertj.version>3.22.0</assertj.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <grpc.version>1.44.0</grpc.version>
-        <guava.version>31.0.1-jre</guava.version>
+        <guava.version>31.1-jre</guava.version>
         <jackson.version>2.13.1</jackson.version>
         <jetcd.version>0.5.11</jetcd.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
