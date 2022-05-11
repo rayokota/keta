@@ -19,10 +19,10 @@ package io.kcache.keta.watch;
 
 import com.google.common.collect.Range;
 import io.etcd.jetcd.api.Event;
+import io.kcache.keta.notifier.Handler;
 import io.kcache.keta.notifier.Notifier;
 import io.kcache.keta.utils.IntervalTree;
 import io.kcache.keta.watch.exceptions.WatchExistsException;
-import io.vertx.core.Handler;
 import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

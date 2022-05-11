@@ -17,7 +17,6 @@
 
 package io.kcache.keta.notifier;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.etcd.jetcd.api.Event;
 import io.kcache.keta.KetaEngine;
 import io.kcache.keta.pb.VersionedValue;
@@ -25,9 +24,6 @@ import io.kcache.keta.utils.ProtoUtils;
 import io.kcache.keta.version.VersionedValues;
 import io.kcache.keta.watch.KetaWatchManager;
 import io.kcache.keta.watch.Watch;
-import io.vertx.core.Handler;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,60 +31,23 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.kcache.keta.version.TxVersionedCache.INVALID_TX;
 import static io.kcache.keta.version.TxVersionedCache.PENDING_TX;
 
-/**
- * A Notifier that use Vertx Event Bus
- */
-public class KetaNotifier implements Notifier {
-    private static final Logger LOG = LoggerFactory.getLogger(KetaNotifier.class);
-
-    private final EventBus eventBus;
-
-    private final Map<Long, MessageConsumer<byte[]>> consumers;
+public abstract class AbstractNotifier implements Notifier {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractNotifier.class);
 
     private volatile int maxGenerationId = -1;
 
-    public KetaNotifier(EventBus eventBus) {
-        this.eventBus = eventBus;
-        this.consumers = new ConcurrentHashMap<>();
-    }
+    @Override
+    public abstract void publish(long watchID, Event event);
 
     @Override
-    public void publish(long watchID, Event event) {
-        LOG.info("publishing to {}", watchID);
-        this.eventBus.publish(String.valueOf(watchID), event.toByteArray());
-    }
+    public abstract void watch(long watchID, Handler<Event> handler);
 
     @Override
-    public void watch(long watchID, Handler<Event> handler) {
-        LOG.info("listening on {}", watchID);
-        MessageConsumer<byte[]> consumer = this.eventBus.consumer(String.valueOf(watchID), message -> {
-            LOG.info("received a message from the eventbus: '{}'", message);
-            if (message.body() instanceof byte[]) {
-                try {
-                    Event event = Event.newBuilder()
-                        .mergeFrom(message.body())
-                        .build();
-                    handler.handle(event);
-                } catch (InvalidProtocolBufferException e) {
-                    LOG.error("cannot create Event: '{}', skipping", e.toString());
-                }
-            } else {
-                LOG.error("received a message wich is not byte[], skipping");
-            }
-        });
-        consumers.put(watchID, consumer);
-    }
-
-    @Override
-    public void unwatch(long watchID) {
-        MessageConsumer<byte[]> consumer = consumers.remove(watchID);
-        consumer.unregister();
-    }
+    public abstract void unwatch(long watchID);
 
     @Override
     public ValidationStatus validateUpdate(byte[] key, VersionedValues value, TopicPartition tp, long offset, long timestamp) {

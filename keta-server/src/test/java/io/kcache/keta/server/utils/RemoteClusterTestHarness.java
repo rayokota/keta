@@ -17,7 +17,7 @@ package io.kcache.keta.server.utils;
 import com.google.common.io.Files;
 import io.kcache.keta.KetaConfig;
 import io.kcache.keta.KetaEngine;
-import io.kcache.keta.notifier.KetaNotifier;
+import io.kcache.keta.server.notifier.VertxNotifier;
 import io.kcache.keta.server.KetaMain;
 import io.kcache.keta.server.grpc.proxy.GrpcProxy;
 import io.kcache.keta.server.leader.KetaLeaderElector;
@@ -91,7 +91,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             KetaConfig config = new KetaConfig(props);
             KetaEngine engine = KetaEngine.getInstance();
             engine.configure(config);
-            engine.init(elector, new KetaNotifier(vertx.eventBus()));
+            engine.init(elector, new VertxNotifier(vertx.eventBus()));
         } catch (Exception e) {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);
