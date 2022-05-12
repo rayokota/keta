@@ -55,7 +55,7 @@
         <scala.version>2.13.8</scala.version>
         <sl4j.version>1.7.36</sl4j.version>
         <tcnative.version>2.0.52.Final</tcnative.version>
-        <vertx.version>4.2.7</vertx.version>
+        <vertx.version>4.3.0</vertx.version>
     </properties>
 
     <dependencyManagement>
