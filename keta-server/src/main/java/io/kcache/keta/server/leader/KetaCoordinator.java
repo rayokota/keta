@@ -148,10 +148,11 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
     }
 
     @Override
-    protected Map<String, ByteBuffer> performAssignment(
+    protected Map<String, ByteBuffer> onLeaderElected(
         String kafkaLeaderId, // Kafka group "leader" who does assignment, *not* the cluster leader
         String protocol,
-        List<JoinGroupResponseData.JoinGroupResponseMember> allMemberMetadata
+        List<JoinGroupResponseData.JoinGroupResponseMember> allMemberMetadata,
+        boolean performAssignment
     ) {
         LOG.debug("Performing assignment");
 
@@ -206,11 +207,12 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
     }
 
     @Override
-    protected void onJoinPrepare(int generation, String memberId) {
+    protected boolean onJoinPrepare(int generation, String memberId) {
         LOG.debug("Revoking previous assignment {}", assignmentSnapshot);
         if (assignmentSnapshot != null) {
             listener.onRevoked();
         }
+        return true;
     }
 
     @Override
