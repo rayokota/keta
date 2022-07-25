@@ -266,14 +266,28 @@ public class KetaEngine implements Configurable, Closeable {
     }
 
     public void sync() {
-        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
-        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
-            timestamps.sync()).thenRunAsync(() -> transactionManager.init());
-        CompletableFuture<Void> leasesFuture = CompletableFuture.runAsync(() -> leases.sync());
-        CompletableFuture<Void> authFuture = CompletableFuture.runAsync(() -> auth.sync());
-        CompletableFuture<Void> authUsersFuture = CompletableFuture.runAsync(() -> authUsers.sync());
-        CompletableFuture<Void> authRolesFuture = CompletableFuture.runAsync(() -> authRoles.sync());
-        CompletableFuture<Void> kvFuture = CompletableFuture.runAsync(() -> cache.sync());
+        CompletableFuture<Void> commitsFuture = CompletableFuture
+            .runAsync(() -> commits.reset())
+            .thenRunAsync(() -> commits.sync());
+        CompletableFuture<Void> timestampsFuture = CompletableFuture
+            .runAsync(() -> timestamps.reset())
+            .thenRunAsync(() -> timestamps.sync())
+            .thenRunAsync(() -> transactionManager.init());
+        CompletableFuture<Void> leasesFuture = CompletableFuture
+            .runAsync(() -> leases.reset())
+            .thenRunAsync(() -> leases.sync());
+        CompletableFuture<Void> authFuture = CompletableFuture
+            .runAsync(() -> auth.reset())
+            .thenRunAsync(() -> auth.sync());
+        CompletableFuture<Void> authUsersFuture = CompletableFuture
+            .runAsync(() -> authUsers.reset())
+            .thenRunAsync(() -> authUsers.sync());
+        CompletableFuture<Void> authRolesFuture = CompletableFuture
+            .runAsync(() -> authRoles.reset())
+            .thenRunAsync(() -> authRoles.sync());
+        CompletableFuture<Void> kvFuture = CompletableFuture
+            .runAsync(() -> cache.reset())
+            .thenRunAsync(() -> cache.sync());
         CompletableFuture.allOf(commitsFuture, timestampsFuture, leasesFuture,
             authFuture, authUsersFuture, authRolesFuture, kvFuture).join();
     }
