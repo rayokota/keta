@@ -207,7 +207,7 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
     }
 
     @Override
-    protected boolean onJoinPrepare(int generation, String memberId) {
+    protected boolean onJoinPrepare(Timer timer, int generation, String memberId) {
         LOG.debug("Revoking previous assignment {}", assignmentSnapshot);
         if (assignmentSnapshot != null) {
             listener.onRevoked();
