@@ -290,7 +290,7 @@ public class AuthService extends AuthGrpc.AuthImplBase {
     public void roleRevokePermission(AuthRoleRevokePermissionRequest request, StreamObserver<AuthRoleRevokePermissionResponse> responseObserver) {
         KetaAuthManager authMgr = KetaEngine.getInstance().getAuthManager();
         try {
-            authMgr.revokePermission(request.getRole(), request.getKeyBytes(), request.getRangeEndBytes());
+            authMgr.revokePermission(request.getRole(), request.getKey(), request.getRangeEnd());
             responseObserver.onNext(AuthRoleRevokePermissionResponse.newBuilder()
                 .setHeader(GrpcUtils.toResponseHeader(elector.getMemberId()))
                 .build());
