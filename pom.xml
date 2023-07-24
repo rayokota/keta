@@ -45,7 +45,7 @@
         <guava.version>32.1.1-jre</guava.version>
         <jackson.version>2.15.2</jackson.version>
         <jetcd.version>0.7.5</jetcd.version>
-        <junit-jupiter.version>5.9.2</junit-jupiter.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <kafka.version>3.5.0</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kcache.version>5.0.0</kcache.version>
