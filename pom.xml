@@ -41,7 +41,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <assertj.version>3.24.2</assertj.version>
         <jbcrypt.version>0.4</jbcrypt.version>
-        <grpc.version>1.56.1</grpc.version>
+        <grpc.version>1.57.0</grpc.version>
         <guava.version>32.1.1-jre</guava.version>
         <jackson.version>2.15.2</jackson.version>
         <jetcd.version>0.7.5</jetcd.version>
