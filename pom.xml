@@ -44,7 +44,7 @@
         <grpc.version>1.60.0</grpc.version>
         <guava.version>33.0.0-jre</guava.version>
         <jackson.version>2.16.0</jackson.version>
-        <jetcd.version>0.7.6</jetcd.version>
+        <jetcd.version>0.7.7</jetcd.version>
         <junit-jupiter.version>5.10.1</junit-jupiter.version>
         <kafka.version>3.6.1</kafka.version>
         <kafka.scala.version>2.13</kafka.scala.version>
