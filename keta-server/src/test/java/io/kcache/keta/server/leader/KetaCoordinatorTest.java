@@ -77,7 +77,7 @@ public class KetaCoordinatorTest {
     private int rebalanceTimeoutMs = 60;
     private int heartbeatIntervalMs = 2;
     private long retryBackoffMs = 100;
-    private long retryBackoffMaxMs = 100;
+    private long retryBackoffMaxMs = 1000;
     private MockTime time;
     private MockClient client;
     private Cluster cluster = TestUtils.singletonCluster("topic", 1);
