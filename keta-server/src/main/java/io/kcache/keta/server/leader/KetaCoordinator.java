@@ -67,6 +67,7 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
         String metricGrpPrefix,
         Time time,
         long retryBackoffMs,
+        long retryBackoffMaxMs,
         KetaIdentity identity,
         KetaRebalanceListener listener) {
         super(
@@ -77,6 +78,7 @@ final class KetaCoordinator extends AbstractCoordinator implements Closeable {
                 groupId,
                 Optional.empty(),
                 retryBackoffMs,
+                retryBackoffMaxMs,
                 true
             ),
             logContext,
