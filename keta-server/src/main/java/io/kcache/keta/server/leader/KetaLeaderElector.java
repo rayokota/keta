@@ -26,6 +26,7 @@ import org.apache.kafka.clients.ApiVersions;
 import org.apache.kafka.clients.ClientUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.Metadata;
+import org.apache.kafka.clients.MetadataRecoveryStrategy;
 import org.apache.kafka.clients.NetworkClient;
 import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
 import org.apache.kafka.common.KafkaException;
@@ -155,7 +156,8 @@ public class KetaLeaderElector implements KetaRebalanceListener, LeaderElector, 
                 time,
                 true,
                 new ApiVersions(),
-                logContext);
+                logContext,
+                MetadataRecoveryStrategy.NONE);
 
             this.client = new ConsumerNetworkClient(
                 logContext,
